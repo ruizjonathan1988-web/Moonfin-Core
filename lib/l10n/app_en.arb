@@ -13990,5 +13990,29 @@
         "type": "String"
       }
     }
+  },
+  "top10Row": "Top 10 Right Now",
+  "@top10Row": {
+    "description": "Home row: the ten trending titles already on the server, ranked"
+  },
+  "surpriseRow": "Surprise Me",
+  "@surpriseRow": {
+    "description": "Home row: a random movie and series that start playing on one press"
+  },
+  "surprisePlayNow": "Play",
+  "@surprisePlayNow": {
+    "description": "Pill on a Surprise card saying a press starts playback"
+  },
+  "cardNewBadge": "New",
+  "@cardNewBadge": {
+    "description": "Badge on a card for a movie or episode added in the last days and not watched yet"
+  },
+  "tabletopRewind": "Back 10 seconds",
+  "@tabletopRewind": {
+    "description": "Fold tabletop player: rewind button label"
+  },
+  "tabletopForward": "Forward 10 seconds",
+  "@tabletopForward": {
+    "description": "Fold tabletop player: fast-forward button label"
   }
 }

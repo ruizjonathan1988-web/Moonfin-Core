@@ -29,6 +29,7 @@ import '../viewmodels/seerr_discover_view_model.dart';
 import '../viewmodels/live_tv_guide_view_model.dart';
 import 'custom_external_lists_service.dart';
 import 'plugin_sync_service.dart';
+import 'home_highlights.dart';
 
 class RowDataSource {
   final MediaServerClient _client;
@@ -2513,6 +2514,59 @@ class RowDataSource {
       }
       return true;
     }).toList();
+  }
+
+  /// Items by id, in the order asked for, skipping any the server doesn't
+  /// return (deleted, or hidden from this user).
+  Future<List<AggregatedItem>> loadItemsByIds(
+    String serverId,
+    List<String> ids,
+  ) async {
+    if (ids.isEmpty) return const [];
+    final res = await _client.itemsApi.getItems(
+      ids: ids,
+      fields: _fields,
+      enableImageTypes: _imageTypes,
+      imageTypeLimit: _imageTypeLimit,
+    );
+    final byId = {for (final item in _parseItems(res, serverId)) item.id: item};
+    return [
+      for (final id in ids)
+        if (byId[id] case final item?) item,
+    ];
+  }
+
+  /// One movie and one series nobody finished, drawn at random and leaning
+  /// towards well-rated ones, for the Surprise row.
+  Future<List<AggregatedItem>> loadSurprisePicks(String serverId) async {
+    Future<AggregatedItem?> draw(String type) async {
+      try {
+        final items = await _searchVisibleLibraryItems(
+          serverId,
+          [type],
+          (parentId) => _getItemsWithFallback(
+            parentId: parentId,
+            sortBy: 'Random',
+            filters: const ['IsUnplayed'],
+            recursive: true,
+            includeItemTypes: [type],
+            limit: 25,
+          ),
+        );
+        // Each library drew on its own, so mix them before picking.
+        items.shuffle();
+        return pickSurprise(items);
+      } catch (e) {
+        debugPrint('[RowDataSource] Surprise draw for $type failed: $e');
+        return null;
+      }
+    }
+
+    final picks = await Future.wait([draw('Movie'), draw('Series')]);
+    return [
+      for (final pick in picks)
+        if (pick != null) pick,
+    ];
   }
 
   /// What the viewer watched lately, newest first, and what they favourited,

@@ -33,6 +33,7 @@ import '../../../data/services/plugin_sync_service.dart';
 import '../../../data/services/seerr/seerr_api_models.dart';
 import '../../../data/services/seerr/seerr_discover_sliders.dart';
 import '../../../data/services/seerr/for_you_service.dart';
+import '../../../data/services/home_highlights.dart';
 import '../../../data/utils/bounded_concurrency.dart';
 import '../../../util/platform_detection.dart';
 import '../../../util/server_url.dart';
@@ -241,6 +242,8 @@ class HomeViewModel extends ChangeNotifier {
       HomeSectionType.radarrCalendar ||
       HomeSectionType.sonarrCalendar ||
       HomeSectionType.seerrForYou ||
+      HomeSectionType.top10 ||
+      HomeSectionType.surprise ||
       HomeSectionType.seasonal =>
         false,
       final t when _isSeerrSectionType(t) || _isTmdbSectionType(t) => false,
@@ -480,7 +483,9 @@ class HomeViewModel extends ChangeNotifier {
                 (showAudioRows || !_isAudioSectionType(c.type)) &&
                 (!_isSeerrSectionType(c.type) || (showSeerrRows && seerrPrefs.isSeerrHomeRowEnabled(c.type))) &&
                 (showSeerrRows || !isSeerrSliderSection(c)) &&
-                (c.type != HomeSectionType.seerrForYou || showSeerrRows) &&
+                ((c.type != HomeSectionType.seerrForYou &&
+                        c.type != HomeSectionType.top10) ||
+                    showSeerrRows) &&
                 (!_isImdbSectionType(c.type) || (showImdbRows && _isImdbSectionEnabled(c.type))) &&
                 (!_isTmdbSectionType(c.type) || (showTmdbRows && _isTmdbSectionEnabled(c.type))) &&
                 (c.type != HomeSectionType.radarrCalendar || _prefs.get(UserPreferences.enableRadarrCalendar)) &&
@@ -903,6 +908,10 @@ class HomeViewModel extends ChangeNotifier {
         return row.rowType == HomeRowType.activeRecordings;
       case HomeSectionType.seerrForYou:
         return row.id == forYouRowId;
+      case HomeSectionType.top10:
+        return row.id == top10RowId;
+      case HomeSectionType.surprise:
+        return row.id == surpriseRowId;
       case HomeSectionType.seerrShortcuts:
         return row.id == 'seerr_shortcuts';
       case HomeSectionType.seerrRecentRequests:
@@ -1253,6 +1262,10 @@ class HomeViewModel extends ChangeNotifier {
         return const {'activeRecordings'};
       case HomeSectionType.seerrForYou:
         return const {'seerrForYou'};
+      case HomeSectionType.top10:
+        return const {'top10'};
+      case HomeSectionType.surprise:
+        return const {'surprise'};
       case HomeSectionType.seerrShortcuts:
         return const {'seerrShortcuts'};
       case HomeSectionType.seerrRecentRequests:
@@ -1603,6 +1616,10 @@ class HomeViewModel extends ChangeNotifier {
         return [];
       case HomeSectionType.seerrForYou:
         return _loadSeerrForYouRow(l10n, forceRefresh: forceRefresh);
+      case HomeSectionType.top10:
+        return _loadTop10Row(l10n);
+      case HomeSectionType.surprise:
+        return _loadSurpriseRow(l10n);
       case HomeSectionType.seerrShortcuts:
         return [await _loadSeerrShortcutsRow(l10n)];
       case HomeSectionType.seerrRecentRequests:
@@ -2068,6 +2085,20 @@ class HomeViewModel extends ChangeNotifier {
         return HomeRow(
           id: forYouRowId,
           title: l10n.seerrForYouRow,
+          rowType: HomeRowType.pluginDynamic,
+          isLoading: true,
+        );
+      case HomeSectionType.top10:
+        return HomeRow(
+          id: top10RowId,
+          title: l10n.top10Row,
+          rowType: HomeRowType.pluginDynamic,
+          isLoading: true,
+        );
+      case HomeSectionType.surprise:
+        return HomeRow(
+          id: surpriseRowId,
+          title: l10n.surpriseRow,
           rowType: HomeRowType.pluginDynamic,
           isLoading: true,
         );
@@ -2775,6 +2806,78 @@ class HomeViewModel extends ChangeNotifier {
       ];
     } catch (e) {
       debugPrint('[SeerrHomeRow] Failed to load For You row: $e');
+      return [];
+    }
+  }
+
+  static const top10RowId = 'top10';
+  static const surpriseRowId = 'surprise';
+
+  /// Marks a Surprise card, so a tap starts playback instead of the page.
+  static const surpriseFlag = 'MoonfinSurprise';
+
+  /// What is trending right now and already on this server, ranked. Seerr
+  /// knows both: TMDB's trending list, and which titles the library holds.
+  Future<List<HomeRow>> _loadTop10Row(AppLocalizations l10n) async {
+    try {
+      final repo = await GetIt.instance.getAsync<SeerrRepository>();
+      await repo.ensureInitialized();
+      if (!repo.isAvailable) return [];
+
+      final trending = <SeerrDiscoverItem>[];
+      // A small library holds few of the trending titles, so look a few
+      // pages deep before giving up on ten.
+      for (var page = 0; page < 4; page++) {
+        final result = await repo.getTrending(limit: 20, offset: page * 20);
+        trending.addAll(result.results);
+        if (playableTrendingIds(trending).length >= 10) break;
+        if (result.results.isEmpty || result.page >= result.totalPages) break;
+      }
+
+      final ids = playableTrendingIds(trending);
+      final items = await _dataSource.loadItemsByIds(_serverId, ids);
+      // A Top 3 isn't much of a chart.
+      if (items.length < 3) return [];
+      return [
+        HomeRow(
+          id: top10RowId,
+          title: l10n.top10Row,
+          rowType: HomeRowType.pluginDynamic,
+          items: items,
+          totalCount: items.length,
+        ),
+      ];
+    } catch (e) {
+      debugPrint('[Top10] Failed to load the Top 10 row: $e');
+      return [];
+    }
+  }
+
+  /// A movie and a series to start without choosing, drawn fresh on each
+  /// load, the way Netflix's Play Something works.
+  Future<List<HomeRow>> _loadSurpriseRow(AppLocalizations l10n) async {
+    try {
+      final picks = await _dataSource.loadSurprisePicks(_serverId);
+      if (picks.isEmpty) return [];
+      final items = [
+        for (final pick in picks)
+          AggregatedItem(
+            id: pick.id,
+            serverId: pick.serverId,
+            rawData: {...pick.rawData, surpriseFlag: true},
+          ),
+      ];
+      return [
+        HomeRow(
+          id: surpriseRowId,
+          title: l10n.surpriseRow,
+          rowType: HomeRowType.pluginDynamic,
+          items: items,
+          totalCount: items.length,
+        ),
+      ];
+    } catch (e) {
+      debugPrint('[Surprise] Failed to load the Surprise row: $e');
       return [];
     }
   }

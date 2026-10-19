@@ -98,6 +98,7 @@ import 'episode_browser.dart';
 import 'episode_browser_panel.dart';
 import 'osd_buttons.dart';
 import 'trickplay_housing_inset.dart';
+import 'tabletop_layout.dart';
 
 class _SubtitleLoadingSpinner extends StatefulWidget {
   const _SubtitleLoadingSpinner();
@@ -4066,7 +4067,22 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                 // Wrapped unconditionally so the subtree keeps one element
                 // identity; toggling a wrapper re-parents it and the player
                 // loses its focus node.
-                child: HdrOverlayCapture(
+                //
+                // The tabletop wrapper is unconditional for the same reason:
+                // folding the phone mid-film must not rebuild the player.
+                child: TabletopLayout(
+                  enabled: PlatformDetection.useMobileUi && !hideOsdForPreroll,
+                  panelBuilder: (_) => TabletopControlPanel(
+                    title: _currentItemTitle(),
+                    positionStream: _state.positionStream,
+                    initialPosition: _state.position,
+                    duration: () => _state.duration,
+                    playingStream: _state.playingStream,
+                    initialPlaying: _state.isPlaying,
+                    onTogglePlay: _togglePlayPause,
+                    onSeekRelative: (ms) => _seekRelative(ms, showControls: false),
+                  ),
+                  child: HdrOverlayCapture(
                   enabled:
                       // In DWM mode the compositor already draws Flutter over
                       // the video.
@@ -4187,6 +4203,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                         ),
                     ],
                   ),
+                ),
                 ),
               ),
             ),

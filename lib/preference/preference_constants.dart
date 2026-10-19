@@ -512,6 +512,12 @@ enum HomeSectionType {
   /// Personal picks from Seerr, built from what the viewer watched, to
   /// request in one click.
   seerrForYou('seerr_for_you'),
+
+  /// The ten trending titles this server can already play, ranked.
+  top10('top10'),
+
+  /// One movie and one series picked at random, played on a single press.
+  surprise('surprise'),
   seerrShortcuts('seerr_shortcuts'),
   seerrRecentRequests('seerr_recent_requests'),
   seerrWatchlist('seerr_watchlist'),

@@ -26,6 +26,8 @@ import '../../../data/repositories/mdblist_repository.dart';
 import '../../../data/repositories/seerr_repository.dart';
 import '../../widgets/seerr/seerr_shortcuts.dart';
 import '../../widgets/seerr/seerr_for_you_sheet.dart';
+import '../../widgets/card_highlights.dart';
+import '../../../data/services/home_highlights.dart';
 import '../../../data/services/background_service.dart';
 import '../../widgets/modern_row.dart';
 import '../../../data/services/theme_music_service.dart';
@@ -4979,6 +4981,8 @@ class _ContentRowsState extends State<_ContentRows>
             context.push(Destinations.genre(item.name, genreId: item.id));
           } else if (row.rowType == HomeRowType.studios && row.id == 'studios') {
             context.push(Destinations.studio(item.name));
+          } else if (item.rawData[HomeViewModel.surpriseFlag] == true) {
+            _playSurprise(context, item);
           } else if (item.serverId == 'seerr') {
             _navigateToSeerrItem(
               context,
@@ -5092,6 +5096,8 @@ class _ContentRowsState extends State<_ContentRows>
                       _navigateToLibrary(context, item);
                     } else if (row.rowType == HomeRowType.genres && row.id == 'genres') {
                       context.push(Destinations.genre(item.name, genreId: item.id));
+                    } else if (item.rawData[HomeViewModel.surpriseFlag] == true) {
+                      _playSurprise(context, item);
                     } else if (item.serverId == 'seerr') {
                       _navigateToSeerrItem(
                         context,
@@ -5201,7 +5207,7 @@ class _ContentRowsState extends State<_ContentRows>
                     title: cardTitle,
                     imageOverlays: isSeerrGenreCard
                         ? [Positioned.fill(child: SeerrGenreLabel(name: item.name))]
-                        : const <Widget>[],
+                        : _highlightOverlays(context, row, item, idx),
                     subtitle: cardSubtitle,
                     subtitleWidget: cardSubtitleWidget,
                     imageUrl: imageUrl,
@@ -5602,6 +5608,35 @@ class _ContentRowsState extends State<_ContentRows>
     } else {
       _openSeerrMediaPage(context, item);
     }
+  }
+
+  /// Surprise cards skip the details page and start straight away.
+  static void _playSurprise(BuildContext context, AggregatedItem item) {
+    context.push(
+      Destinations.item(item.id, serverId: item.serverId, autoPlay: true),
+    );
+  }
+
+  /// The streaming-style marks a card can carry: its rank in the Top 10,
+  /// a Play pill on Surprise cards, or New on something just added.
+  static List<Widget> _highlightOverlays(
+    BuildContext context,
+    HomeRow row,
+    AggregatedItem item,
+    int index,
+  ) {
+    final l10n = AppLocalizations.of(context);
+    return [
+      if (row.id == HomeViewModel.top10RowId)
+        RankNumberOverlay(rank: index + 1)
+      else if (row.id == HomeViewModel.surpriseRowId)
+        CardHighlightPill(
+          label: l10n.surprisePlayNow,
+          icon: Icons.play_arrow_rounded,
+        )
+      else if (item.serverId != 'seerr' && isFreshlyAdded(item))
+        CardHighlightPill(label: l10n.cardNewBadge),
+    ];
   }
 
   static void _openSeerrMediaPage(BuildContext context, AggregatedItem item) {

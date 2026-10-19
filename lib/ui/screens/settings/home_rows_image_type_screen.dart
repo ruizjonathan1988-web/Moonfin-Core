@@ -92,6 +92,8 @@ class _HomeRowsImageTypeScreenState extends State<HomeRowsImageTypeScreen> {
         HomeSectionType.onNow => l10n.onNow,
         HomeSectionType.seerrShortcuts => l10n.seerrShortcutsRow,
         HomeSectionType.seerrForYou => l10n.seerrForYouRow,
+        HomeSectionType.top10 => l10n.top10Row,
+        HomeSectionType.surprise => l10n.surpriseRow,
         HomeSectionType.seerrRecentRequests => l10n.recentRequests,
         HomeSectionType.seerrWatchlist => l10n.yourWatchlist,
         HomeSectionType.seerrRecentlyAdded => l10n.recentlyAdded,

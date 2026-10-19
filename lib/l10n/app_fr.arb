@@ -13832,5 +13832,11 @@
     "seerrForYouRequestSent": "Demande envoyée",
     "seerrForYouRequestSentBody": "{title} a été envoyé à Seerr.",
     "seerrForYouRequestFailed": "La demande a échoué",
-    "seerrForYouAlreadyRequested": "{title} est déjà demandé."
+    "seerrForYouAlreadyRequested": "{title} est déjà demandé.",
+    "top10Row": "Top 10 en ce moment",
+    "surpriseRow": "Lecture surprise",
+    "surprisePlayNow": "Lecture",
+    "cardNewBadge": "Nouveau",
+    "tabletopRewind": "Reculer de 10 secondes",
+    "tabletopForward": "Avancer de 10 secondes"
 }

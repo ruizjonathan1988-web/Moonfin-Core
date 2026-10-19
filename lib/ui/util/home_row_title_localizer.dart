@@ -83,6 +83,10 @@ String localizeHomeRowTitle({
       return 'Upcoming TV Shows (Sonarr)';
     case 'seerr_for_you':
       return l10n.seerrForYouRow;
+    case 'top10':
+      return l10n.top10Row;
+    case 'surprise':
+      return l10n.surpriseRow;
     case 'seerr_recent_requests':
       return l10n.recentRequests;
     case 'seerr_recently_added':

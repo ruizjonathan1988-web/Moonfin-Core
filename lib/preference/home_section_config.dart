@@ -197,6 +197,9 @@ class HomeSectionConfig {
       enabled: true,
       order: 2,
     ),
+    // Also needs Seerr, for what is trending.
+    HomeSectionConfig(type: HomeSectionType.top10, enabled: true, order: 3),
+    HomeSectionConfig(type: HomeSectionType.surprise, enabled: true, order: 4),
     HomeSectionConfig(
       type: HomeSectionType.latestMedia,
       enabled: true,
