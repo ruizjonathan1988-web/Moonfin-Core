@@ -1,0 +1,60 @@
+# Builds the personal APKs for a fork: one for the TV, one for the phone.
+# Both install next to the Play Store version instead of replacing it.
+name: APK perso
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [perso]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+
+      - run: flutter pub get
+
+      # Only errors stop the build: the upstream code has infos and warnings
+      # of its own.
+      - name: Analyse
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Tests des ajouts
+        run: >
+          flutter test
+          test/data/services/for_you_ranker_test.dart
+          test/data/services/home_highlights_test.dart
+          test/ui/screens/home/home_row_image_type_test.dart
+          test/ui/kids_mode_test.dart
+
+      # "Moonfin Beta" on the phone.
+      - name: APK telephone
+        run: >
+          flutter build apk --release
+          --flavor mobile-beta
+          --dart-define=DISTRIBUTION_CHANNEL=apk
+
+      # "Moonfin Test" on the TV: the real TV build under its own id.
+      - name: APK TV
+        env:
+          MOONFIN_TEST_ID_SUFFIX: .perso
+        run: >
+          flutter build apk --release
+          --flavor androidTv
+          --dart-define=MOONFIN_FORCE_TV=true
+          --dart-define=DISTRIBUTION_CHANNEL=android_tv_apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: moonfin-perso
+          path: build/app/outputs/flutter-apk/*-release.apk
