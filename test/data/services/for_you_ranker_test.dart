@@ -143,12 +143,12 @@ void main() {
       final picks = ForYouRanker.rank(
         seeds: [seed],
         recommendationsBySeed: {
-          seed.key: [_item(1, adult: true)],
+          seed.key: [_item(10, adult: true)],
         },
         blockAdult: false,
         now: _now,
       );
-      expect(_ids(picks), [1]);
+      expect(_ids(picks), [10]);
     });
 
     test('never suggests a seed or an excluded title', () {
