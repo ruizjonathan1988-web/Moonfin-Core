@@ -191,6 +191,12 @@ class HomeSectionConfig {
     ),
     HomeSectionConfig(type: HomeSectionType.resume, enabled: true, order: 1),
     HomeSectionConfig(type: HomeSectionType.nextUp, enabled: true, order: 2),
+    // Only shows once Seerr is signed in.
+    HomeSectionConfig(
+      type: HomeSectionType.seerrForYou,
+      enabled: true,
+      order: 2,
+    ),
     HomeSectionConfig(
       type: HomeSectionType.latestMedia,
       enabled: true,

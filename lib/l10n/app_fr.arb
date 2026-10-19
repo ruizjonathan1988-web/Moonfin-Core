@@ -13822,5 +13822,15 @@
     "playlistNoMatchingTracks": "Aucune piste ne correspond aux filtres actifs",
     "@playlistNoMatchingTracks": {
         "description": "Empty state message shown when playlist filters match no items"
-    }
+    },
+    "seerrForYouRow": "Pour vous",
+    "seerrForYouBecause": "Parce que vous avez regardé {title}",
+    "seerrForYouRequestMovie": "Demander le téléchargement",
+    "seerrForYouRequestFirstSeason": "Demander la saison 1",
+    "seerrForYouRequestAllSeasons": "Demander toutes les saisons",
+    "seerrForYouOpenDetails": "Voir la fiche",
+    "seerrForYouRequestSent": "Demande envoyée",
+    "seerrForYouRequestSentBody": "{title} a été envoyé à Seerr.",
+    "seerrForYouRequestFailed": "La demande a échoué",
+    "seerrForYouAlreadyRequested": "{title} est déjà demandé."
 }

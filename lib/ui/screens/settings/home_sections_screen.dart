@@ -531,6 +531,7 @@ class _HomeSectionsScreenState extends State<HomeSectionsScreen>
       return 5;
     }
     if (_isSeerrSectionType(section.type) ||
+        section.type == HomeSectionType.seerrForYou ||
         section.type == HomeSectionType.radarrCalendar ||
         section.type == HomeSectionType.sonarrCalendar) {
       return 6;
@@ -1817,6 +1818,7 @@ class _HomeSectionsScreenState extends State<HomeSectionsScreen>
         HomeSectionType.liveTv => l10n.liveTV,
         HomeSectionType.onNow => l10n.onNow,
         HomeSectionType.seerrShortcuts => l10n.seerrShortcutsRow,
+        HomeSectionType.seerrForYou => l10n.seerrForYouRow,
         HomeSectionType.seerrRecentRequests => l10n.recentRequests,
         HomeSectionType.seerrWatchlist => l10n.yourWatchlist,
         HomeSectionType.seerrRecentlyAdded => l10n.recentlyAdded,

@@ -32,6 +32,7 @@ import '../../../data/repositories/seerr_repository.dart';
 import '../../../data/services/plugin_sync_service.dart';
 import '../../../data/services/seerr/seerr_api_models.dart';
 import '../../../data/services/seerr/seerr_discover_sliders.dart';
+import '../../../data/services/seerr/for_you_service.dart';
 import '../../../data/utils/bounded_concurrency.dart';
 import '../../../util/platform_detection.dart';
 import '../../../util/server_url.dart';
@@ -239,6 +240,7 @@ class HomeViewModel extends ChangeNotifier {
       HomeSectionType.audioPlaylists ||
       HomeSectionType.radarrCalendar ||
       HomeSectionType.sonarrCalendar ||
+      HomeSectionType.seerrForYou ||
       HomeSectionType.seasonal =>
         false,
       final t when _isSeerrSectionType(t) || _isTmdbSectionType(t) => false,
@@ -478,6 +480,7 @@ class HomeViewModel extends ChangeNotifier {
                 (showAudioRows || !_isAudioSectionType(c.type)) &&
                 (!_isSeerrSectionType(c.type) || (showSeerrRows && seerrPrefs.isSeerrHomeRowEnabled(c.type))) &&
                 (showSeerrRows || !isSeerrSliderSection(c)) &&
+                (c.type != HomeSectionType.seerrForYou || showSeerrRows) &&
                 (!_isImdbSectionType(c.type) || (showImdbRows && _isImdbSectionEnabled(c.type))) &&
                 (!_isTmdbSectionType(c.type) || (showTmdbRows && _isTmdbSectionEnabled(c.type))) &&
                 (c.type != HomeSectionType.radarrCalendar || _prefs.get(UserPreferences.enableRadarrCalendar)) &&
@@ -898,6 +901,8 @@ class HomeViewModel extends ChangeNotifier {
         return row.rowType == HomeRowType.liveTvOnNow && row.id == 'onNow';
       case HomeSectionType.activeRecordings:
         return row.rowType == HomeRowType.activeRecordings;
+      case HomeSectionType.seerrForYou:
+        return row.id == forYouRowId;
       case HomeSectionType.seerrShortcuts:
         return row.id == 'seerr_shortcuts';
       case HomeSectionType.seerrRecentRequests:
@@ -1246,6 +1251,8 @@ class HomeViewModel extends ChangeNotifier {
         return const {'studios'};
       case HomeSectionType.activeRecordings:
         return const {'activeRecordings'};
+      case HomeSectionType.seerrForYou:
+        return const {'seerrForYou'};
       case HomeSectionType.seerrShortcuts:
         return const {'seerrShortcuts'};
       case HomeSectionType.seerrRecentRequests:
@@ -1594,6 +1601,8 @@ class HomeViewModel extends ChangeNotifier {
       case HomeSectionType.mediaBar:
         _mediaBarViewModel.load();
         return [];
+      case HomeSectionType.seerrForYou:
+        return _loadSeerrForYouRow(l10n, forceRefresh: forceRefresh);
       case HomeSectionType.seerrShortcuts:
         return [await _loadSeerrShortcutsRow(l10n)];
       case HomeSectionType.seerrRecentRequests:
@@ -2052,6 +2061,13 @@ class HomeViewModel extends ChangeNotifier {
         return HomeRow(
           id: 'seerr_upcoming_series',
           title: l10n.upcomingSeries,
+          rowType: HomeRowType.pluginDynamic,
+          isLoading: true,
+        );
+      case HomeSectionType.seerrForYou:
+        return HomeRow(
+          id: forYouRowId,
+          title: l10n.seerrForYouRow,
           rowType: HomeRowType.pluginDynamic,
           isLoading: true,
         );
@@ -2705,6 +2721,82 @@ class HomeViewModel extends ChangeNotifier {
       debugPrint('[SeerrHomeRow] Failed to load Seerr row $type: $e');
       return [];
     }
+  }
+
+  static const forYouRowId = 'seerr_for_you';
+
+  /// Personal picks to request: what TMDB recommends next to the titles the
+  /// viewer watched lately or favourited, minus what the server already has.
+  Future<List<HomeRow>> _loadSeerrForYouRow(
+    AppLocalizations l10n, {
+    bool forceRefresh = false,
+  }) async {
+    try {
+      final repo = await GetIt.instance.getAsync<SeerrRepository>();
+      await repo.ensureInitialized();
+      if (!repo.isAvailable) return [];
+      final blockNsfw = GetIt.instance<SeerrPreferences>().blockNsfw;
+
+      final picks = await ForYouService.instance.load(
+        serverId: _serverId,
+        loadHistory: () => _dataSource.loadTasteHistory(_serverId),
+        fetchRecommendations: (seed) => seed.mediaType == 'tv'
+            ? repo.getTvRecommendations(seed.tmdbId)
+            : repo.getMovieRecommendations(seed.tmdbId),
+        blockAdult: blockNsfw,
+        forceRefresh: forceRefresh,
+      );
+
+      final items = <AggregatedItem>[];
+      for (final pick in picks) {
+        // Same card shape and NSFW filtering as the other Seerr rows.
+        final base = _seerrAggregatedItems([pick.item], null, blockNsfw);
+        if (base.isEmpty) continue;
+        items.add(
+          AggregatedItem(
+            id: base.first.id,
+            serverId: base.first.serverId,
+            rawData: {
+              ...base.first.rawData,
+              'Type': pick.mediaType == 'tv' ? 'Series' : 'Movie',
+              'SeerrMediaType': pick.mediaType,
+              forYouFlag: true,
+              forYouReasonKey: pick.because.title,
+            },
+          ),
+        );
+      }
+      // No history yet, or nothing left to suggest: no row rather than an
+      // empty one.
+      if (items.isEmpty) return [];
+      return [
+        _seerrRow(forYouRowId, l10n.seerrForYouRow, items,
+            totalCount: items.length),
+      ];
+    } catch (e) {
+      debugPrint('[SeerrHomeRow] Failed to load For You row: $e');
+      return [];
+    }
+  }
+
+  /// Marks a For You card, so a tap offers the request instead of the page.
+  static const forYouFlag = 'SeerrForYou';
+
+  /// The title that earned a For You card its place.
+  static const forYouReasonKey = 'SeerrForYouBecause';
+
+  /// Takes a requested title out of the For You row right away.
+  void removeFromForYouRow(AggregatedItem item) {
+    final mediaType = item.rawData['SeerrMediaType'] as String? ?? 'movie';
+    final tmdbId = int.tryParse(item.id);
+    if (tmdbId != null) {
+      ForYouService.instance.markRequested(mediaType, tmdbId);
+    }
+    final index = _rows.indexWhere((r) => r.id == forYouRowId);
+    if (index < 0) return;
+    final row = _rows[index];
+    final items = row.items.where((i) => i.id != item.id).toList();
+    _replaceRowById(row.copyWith(items: items, totalCount: items.length));
   }
 
   /// Appends the next Seerr page to [rowIndex]. Called from [loadMoreForRow],

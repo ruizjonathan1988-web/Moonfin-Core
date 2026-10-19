@@ -2515,6 +2515,98 @@ class RowDataSource {
     }).toList();
   }
 
+  /// What the viewer watched lately, newest first, and what they favourited,
+  /// as movies and series carrying their provider ids. The For You row asks
+  /// Seerr what goes with each of them. Watched episodes stand for their
+  /// series.
+  Future<({List<AggregatedItem> recent, List<AggregatedItem> favorites})>
+  loadTasteHistory(String serverId) async {
+    const seedFields = '$_fields,ProviderIds';
+    const recentTypes = ['Movie', 'Episode'];
+    const favoriteTypes = ['Movie', 'Series'];
+
+    var played = const <AggregatedItem>[];
+    try {
+      played = await _searchVisibleLibraryItems(
+        serverId,
+        recentTypes,
+        (parentId) => _getItemsWithFallback(
+          parentId: parentId,
+          sortBy: 'DatePlayed',
+          sortOrder: 'Descending',
+          filters: const ['IsPlayed'],
+          recursive: true,
+          includeItemTypes: recentTypes,
+          limit: 60,
+          fields: seedFields,
+        ),
+        merge: _byLastPlayed,
+      );
+    } catch (e) {
+      debugPrint('[RowDataSource] For You history failed: $e');
+    }
+
+    // Keep the play order while swapping each episode for its series.
+    final order = <String>[];
+    final movies = <String, AggregatedItem>{};
+    final seriesIds = <String>[];
+    for (final item in played) {
+      if (item.type == 'Movie') {
+        if (movies.containsKey(item.id)) continue;
+        movies[item.id] = item;
+        order.add(item.id);
+      } else if (item.type == 'Episode') {
+        final seriesId = item.rawData['SeriesId']?.toString();
+        if (seriesId == null || seriesId.isEmpty) continue;
+        if (seriesIds.contains(seriesId)) continue;
+        seriesIds.add(seriesId);
+        order.add(seriesId);
+      }
+    }
+
+    final series = <String, AggregatedItem>{};
+    if (seriesIds.isNotEmpty) {
+      try {
+        final res = await _client.itemsApi.getItems(
+          ids: seriesIds,
+          fields: seedFields,
+        );
+        for (final s in _parseItems(res, serverId)) {
+          series[s.id] = s;
+        }
+      } catch (e) {
+        debugPrint('[RowDataSource] For You series lookup failed: $e');
+      }
+    }
+
+    final recent = <AggregatedItem>[
+      for (final id in order)
+        if (movies[id] ?? series[id] case final item?) item,
+    ];
+
+    var favorites = const <AggregatedItem>[];
+    try {
+      favorites = await _searchVisibleLibraryItems(
+        serverId,
+        favoriteTypes,
+        (parentId) => _getItemsWithFallback(
+          parentId: parentId,
+          isFavorite: true,
+          recursive: true,
+          includeItemTypes: favoriteTypes,
+          sortBy: 'DatePlayed',
+          sortOrder: 'Descending',
+          limit: 20,
+          fields: seedFields,
+        ),
+      );
+    } catch (e) {
+      debugPrint('[RowDataSource] For You favourites failed: $e');
+    }
+
+    return (recent: recent, favorites: favorites);
+  }
+
   Future<HomeRow> loadSinceYouWatchedRow(String serverId, int rowIndex) async {
     final prefs = GetIt.instance<UserPreferences>();
     final sourceType = prefs.get(UserPreferences.sinceYouWatchedSourceType);

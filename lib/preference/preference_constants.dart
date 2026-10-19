@@ -509,6 +509,9 @@ enum HomeSectionType {
   studios('studios'),
   liveTv('livetv'),
   onNow('onnow'),
+  /// Personal picks from Seerr, built from what the viewer watched, to
+  /// request in one click.
+  seerrForYou('seerr_for_you'),
   seerrShortcuts('seerr_shortcuts'),
   seerrRecentRequests('seerr_recent_requests'),
   seerrWatchlist('seerr_watchlist'),

@@ -13935,5 +13935,60 @@
   "librarySortLength": "Length",
   "@librarySortLength": {
     "description": "Sort option for music: by track or album length"
+  },
+  "seerrForYouRow": "For You",
+  "@seerrForYouRow": {
+    "description": "Home row of personal recommendations from Seerr, built from what the user watched"
+  },
+  "seerrForYouBecause": "Because you watched {title}",
+  "@seerrForYouBecause": {
+    "description": "Why a For You recommendation is suggested",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "seerrForYouRequestMovie": "Request download",
+  "@seerrForYouRequestMovie": {
+    "description": "For You sheet: request a movie through Seerr"
+  },
+  "seerrForYouRequestFirstSeason": "Request season 1",
+  "@seerrForYouRequestFirstSeason": {
+    "description": "For You sheet: request only the first season of a series"
+  },
+  "seerrForYouRequestAllSeasons": "Request all seasons",
+  "@seerrForYouRequestAllSeasons": {
+    "description": "For You sheet: request every season of a series"
+  },
+  "seerrForYouOpenDetails": "See details",
+  "@seerrForYouOpenDetails": {
+    "description": "For You sheet: open the full Seerr page instead of requesting"
+  },
+  "seerrForYouRequestSent": "Request sent",
+  "@seerrForYouRequestSent": {
+    "description": "Notification title after a For You request succeeded"
+  },
+  "seerrForYouRequestSentBody": "{title} was sent to Seerr.",
+  "@seerrForYouRequestSentBody": {
+    "description": "Notification body after a For You request succeeded",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "seerrForYouRequestFailed": "Request failed",
+  "@seerrForYouRequestFailed": {
+    "description": "Notification title when a For You request failed"
+  },
+  "seerrForYouAlreadyRequested": "{title} is already requested.",
+  "@seerrForYouAlreadyRequested": {
+    "description": "Notification body when the title was already requested",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
   }
 }

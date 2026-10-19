@@ -25,6 +25,7 @@ import '../../../data/models/home_row.dart';
 import '../../../data/repositories/mdblist_repository.dart';
 import '../../../data/repositories/seerr_repository.dart';
 import '../../widgets/seerr/seerr_shortcuts.dart';
+import '../../widgets/seerr/seerr_for_you_sheet.dart';
 import '../../../data/services/background_service.dart';
 import '../../widgets/modern_row.dart';
 import '../../../data/services/theme_music_service.dart';
@@ -4979,7 +4980,12 @@ class _ContentRowsState extends State<_ContentRows>
           } else if (row.rowType == HomeRowType.studios && row.id == 'studios') {
             context.push(Destinations.studio(item.name));
           } else if (item.serverId == 'seerr') {
-            _navigateToSeerrItem(context, item);
+            _navigateToSeerrItem(
+              context,
+              item,
+              onForYouRequested: () =>
+                  widget.viewModel.removeFromForYouRow(item),
+            );
           } else {
             context.push(
               Destinations.itemOrPhoto(
@@ -5087,7 +5093,12 @@ class _ContentRowsState extends State<_ContentRows>
                     } else if (row.rowType == HomeRowType.genres && row.id == 'genres') {
                       context.push(Destinations.genre(item.name, genreId: item.id));
                     } else if (item.serverId == 'seerr') {
-                      _navigateToSeerrItem(context, item);
+                      _navigateToSeerrItem(
+                        context,
+                        item,
+                        onForYouRequested: () =>
+                            widget.viewModel.removeFromForYouRow(item),
+                      );
                     } else {
                       context.push(
                         Destinations.itemOrPhoto(
@@ -5552,7 +5563,21 @@ class _ContentRowsState extends State<_ContentRows>
         imdbId: item.imdbId,
       );
 
-  static void _navigateToSeerrItem(BuildContext context, AggregatedItem item) {
+  static void _navigateToSeerrItem(
+    BuildContext context,
+    AggregatedItem item, {
+    VoidCallback? onForYouRequested,
+  }) {
+    if (item.rawData[HomeViewModel.forYouFlag] == true) {
+      showSeerrForYouSheet(
+        context: context,
+        item: item,
+        because: item.rawData[HomeViewModel.forYouReasonKey] as String?,
+        openDetails: () => _openSeerrMediaPage(context, item),
+        onRequested: onForYouRequested,
+      );
+      return;
+    }
     final shortcut = SeerrShortcut.fromName(
       item.rawData['SeerrShortcut'] as String?,
     );
@@ -5575,21 +5600,25 @@ class _ContentRowsState extends State<_ContentRows>
       );
       context.push(uri.toString());
     } else {
-      final mediaType = item.type == 'Series' || item.type == 'tv'
-          ? 'tv'
-          : 'movie';
-      // External rows key their items by IMDb id where they have one, which
-      // Seerr can only resolve by searching, and a search can land on the
-      // wrong title. The TMDB id these items also carry names exactly one.
-      final tmdbId = item.tmdbId;
-      context.push(
-        Destinations.seerrMedia(
-          tmdbId != null && tmdbId.isNotEmpty ? tmdbId : item.id,
-          mediaType: mediaType,
-          title: item.name,
-        ),
-      );
+      _openSeerrMediaPage(context, item);
     }
+  }
+
+  static void _openSeerrMediaPage(BuildContext context, AggregatedItem item) {
+    final mediaType = item.type == 'Series' || item.type == 'tv'
+        ? 'tv'
+        : 'movie';
+    // External rows key their items by IMDb id where they have one, which
+    // Seerr can only resolve by searching, and a search can land on the
+    // wrong title. The TMDB id these items also carry names exactly one.
+    final tmdbId = item.tmdbId;
+    context.push(
+      Destinations.seerrMedia(
+        tmdbId != null && tmdbId.isNotEmpty ? tmdbId : item.id,
+        mediaType: mediaType,
+        title: item.name,
+      ),
+    );
   }
 
   static void _navigateToLibrary(BuildContext context, AggregatedItem item) {
