@@ -1550,7 +1550,11 @@ class PluginSyncService extends ChangeNotifier {
             }
             if (!enabledTypes.contains(type)) {
               sections.add(
-                HomeSectionConfig(type: type, enabled: false, order: order++),
+                HomeSectionConfig(
+                  type: type,
+                  enabled: _isOnByDefaultWhenMissing(type),
+                  order: order++,
+                ),
               );
             }
           }
@@ -1685,14 +1689,27 @@ class PluginSyncService extends ChangeNotifier {
       if (type == prefs.HomeSectionType.none || present.contains(type)) {
         continue;
       }
-      final enabled = type == prefs.HomeSectionType.seasonal &&
-          _prefs.get(UserPreferences.seasonalRowEnabled);
+      final enabled =
+          _isOnByDefaultWhenMissing(type) ||
+          (type == prefs.HomeSectionType.seasonal &&
+              _prefs.get(UserPreferences.seasonalRowEnabled));
       sections.add(
         HomeSectionConfig(type: type, enabled: enabled, order: order++),
       );
     }
     return order;
   }
+
+  /// Sections a layout pushed by an older client can't mention, since they
+  /// didn't exist then. They show up on their own like on a fresh install,
+  /// and a viewer who switches one off keeps it off because the layout then
+  /// lists it.
+  static bool _isOnByDefaultWhenMissing(prefs.HomeSectionType type) =>
+      type == prefs.HomeSectionType.seerrForYou ||
+      type == prefs.HomeSectionType.seerrMyRequests ||
+      type == prefs.HomeSectionType.seerrBecause ||
+      type == prefs.HomeSectionType.top10 ||
+      type == prefs.HomeSectionType.surprise;
 
   /// Seerr home rows keep their own copy of the enabled state that the settings
   /// screens write alongside the section layout, so mirror it here too. Without
