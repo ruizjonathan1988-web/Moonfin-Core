@@ -14087,6 +14087,110 @@
       }
     }
   },
+  "tasteMoodQuestion": "What makes you want to press play?",
+  "@tasteMoodQuestion": {
+    "description": "Taste questionnaire"
+  },
+  "tasteMoodHint": "Pick the moods you like, as many as you want.",
+  "@tasteMoodHint": {
+    "description": "Taste questionnaire"
+  },
+  "tasteMoodDark": "Dark plots",
+  "@tasteMoodDark": {
+    "description": "Taste questionnaire"
+  },
+  "tasteMoodDarkSub": "Crime, thrillers, mysteries",
+  "@tasteMoodDarkSub": {
+    "description": "Taste questionnaire"
+  },
+  "tasteMoodAdrenaline": "Adrenaline",
+  "@tasteMoodAdrenaline": {
+    "description": "Taste questionnaire"
+  },
+  "tasteMoodAdrenalineSub": "Action, adventure, war, westerns",
+  "@tasteMoodAdrenalineSub": {
+    "description": "Taste questionnaire"
+  },
+  "tasteMoodImaginary": "Imaginary worlds",
+  "@tasteMoodImaginary": {
+    "description": "Taste questionnaire"
+  },
+  "tasteMoodImaginarySub": "Science fiction and fantasy",
+  "@tasteMoodImaginarySub": {
+    "description": "Taste questionnaire"
+  },
+  "tasteMoodTrue": "True stories",
+  "@tasteMoodTrue": {
+    "description": "Taste questionnaire"
+  },
+  "tasteMoodTrueSub": "Documentaries and history",
+  "@tasteMoodTrueSub": {
+    "description": "Taste questionnaire"
+  },
+  "tasteMoodDrama": "Intense dramas",
+  "@tasteMoodDrama": {
+    "description": "Taste questionnaire"
+  },
+  "tasteMoodDramaSub": "Stories that hit hard",
+  "@tasteMoodDramaSub": {
+    "description": "Taste questionnaire"
+  },
+  "tasteMoodFeelGood": "Feel-good",
+  "@tasteMoodFeelGood": {
+    "description": "Taste questionnaire"
+  },
+  "tasteMoodFeelGoodSub": "Comedies, romance, music",
+  "@tasteMoodFeelGoodSub": {
+    "description": "Taste questionnaire"
+  },
+  "tasteMoodChills": "Chills",
+  "@tasteMoodChills": {
+    "description": "Taste questionnaire"
+  },
+  "tasteMoodChillsSub": "Horror",
+  "@tasteMoodChillsSub": {
+    "description": "Taste questionnaire"
+  },
+  "tasteMoodAnimated": "Animation",
+  "@tasteMoodAnimated": {
+    "description": "Taste questionnaire"
+  },
+  "tasteMoodAnimatedSub": "For every age",
+  "@tasteMoodAnimatedSub": {
+    "description": "Taste questionnaire"
+  },
+  "tasteMoodFamily": "Family time",
+  "@tasteMoodFamily": {
+    "description": "Taste questionnaire"
+  },
+  "tasteMoodFamilySub": "For the whole house, kids included",
+  "@tasteMoodFamilySub": {
+    "description": "Taste questionnaire"
+  },
+  "tasteEraQuestion": "Recent or classic?",
+  "@tasteEraQuestion": {
+    "description": "Taste questionnaire"
+  },
+  "tasteEraHint": "Just a nudge: nothing is ruled out.",
+  "@tasteEraHint": {
+    "description": "Taste questionnaire"
+  },
+  "tasteEraAny": "Doesn't matter",
+  "@tasteEraAny": {
+    "description": "Taste questionnaire"
+  },
+  "tasteEraRecent": "Recent releases",
+  "@tasteEraRecent": {
+    "description": "Taste questionnaire"
+  },
+  "tasteEraClassic": "Classics",
+  "@tasteEraClassic": {
+    "description": "Taste questionnaire"
+  },
+  "tastePicksRetry": "Try again",
+  "@tastePicksRetry": {
+    "description": "Taste questionnaire"
+  },
   "tasteTitle": "Your taste",
   "@tasteTitle": {
     "description": "Taste questionnaire title"

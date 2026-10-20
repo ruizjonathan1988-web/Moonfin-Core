@@ -53,6 +53,32 @@ enum TasteGenre {
 /// Whether the viewer leans to movies, series, or neither.
 enum TasteMediaPref { both, movies, series }
 
+/// Whether the viewer leans to recent titles, to older ones, or neither.
+enum TasteEra { any, recent, classic }
+
+/// A mood the questionnaire offers, read as a few genres. The moods share no
+/// genre, so one is chosen exactly when all of its genres are liked.
+enum TasteMood {
+  darkPlots({TasteGenre.crime, TasteGenre.thriller, TasteGenre.mystery}),
+  adrenaline({
+    TasteGenre.action,
+    TasteGenre.adventure,
+    TasteGenre.war,
+    TasteGenre.western,
+  }),
+  imaginary({TasteGenre.scifi, TasteGenre.fantasy}),
+  trueStories({TasteGenre.documentary, TasteGenre.history}),
+  intenseDrama({TasteGenre.drama}),
+  feelGood({TasteGenre.comedy, TasteGenre.romance, TasteGenre.music}),
+  chills({TasteGenre.horror}),
+  animated({TasteGenre.animation}),
+  family({TasteGenre.family, TasteGenre.kids});
+
+  final Set<TasteGenre> genres;
+
+  const TasteMood(this.genres);
+}
+
 /// A title picked as a favourite in the questionnaire.
 class TastePick {
   final int tmdbId;
@@ -101,12 +127,14 @@ class TasteProfile {
   /// ISO 639-1 codes. Empty means any language.
   final Set<String> languages;
   final List<TastePick> favorites;
+  final TasteEra era;
 
   /// When the questionnaire was last completed, or null if never.
   final DateTime? updatedAt;
 
   const TasteProfile({
     this.mediaPref = TasteMediaPref.both,
+    this.era = TasteEra.any,
     this.liked = const {},
     this.avoided = const {},
     this.languages = const {},
@@ -120,6 +148,7 @@ class TasteProfile {
 
   TasteProfile copyWith({
     TasteMediaPref? mediaPref,
+    TasteEra? era,
     Set<TasteGenre>? liked,
     Set<TasteGenre>? avoided,
     Set<String>? languages,
@@ -127,6 +156,7 @@ class TasteProfile {
     DateTime? updatedAt,
   }) => TasteProfile(
     mediaPref: mediaPref ?? this.mediaPref,
+    era: era ?? this.era,
     liked: liked ?? this.liked,
     avoided: avoided ?? this.avoided,
     languages: languages ?? this.languages,
@@ -136,6 +166,7 @@ class TasteProfile {
 
   Map<String, dynamic> toJson() => {
     'media': mediaPref.name,
+    'era': era.name,
     'liked': [for (final g in liked) g.name],
     'avoided': [for (final g in avoided) g.name],
     'languages': languages.toList(),
@@ -161,6 +192,7 @@ class TasteProfile {
         mediaPref:
             TasteMediaPref.values.asNameMap()[json['media']] ??
             TasteMediaPref.both,
+        era: TasteEra.values.asNameMap()[json['era']] ?? TasteEra.any,
         liked: genres(json['liked']),
         avoided: genres(json['avoided']),
         languages: {
@@ -254,8 +286,9 @@ double tasteFactor(
   SeerrDiscoverItem item,
   String mediaType,
   TasteProfile profile,
-  TasteFeedback feedback,
-) {
+  TasteFeedback feedback, {
+  DateTime? now,
+}) {
   final genres = TasteGenre.of(item.genreIds, mediaType);
   if (genres.any(profile.avoided.contains)) return 0;
 
@@ -279,6 +312,22 @@ double tasteFactor(
     factor *= profile.languages.contains(language) ? 1.15 : 0.7;
   }
 
+  if (profile.era != TasteEra.any) {
+    final year = _releaseYear(item);
+    if (year != null) {
+      final thisYear = (now ?? DateTime.now()).year;
+      final recent = year >= thisYear - 8;
+      final old = year <= thisYear - 20;
+      if (profile.era == TasteEra.recent) {
+        if (recent) factor *= 1.12;
+        if (old) factor *= 0.8;
+      } else {
+        if (old) factor *= 1.25;
+        if (recent) factor *= 0.85;
+      }
+    }
+  }
+
   var penalty = 1.0;
   for (final genre in genres) {
     final count = feedback.genrePenalties[genre] ?? 0;
@@ -287,4 +336,10 @@ double tasteFactor(
   factor *= math.max(penalty, 0.3);
 
   return factor;
+}
+
+int? _releaseYear(SeerrDiscoverItem item) {
+  final date = item.releaseDate ?? item.firstAirDate;
+  if (date == null || date.length < 4) return null;
+  return int.tryParse(date.substring(0, 4));
 }

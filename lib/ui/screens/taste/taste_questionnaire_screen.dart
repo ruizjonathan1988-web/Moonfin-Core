@@ -23,11 +23,14 @@ Future<bool> openTasteQuestionnaire(BuildContext context) async {
   return saved == true;
 }
 
+/// A poster on offer, with the media type Seerr gave or the list implied.
+typedef _Poster = ({SeerrDiscoverItem item, String type});
+
 /// A short questionnaire that tells the suggestions what the viewer likes:
-/// movies or series, genres loved and refused, languages, and a few titles
-/// picked from their posters.
+/// movies or series, moods, genres refused, recent or classic, languages,
+/// and a few titles picked from their posters.
 ///
-/// Five steps, each answerable in a few presses on a remote. Every step can
+/// Six steps, each answerable in a few presses on a remote. Every step can
 /// be left as it is, and the whole thing can be put off.
 class TasteQuestionnaireScreen extends StatefulWidget {
   const TasteQuestionnaireScreen({super.key});
@@ -38,7 +41,7 @@ class TasteQuestionnaireScreen extends StatefulWidget {
 }
 
 class _TasteQuestionnaireScreenState extends State<TasteQuestionnaireScreen> {
-  static const _steps = 5;
+  static const _steps = 6;
   static const maxPicks = 15;
 
   /// Original languages offered, as ISO 639-1 codes.
@@ -48,12 +51,13 @@ class _TasteQuestionnaireScreenState extends State<TasteQuestionnaireScreen> {
 
   int _step = 0;
   late TasteMediaPref _mediaPref;
+  late TasteEra _era;
   late Set<TasteGenre> _liked;
   late Set<TasteGenre> _avoided;
   late Set<String> _languagesPicked;
   late Map<String, TastePick> _picks;
 
-  List<SeerrDiscoverItem>? _posters;
+  List<_Poster>? _posters;
   bool _postersFailed = false;
   bool _saving = false;
 
@@ -62,6 +66,7 @@ class _TasteQuestionnaireScreenState extends State<TasteQuestionnaireScreen> {
     super.initState();
     final profile = TasteProfile.decode(_prefs.tasteProfileJson);
     _mediaPref = profile.mediaPref;
+    _era = profile.era;
     _liked = {...profile.liked};
     _avoided = {...profile.avoided};
     _languagesPicked = {...profile.languages};
@@ -69,31 +74,60 @@ class _TasteQuestionnaireScreenState extends State<TasteQuestionnaireScreen> {
     _loadPosters();
   }
 
+  /// Posters to choose from. Every list is asked for on its own, so one
+  /// that this server cannot give does not take the others down.
   Future<void> _loadPosters() async {
     try {
       final repo = await GetIt.instance.getAsync<SeerrRepository>();
       await repo.ensureInitialized();
+
+      Future<List<({SeerrDiscoverItem item, String type})>> list(
+        Future<SeerrDiscoverPage> Function() load,
+        String? fallbackType,
+      ) async {
+        try {
+          final page = await load();
+          return [
+            for (final item in page.results)
+              if ((item.mediaType ?? fallbackType) case final type?)
+                (item: item, type: type),
+          ];
+        } catch (e) {
+          debugPrint('[Taste] A poster list failed: $e');
+          return const [];
+        }
+      }
+
       final pages = await Future.wait([
-        repo.getTrending(limit: 20, offset: 0),
-        repo.getTrending(limit: 20, offset: 20),
-        repo.getTopMovies(limit: 20),
-        repo.getTopTv(limit: 20),
+        list(() => repo.getTrending(limit: 20, offset: 0), null),
+        list(() => repo.getTrendingMovies(limit: 20, offset: 0), 'movie'),
+        list(() => repo.getTrendingTv(limit: 20, offset: 0), 'tv'),
+        list(() => repo.getTrending(limit: 20, offset: 20), null),
+        list(() => repo.getTrendingMovies(limit: 20, offset: 20), 'movie'),
+        list(() => repo.getTrendingTv(limit: 20, offset: 20), 'tv'),
       ]);
+
+      // Interleave the lists so the first posters already mix sources.
       final seen = <String>{};
-      final items = <SeerrDiscoverItem>[];
-      for (final page in pages) {
-        for (final item in page.results) {
-          final type = item.mediaType;
+      final items = <_Poster>[];
+      final longest = pages.fold<int>(0, (m, p) => p.length > m ? p.length : m);
+      for (var i = 0; i < longest; i++) {
+        for (final page in pages) {
+          if (i >= page.length) continue;
+          final (:item, :type) = page[i];
           if (type != 'movie' && type != 'tv') continue;
           final poster = item.posterPath;
           if (poster == null || poster.isEmpty) continue;
           if (item.adult) continue;
           if (!seen.add('$type:${item.id}')) continue;
-          items.add(item);
+          items.add((item: item, type: type));
         }
       }
       if (!mounted) return;
-      setState(() => _posters = items);
+      setState(() {
+        _posters = items;
+        _postersFailed = items.isEmpty;
+      });
     } catch (e) {
       debugPrint('[Taste] Posters failed: $e');
       if (!mounted) return;
@@ -106,6 +140,7 @@ class _TasteQuestionnaireScreenState extends State<TasteQuestionnaireScreen> {
     setState(() => _saving = true);
     final profile = TasteProfile(
       mediaPref: _mediaPref,
+      era: _era,
       liked: _liked,
       avoided: _avoided,
       languages: _languagesPicked,
@@ -140,9 +175,10 @@ class _TasteQuestionnaireScreenState extends State<TasteQuestionnaireScreen> {
     final l10n = AppLocalizations.of(context);
     final (title, hint) = switch (_step) {
       0 => (l10n.tasteMediaQuestion, l10n.tasteIntro),
-      1 => (l10n.tasteLikedQuestion, l10n.tasteLikedHint),
+      1 => (l10n.tasteMoodQuestion, l10n.tasteMoodHint),
       2 => (l10n.tasteAvoidedQuestion, l10n.tasteAvoidedHint),
-      3 => (l10n.tasteLanguagesQuestion, l10n.tasteLanguagesHint),
+      3 => (l10n.tasteEraQuestion, l10n.tasteEraHint),
+      4 => (l10n.tasteLanguagesQuestion, l10n.tasteLanguagesHint),
       _ => (l10n.tastePicksQuestion, l10n.tastePicksHint(maxPicks)),
     };
 
@@ -254,20 +290,30 @@ class _TasteQuestionnaireScreenState extends State<TasteQuestionnaireScreen> {
             ),
         ]);
       case 1:
-        return _chips([
-          for (final (i, genre) in TasteGenre.values.indexed)
-            _TasteChip(
-              label: tasteGenreLabel(l10n, genre),
-              selected: _liked.contains(genre),
-              autofocus: i == 0,
-              onTap: () => setState(() {
-                if (!_liked.remove(genre)) {
-                  _liked.add(genre);
-                  _avoided.remove(genre);
-                }
-              }),
-            ),
-        ]);
+        return SingleChildScrollView(
+          child: Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              for (final (i, mood) in TasteMood.values.indexed)
+                _MoodCard(
+                  title: tasteMoodTitle(l10n, mood),
+                  subtitle: tasteMoodSubtitle(l10n, mood),
+                  icon: tasteMoodIcon(mood),
+                  selected: mood.genres.every(_liked.contains),
+                  autofocus: i == 0,
+                  onTap: () => setState(() {
+                    if (mood.genres.every(_liked.contains)) {
+                      _liked.removeAll(mood.genres);
+                    } else {
+                      _liked.addAll(mood.genres);
+                      _avoided.removeAll(mood.genres);
+                    }
+                  }),
+                ),
+            ],
+          ),
+        );
       case 2:
         return _chips([
           for (final (i, genre) in TasteGenre.values.indexed)
@@ -285,6 +331,25 @@ class _TasteQuestionnaireScreenState extends State<TasteQuestionnaireScreen> {
             ),
         ]);
       case 3:
+        return _chips([
+          for (final (i, era) in TasteEra.values.indexed)
+            _TasteChip(
+              label: switch (era) {
+                TasteEra.any => l10n.tasteEraAny,
+                TasteEra.recent => l10n.tasteEraRecent,
+                TasteEra.classic => l10n.tasteEraClassic,
+              },
+              icon: switch (era) {
+                TasteEra.any => Icons.all_inclusive_rounded,
+                TasteEra.recent => Icons.new_releases_outlined,
+                TasteEra.classic => Icons.history_edu_outlined,
+              },
+              selected: _era == era,
+              autofocus: i == 0,
+              onTap: () => setState(() => _era = era),
+            ),
+        ]);
+      case 4:
         return _chips([
           for (final (i, code) in _languages.indexed)
             _TasteChip(
@@ -305,38 +370,85 @@ class _TasteQuestionnaireScreenState extends State<TasteQuestionnaireScreen> {
     child: Wrap(spacing: 10, runSpacing: 10, children: chips),
   );
 
+  /// The posters worth showing given the answers so far: nothing from a
+  /// refused genre, the kind of title preferred first, then the moods liked.
+  List<_Poster> _orderedPosters(List<_Poster> posters) {
+    final scored = <(_Poster, double)>[];
+    for (final poster in posters) {
+      final genres = TasteGenre.of(poster.item.genreIds, poster.type);
+      if (genres.any(_avoided.contains)) continue;
+      var score = genres.where(_liked.contains).length * 2.0;
+      if (_mediaPref == TasteMediaPref.movies && poster.type == 'movie') {
+        score += 1;
+      }
+      if (_mediaPref == TasteMediaPref.series && poster.type == 'tv') {
+        score += 1;
+      }
+      final language = poster.item.originalLanguage;
+      if (language != null && _languagesPicked.contains(language)) score += 1;
+      scored.add((poster, score));
+    }
+    // A stable sort keeps the mixed order among equal scores.
+    final indexed = [for (final (i, e) in scored.indexed) (i, e.$1, e.$2)];
+    indexed.sort((a, b) {
+      final byScore = b.$3.compareTo(a.$3);
+      return byScore != 0 ? byScore : a.$1.compareTo(b.$1);
+    });
+    return [for (final e in indexed) e.$2];
+  }
+
   Widget _buildPosters(AppLocalizations l10n) {
     final posters = _posters;
     if (posters == null) {
-      if (_postersFailed) {
-        return Center(
-          child: Text(
-            l10n.tastePicksEmpty,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: AppColorScheme.onBackground.withValues(alpha: 0.7),
-            ),
-          ),
-        );
-      }
       return const Center(child: CircularProgressIndicator());
+    }
+    if (_postersFailed) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              l10n.tastePicksEmpty,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColorScheme.onBackground.withValues(alpha: 0.7),
+              ),
+            ),
+            const SizedBox(height: 14),
+            OutlinedButton.icon(
+              autofocus: true,
+              onPressed: () {
+                setState(() {
+                  _posters = null;
+                  _postersFailed = false;
+                });
+                _loadPosters();
+              },
+              icon: const Icon(Icons.refresh_rounded),
+              label: Text(l10n.tastePicksRetry),
+            ),
+          ],
+        ),
+      );
     }
     // Earlier picks first, so they can be unpicked without hunting.
     final picked = _picks.values.toList();
     final pickedKeys = _picks.keys.toSet();
-    final rest = posters
-        .where((p) => !pickedKeys.contains('${p.mediaType}:${p.id}'))
-        .toList();
+    final rest = _orderedPosters(
+      posters
+          .where((p) => !pickedKeys.contains('${p.type}:${p.item.id}'))
+          .toList(),
+    );
     final tiles = <({String key, String title, String? poster, String type, int id})>[
       for (final p in picked)
         (key: p.key, title: p.title, poster: p.posterPath, type: p.mediaType, id: p.tmdbId),
       for (final p in rest)
         (
-          key: '${p.mediaType}:${p.id}',
-          title: p.displayTitle,
-          poster: p.posterPath,
-          type: p.mediaType!,
-          id: p.id,
+          key: '${p.type}:${p.item.id}',
+          title: p.item.displayTitle,
+          poster: p.item.posterPath,
+          type: p.type,
+          id: p.item.id,
         ),
     ];
 
@@ -354,7 +466,7 @@ class _TasteQuestionnaireScreenState extends State<TasteQuestionnaireScreen> {
         Expanded(
           child: GridView.builder(
             gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 130,
+              maxCrossAxisExtent: 140,
               childAspectRatio: 2 / 3,
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
@@ -364,6 +476,7 @@ class _TasteQuestionnaireScreenState extends State<TasteQuestionnaireScreen> {
               final tile = tiles[index];
               final selected = _picks.containsKey(tile.key);
               return _PosterTile(
+                key: ValueKey(tile.key),
                 title: tile.title,
                 posterUrl: tile.poster == null || tile.poster!.isEmpty
                     ? null
@@ -498,6 +611,103 @@ class _TasteChipState extends State<_TasteChip> {
   }
 }
 
+/// A mood with a line saying what it covers, easy to see and press from a
+/// couch.
+class _MoodCard extends StatefulWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final bool selected;
+  final bool autofocus;
+  final VoidCallback onTap;
+
+  const _MoodCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+    this.autofocus = false,
+  });
+
+  @override
+  State<_MoodCard> createState() => _MoodCardState();
+}
+
+class _MoodCardState extends State<_MoodCard> {
+  bool _focused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final onBg = AppColorScheme.onBackground;
+    final accent = AppColorScheme.accent;
+    final selected = widget.selected;
+    return InkWell(
+      autofocus: widget.autofocus,
+      borderRadius: BorderRadius.circular(14),
+      onFocusChange: (f) => setState(() => _focused = f),
+      onTap: () {
+        HapticFeedback.selectionClick();
+        widget.onTap();
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        width: 250,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: selected
+              ? accent.withValues(alpha: 0.9)
+              : onBg.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: _focused ? onBg : Colors.transparent,
+            width: 2,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              selected ? Icons.check_circle_rounded : widget.icon,
+              color: selected ? Colors.white : accent,
+              size: 28,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    widget.title,
+                    style: TextStyle(
+                      color: selected ? Colors.white : onBg,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    widget.subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: (selected ? Colors.white : onBg).withValues(
+                        alpha: 0.75,
+                      ),
+                      fontSize: 12.5,
+                      height: 1.25,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _PosterTile extends StatefulWidget {
   final String title;
   final String? posterUrl;
@@ -506,6 +716,7 @@ class _PosterTile extends StatefulWidget {
   final VoidCallback onTap;
 
   const _PosterTile({
+    super.key,
     required this.title,
     required this.posterUrl,
     required this.selected,
@@ -632,3 +843,41 @@ String tasteLanguageLabel(AppLocalizations l10n, String code) =>
       'ko' => l10n.tasteLangKo,
       _ => code,
     };
+
+/// A questionnaire mood, as the viewer reads it.
+String tasteMoodTitle(AppLocalizations l10n, TasteMood mood) => switch (mood) {
+  TasteMood.darkPlots => l10n.tasteMoodDark,
+  TasteMood.adrenaline => l10n.tasteMoodAdrenaline,
+  TasteMood.imaginary => l10n.tasteMoodImaginary,
+  TasteMood.trueStories => l10n.tasteMoodTrue,
+  TasteMood.intenseDrama => l10n.tasteMoodDrama,
+  TasteMood.feelGood => l10n.tasteMoodFeelGood,
+  TasteMood.chills => l10n.tasteMoodChills,
+  TasteMood.animated => l10n.tasteMoodAnimated,
+  TasteMood.family => l10n.tasteMoodFamily,
+};
+
+String tasteMoodSubtitle(AppLocalizations l10n, TasteMood mood) =>
+    switch (mood) {
+      TasteMood.darkPlots => l10n.tasteMoodDarkSub,
+      TasteMood.adrenaline => l10n.tasteMoodAdrenalineSub,
+      TasteMood.imaginary => l10n.tasteMoodImaginarySub,
+      TasteMood.trueStories => l10n.tasteMoodTrueSub,
+      TasteMood.intenseDrama => l10n.tasteMoodDramaSub,
+      TasteMood.feelGood => l10n.tasteMoodFeelGoodSub,
+      TasteMood.chills => l10n.tasteMoodChillsSub,
+      TasteMood.animated => l10n.tasteMoodAnimatedSub,
+      TasteMood.family => l10n.tasteMoodFamilySub,
+    };
+
+IconData tasteMoodIcon(TasteMood mood) => switch (mood) {
+  TasteMood.darkPlots => Icons.search_rounded,
+  TasteMood.adrenaline => Icons.bolt_rounded,
+  TasteMood.imaginary => Icons.auto_awesome_rounded,
+  TasteMood.trueStories => Icons.menu_book_rounded,
+  TasteMood.intenseDrama => Icons.theater_comedy_rounded,
+  TasteMood.feelGood => Icons.sentiment_very_satisfied_rounded,
+  TasteMood.chills => Icons.nightlight_round,
+  TasteMood.animated => Icons.animation_rounded,
+  TasteMood.family => Icons.family_restroom_rounded,
+};

@@ -41,6 +41,7 @@ void main() {
     test('survives a round trip', () {
       final profile = TasteProfile(
         mediaPref: TasteMediaPref.series,
+        era: TasteEra.classic,
         liked: {TasteGenre.crime, TasteGenre.drama},
         avoided: {TasteGenre.reality},
         languages: {'fr', 'ru'},
@@ -51,6 +52,7 @@ void main() {
       );
       final back = TasteProfile.decode(profile.encode());
       expect(back.mediaPref, TasteMediaPref.series);
+      expect(back.era, TasteEra.classic);
       expect(back.liked, profile.liked);
       expect(back.avoided, profile.avoided);
       expect(back.languages, profile.languages);
@@ -62,6 +64,17 @@ void main() {
       expect(TasteProfile.decode(null).answered, isFalse);
       expect(TasteProfile.decode('not json').answered, isFalse);
       expect(TasteProfile.decode('{"liked":["nope"]}').liked, isEmpty);
+    });
+  });
+
+  group('TasteMood', () {
+    test('moods share no genre, so one is chosen when all its genres are', () {
+      final seen = <TasteGenre>{};
+      for (final mood in TasteMood.values) {
+        for (final genre in mood.genres) {
+          expect(seen.add(genre), isTrue, reason: '$genre is in two moods');
+        }
+      }
     });
   });
 
@@ -128,6 +141,29 @@ void main() {
       );
       expect(series, lessThan(1));
       expect(series, greaterThan(0));
+    });
+
+    test('the era lifts recent or older titles without excluding any', () {
+      final now = DateTime(2026, 10, 20);
+      SeerrDiscoverItem dated(String date) => SeerrDiscoverItem(
+        id: 1,
+        mediaType: 'movie',
+        title: 'T',
+        releaseDate: date,
+      );
+      double factorFor(TasteEra era, String date) => tasteFactor(
+        dated(date),
+        'movie',
+        TasteProfile(era: era),
+        TasteFeedback.empty,
+        now: now,
+      );
+      expect(factorFor(TasteEra.recent, '2025-05-01'), greaterThan(1));
+      expect(factorFor(TasteEra.recent, '1994-05-01'), lessThan(1));
+      expect(factorFor(TasteEra.classic, '1994-05-01'), greaterThan(1));
+      expect(factorFor(TasteEra.classic, '2025-05-01'), lessThan(1));
+      expect(factorFor(TasteEra.classic, '2025-05-01'), greaterThan(0));
+      expect(factorFor(TasteEra.any, '1994-05-01'), 1.0);
     });
 
     test('turned-down genres sink, never below the floor', () {
