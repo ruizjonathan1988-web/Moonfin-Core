@@ -2943,7 +2943,23 @@ class HomeViewModel extends ChangeNotifier {
         sort: 'modified',
         limit: 50,
       );
-      final entries = myRequestEntries(response.results, now: DateTime.now());
+      final now = DateTime.now();
+      var entries = myRequestEntries(response.results, now: now);
+      // Seerr can lag behind the library: a title already in it is ready.
+      final candidates = [
+        for (final e in libraryCandidates(entries))
+          if (e.media.tmdbId != null) e,
+      ];
+      if (candidates.isNotEmpty) {
+        final inLibrary = await _dataSource.loadLibraryTmdbKeys(_serverId, [
+          for (final e in candidates)
+            (
+              mediaType: e.request.type == 'tv' ? 'tv' : 'movie',
+              tmdbId: e.media.tmdbId!,
+            ),
+        ]);
+        entries = promoteInLibrary(entries, inLibrary, now: now);
+      }
 
       final ready = newlyReady(entries, seerrPrefs.announcedReadyRequests);
       final announced = {

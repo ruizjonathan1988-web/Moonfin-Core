@@ -2536,6 +2536,44 @@ class RowDataSource {
     ];
   }
 
+  /// Which of [wanted] this library already holds, as `movie:603` style keys.
+  ///
+  /// Seerr only learns that a request came through when its own scan next
+  /// runs, so the server is asked directly. A server that ignores the
+  /// provider filter would answer with unrelated items, which is why each
+  /// answer is checked against the id that was asked for.
+  Future<Set<String>> loadLibraryTmdbKeys(
+    String serverId,
+    List<({String mediaType, int tmdbId})> wanted,
+  ) async {
+    if (wanted.isEmpty) return const {};
+    final found = <String>{};
+    await Future.wait([
+      for (final want in wanted)
+        () async {
+          try {
+            final type = want.mediaType == 'tv' ? 'Series' : 'Movie';
+            final res = await _client.itemsApi.getItems(
+              anyProviderIdEquals: 'tmdb.${want.tmdbId}',
+              includeItemTypes: [type],
+              recursive: true,
+              limit: 5,
+              fields: 'ProviderIds',
+              enableTotalRecordCount: false,
+            );
+            final hit = _parseItems(res, serverId).any(
+              (item) =>
+                  item.type == type && item.tmdbId == '${want.tmdbId}',
+            );
+            if (hit) found.add('${want.mediaType}:${want.tmdbId}');
+          } catch (e) {
+            debugPrint('[RowDataSource] Library lookup failed: $e');
+          }
+        }(),
+    ]);
+    return found;
+  }
+
   /// One movie and one series nobody finished, drawn at random and leaning
   /// towards well-rated ones, for the Surprise row.
   Future<List<AggregatedItem>> loadSurprisePicks(String serverId) async {

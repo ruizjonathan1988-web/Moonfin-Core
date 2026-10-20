@@ -185,4 +185,40 @@ void main() {
       expect(fresh.map((e) => e.request.id), [2]);
     });
   });
+
+  group('promoteInLibrary', () {
+    test('a title the library holds is ready whatever Seerr says', () {
+      final entries = myRequestEntries([
+        _request(1, type: 'tv', tmdbId: 500),
+        _request(2, tmdbId: 600, status: SeerrRequest.statusPending, mediaStatus: null),
+        _request(
+          3,
+          tmdbId: 700,
+          downloads: const [SeerrDownloadingItem(size: 10, sizeLeft: 5)],
+        ),
+      ], now: _now);
+      final promoted = promoteInLibrary(
+        entries,
+        {'tv:500', 'movie:700'},
+        now: _now,
+      );
+      final byId = {for (final e in promoted) e.request.id: e.state};
+      expect(byId[1], MyRequestState.ready);
+      // Not in the library yet.
+      expect(byId[2], MyRequestState.pending);
+      // A download under way still reads as one.
+      expect(byId[3], MyRequestState.downloading);
+      expect(promoted.first.request.id, 1);
+    });
+
+    test('an old request found in the library drops off', () {
+      final entries = myRequestEntries([
+        _request(1, tmdbId: 500, updated: _daysAgo(40)),
+      ], now: _now);
+      expect(
+        promoteInLibrary(entries, {'movie:500'}, now: _now),
+        isEmpty,
+      );
+    });
+  });
 }

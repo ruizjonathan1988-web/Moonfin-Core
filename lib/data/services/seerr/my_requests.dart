@@ -20,6 +20,9 @@ class MyRequestEntry {
 
   SeerrMedia get media => request.media!;
 
+  MyRequestEntry withState(MyRequestState state) =>
+      MyRequestEntry(request: request, state: state);
+
   /// One card per title, however many requests it took.
   String get key => '${request.type}:${media.tmdbId ?? media.id}';
 
@@ -166,4 +169,44 @@ List<MyRequestEntry> newlyReady(
       if (entry.state == MyRequestState.ready && !known.contains(entry.readyKey))
         entry,
   ];
+}
+
+/// Titles still shown as approved or awaiting approval that the library
+/// already holds, as the [MyRequestEntry.key]s worth asking the server about.
+List<MyRequestEntry> libraryCandidates(List<MyRequestEntry> entries) => [
+  for (final entry in entries)
+    if (entry.state == MyRequestState.approved ||
+        entry.state == MyRequestState.pending)
+      entry,
+];
+
+/// Seerr learns that a request came through only when its own scan runs,
+/// and keeps a series request approved until every season is in. A title the
+/// library already holds is ready to watch whatever Seerr still says.
+///
+/// Requests older than [myRequestsReadyWindow] that turn out to be in the
+/// library are dropped, since the row is for what is new.
+List<MyRequestEntry> promoteInLibrary(
+  List<MyRequestEntry> entries,
+  Set<String> inLibrary, {
+  required DateTime now,
+}) {
+  final promoted = <MyRequestEntry>[];
+  for (final entry in entries) {
+    final candidate =
+        entry.state == MyRequestState.approved ||
+        entry.state == MyRequestState.pending;
+    if (!candidate || !inLibrary.contains(entry.key)) {
+      promoted.add(entry);
+      continue;
+    }
+    final changed =
+        _parse(entry.request.updatedAt) ?? _parse(entry.request.createdAt);
+    if (changed != null && now.difference(changed) > myRequestsReadyWindow) {
+      continue;
+    }
+    promoted.add(entry.withState(MyRequestState.ready));
+  }
+  promoted.sort((a, b) => a.state.index.compareTo(b.state.index));
+  return promoted;
 }
