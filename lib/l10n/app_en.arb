@@ -14086,5 +14086,277 @@
         "type": "int"
       }
     }
+  },
+  "tasteTitle": "Your taste",
+  "@tasteTitle": {
+    "description": "Taste questionnaire title"
+  },
+  "tasteIntro": "A few questions so suggestions fit you. Under a minute.",
+  "@tasteIntro": {
+    "description": "Taste questionnaire intro"
+  },
+  "tasteStepOf": "Step {step} of {total}",
+  "@tasteStepOf": {
+    "description": "Taste questionnaire progress",
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "tasteLater": "Later",
+  "@tasteLater": {
+    "description": "Put the taste questionnaire off"
+  },
+  "tasteBack": "Back",
+  "@tasteBack": {
+    "description": "Previous questionnaire step"
+  },
+  "tasteNext": "Next",
+  "@tasteNext": {
+    "description": "Next questionnaire step"
+  },
+  "tasteFinish": "Done",
+  "@tasteFinish": {
+    "description": "Finish the questionnaire"
+  },
+  "tasteMediaQuestion": "What do you mostly watch?",
+  "@tasteMediaQuestion": {
+    "description": "Questionnaire step: movies or series"
+  },
+  "tasteMediaBoth": "Movies and series",
+  "@tasteMediaBoth": {
+    "description": "Answer: both"
+  },
+  "tasteMediaMovies": "Mostly movies",
+  "@tasteMediaMovies": {
+    "description": "Answer: movies"
+  },
+  "tasteMediaSeries": "Mostly series",
+  "@tasteMediaSeries": {
+    "description": "Answer: series"
+  },
+  "tasteLikedQuestion": "Genres you love",
+  "@tasteLikedQuestion": {
+    "description": "Questionnaire step: liked genres"
+  },
+  "tasteLikedHint": "Pick as many as you like.",
+  "@tasteLikedHint": {
+    "description": "Hint for liked genres"
+  },
+  "tasteAvoidedQuestion": "What you never want to see",
+  "@tasteAvoidedQuestion": {
+    "description": "Questionnaire step: avoided genres"
+  },
+  "tasteAvoidedHint": "These genres won't be suggested anymore.",
+  "@tasteAvoidedHint": {
+    "description": "Hint for avoided genres"
+  },
+  "tasteLanguagesQuestion": "In which languages?",
+  "@tasteLanguagesQuestion": {
+    "description": "Questionnaire step: original languages"
+  },
+  "tasteLanguagesHint": "The titles' original language. Leave empty if it doesn't matter.",
+  "@tasteLanguagesHint": {
+    "description": "Hint for languages"
+  },
+  "tastePicksQuestion": "Your favourites",
+  "@tastePicksQuestion": {
+    "description": "Questionnaire step: favourite titles"
+  },
+  "tastePicksHint": "Tap the posters of titles you loved, up to {max}.",
+  "@tastePicksHint": {
+    "description": "Hint for favourite titles",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "tastePicksCount": "Selected: {count}",
+  "@tastePicksCount": {
+    "description": "How many favourites are picked",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tastePicksEmpty": "Posters couldn't load. You can pick favourites later.",
+  "@tastePicksEmpty": {
+    "description": "Posters failed to load"
+  },
+  "tasteSaved": "Taste saved",
+  "@tasteSaved": {
+    "description": "Notification after saving the questionnaire"
+  },
+  "tasteSavedBody": "Your suggestions are adapting.",
+  "@tasteSavedBody": {
+    "description": "Notification body after saving"
+  },
+  "tasteReminderTitle": "Has your taste changed?",
+  "@tasteReminderTitle": {
+    "description": "Monthly reminder to update the questionnaire"
+  },
+  "tasteReminderBody": "Tap here to update your suggestions.",
+  "@tasteReminderBody": {
+    "description": "Reminder body"
+  },
+  "tasteEdit": "Refine my taste",
+  "@tasteEdit": {
+    "description": "Open the taste questionnaire"
+  },
+  "tasteEditSubtitle": "Genres, languages and favourites behind the suggestions",
+  "@tasteEditSubtitle": {
+    "description": "Settings subtitle for the questionnaire"
+  },
+  "notInterested": "Not interested",
+  "@notInterested": {
+    "description": "Hide a suggestion"
+  },
+  "notInterestedDone": "Got it",
+  "@notInterestedDone": {
+    "description": "Notification after hiding a suggestion"
+  },
+  "notInterestedDoneBody": "{title} won't be suggested again, and titles like it less often.",
+  "@notInterestedDoneBody": {
+    "description": "Notification body after hiding a suggestion",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteGenreAction": "Action",
+  "@tasteGenreAction": {
+    "description": "Taste questionnaire genre"
+  },
+  "tasteGenreAdventure": "Adventure",
+  "@tasteGenreAdventure": {
+    "description": "Taste questionnaire genre"
+  },
+  "tasteGenreAnimation": "Animation",
+  "@tasteGenreAnimation": {
+    "description": "Taste questionnaire genre"
+  },
+  "tasteGenreComedy": "Comedy",
+  "@tasteGenreComedy": {
+    "description": "Taste questionnaire genre"
+  },
+  "tasteGenreCrime": "Crime",
+  "@tasteGenreCrime": {
+    "description": "Taste questionnaire genre"
+  },
+  "tasteGenreDocumentary": "Documentary",
+  "@tasteGenreDocumentary": {
+    "description": "Taste questionnaire genre"
+  },
+  "tasteGenreDrama": "Drama",
+  "@tasteGenreDrama": {
+    "description": "Taste questionnaire genre"
+  },
+  "tasteGenreFamily": "Family",
+  "@tasteGenreFamily": {
+    "description": "Taste questionnaire genre"
+  },
+  "tasteGenreFantasy": "Fantasy",
+  "@tasteGenreFantasy": {
+    "description": "Taste questionnaire genre"
+  },
+  "tasteGenreHistory": "History",
+  "@tasteGenreHistory": {
+    "description": "Taste questionnaire genre"
+  },
+  "tasteGenreHorror": "Horror",
+  "@tasteGenreHorror": {
+    "description": "Taste questionnaire genre"
+  },
+  "tasteGenreKids": "Kids",
+  "@tasteGenreKids": {
+    "description": "Taste questionnaire genre"
+  },
+  "tasteGenreMusic": "Music",
+  "@tasteGenreMusic": {
+    "description": "Taste questionnaire genre"
+  },
+  "tasteGenreMystery": "Mystery",
+  "@tasteGenreMystery": {
+    "description": "Taste questionnaire genre"
+  },
+  "tasteGenreReality": "Reality TV",
+  "@tasteGenreReality": {
+    "description": "Taste questionnaire genre"
+  },
+  "tasteGenreRomance": "Romance",
+  "@tasteGenreRomance": {
+    "description": "Taste questionnaire genre"
+  },
+  "tasteGenreScifi": "Science fiction",
+  "@tasteGenreScifi": {
+    "description": "Taste questionnaire genre"
+  },
+  "tasteGenreTalk": "Talk shows and soaps",
+  "@tasteGenreTalk": {
+    "description": "Taste questionnaire genre"
+  },
+  "tasteGenreThriller": "Thriller",
+  "@tasteGenreThriller": {
+    "description": "Taste questionnaire genre"
+  },
+  "tasteGenreWar": "War",
+  "@tasteGenreWar": {
+    "description": "Taste questionnaire genre"
+  },
+  "tasteGenreWestern": "Western",
+  "@tasteGenreWestern": {
+    "description": "Taste questionnaire genre"
+  },
+  "tasteLangFr": "French",
+  "@tasteLangFr": {
+    "description": "Taste questionnaire language"
+  },
+  "tasteLangEn": "English",
+  "@tasteLangEn": {
+    "description": "Taste questionnaire language"
+  },
+  "tasteLangRu": "Russian",
+  "@tasteLangRu": {
+    "description": "Taste questionnaire language"
+  },
+  "tasteLangUk": "Ukrainian",
+  "@tasteLangUk": {
+    "description": "Taste questionnaire language"
+  },
+  "tasteLangEs": "Spanish",
+  "@tasteLangEs": {
+    "description": "Taste questionnaire language"
+  },
+  "tasteLangIt": "Italian",
+  "@tasteLangIt": {
+    "description": "Taste questionnaire language"
+  },
+  "tasteLangDe": "German",
+  "@tasteLangDe": {
+    "description": "Taste questionnaire language"
+  },
+  "tasteLangJa": "Japanese",
+  "@tasteLangJa": {
+    "description": "Taste questionnaire language"
+  },
+  "tasteLangKo": "Korean",
+  "@tasteLangKo": {
+    "description": "Taste questionnaire language"
+  },
+  "becauseYouLike": "Because you like {title}",
+  "@becauseYouLike": {
+    "description": "Title of a home row of titles close to one the viewer favourited, picked or asked for",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
   }
 }

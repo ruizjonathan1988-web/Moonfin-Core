@@ -29,6 +29,7 @@ import '../../widgets/focus/request_initial_focus.dart';
 import '../../widgets/settings/clean_settings_typography.dart';
 import '../../widgets/settings/preference_tiles.dart';
 import 'settings_app_bar.dart';
+import '../taste/taste_questionnaire_screen.dart';
 
 typedef _SeerrSignInAction =
     Future<String?> Function(String username, String password, String authType);
@@ -512,6 +513,36 @@ class _SeerrConfigScreenState extends State<SeerrConfigScreen> {
             onSignOut: _signOutFromSeerr,
             firstFocusNode: _accountCardFocusNode,
             onMoveUp: () => _enableSeerrFocusNode.requestFocus(),
+          ),
+        if (showSeerrSettings)
+          TvFocusHighlight(
+            builder: (context, focused) => ListTile(
+              leading: Icon(
+                Icons.tune_rounded,
+                color: focused ? AppColors.black.withValues(alpha: 0.54) : null,
+              ),
+              title: Text(
+                l10n.tasteEdit,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: focused
+                      ? AppColors.black.withValues(alpha: 0.87)
+                      : AppColorScheme.onSurface,
+                ),
+              ),
+              subtitle: Text(
+                l10n.tasteEditSubtitle,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: focused
+                      ? AppColors.black.withValues(alpha: 0.54)
+                      : AppColorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+              ),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => openTasteQuestionnaire(context),
+            ),
           ),
         if (showSeerrSettings)
           TvFocusHighlight(

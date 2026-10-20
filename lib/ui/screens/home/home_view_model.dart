@@ -34,6 +34,8 @@ import '../../../data/services/seerr/seerr_api_models.dart';
 import '../../../data/services/seerr/seerr_discover_sliders.dart';
 import '../../../data/services/seerr/for_you_service.dart';
 import '../../../data/services/seerr/my_requests.dart';
+import '../../../data/services/seerr/for_you_ranker.dart';
+import '../../../data/services/seerr/taste_profile.dart';
 import '../../../data/services/home_highlights.dart';
 import '../../../data/utils/bounded_concurrency.dart';
 import '../../../util/platform_detection.dart';
@@ -2795,15 +2797,20 @@ class HomeViewModel extends ChangeNotifier {
       if (!repo.isAvailable) return [];
       final blockNsfw = GetIt.instance<SeerrPreferences>().blockNsfw;
 
+      final taste = _taste();
       final picks = await ForYouService.instance.load(
         serverId: _serverId,
         loadHistory: () => _dataSource.loadTasteHistory(_serverId),
         fetchRecommendations: (seed) => seed.mediaType == 'tv'
             ? repo.getTvRecommendations(seed.tmdbId)
             : repo.getMovieRecommendations(seed.tmdbId),
+        loadExtras: () => _loadTasteExtras(repo, taste.profile),
+        weigh: taste.weigh,
+        hidden: taste.feedback.hiddenKeys,
         blockAdult: blockNsfw,
         forceRefresh: forceRefresh,
       );
+      _maybePromptTaste(taste.profile);
 
       final items = <AggregatedItem>[];
       for (final pick in picks) {
@@ -2818,6 +2825,7 @@ class HomeViewModel extends ChangeNotifier {
               ...base.first.rawData,
               'Type': pick.mediaType == 'tv' ? 'Series' : 'Movie',
               'SeerrMediaType': pick.mediaType,
+              tasteGenreIdsKey: pick.item.genreIds,
               forYouFlag: true,
               forYouReasonKey: pick.because.title,
             },
@@ -3033,12 +3041,16 @@ class HomeViewModel extends ChangeNotifier {
       if (!repo.isAvailable) return [];
       final blockNsfw = GetIt.instance<SeerrPreferences>().blockNsfw;
 
+      final taste = _taste();
       final rows = await ForYouService.instance.loadBecauseRows(
         serverId: _serverId,
         loadHistory: () => _dataSource.loadTasteHistory(_serverId),
         fetchRecommendations: (seed) => seed.mediaType == 'tv'
             ? repo.getTvRecommendations(seed.tmdbId)
             : repo.getMovieRecommendations(seed.tmdbId),
+        loadExtras: () => _loadTasteExtras(repo, taste.profile),
+        weigh: taste.weigh,
+        hidden: taste.feedback.hiddenKeys,
         blockAdult: blockNsfw,
         forceRefresh: forceRefresh,
       );
@@ -3068,6 +3080,7 @@ class HomeViewModel extends ChangeNotifier {
                 ...base.first.rawData,
                 'Type': entry.mediaType == 'tv' ? 'Series' : 'Movie',
                 'SeerrMediaType': entry.mediaType,
+                tasteGenreIdsKey: entry.item.genreIds,
                 // Something to ask for opens the request sheet; what the
                 // library holds or already awaits opens its page.
                 if (requestable && !inLibrary) forYouFlag: true,
@@ -3080,7 +3093,9 @@ class HomeViewModel extends ChangeNotifier {
         result.add(
           _seerrRow(
             '$becauseRowIdPrefix${row.seed.mediaType}_${row.seed.tmdbId}',
-            l10n.becauseYouWatched(row.seed.title),
+            row.seed.source == TasteSource.watched
+                ? l10n.becauseYouWatched(row.seed.title)
+                : l10n.becauseYouLike(row.seed.title),
             items,
             totalCount: items.length,
           ),
@@ -3090,6 +3105,157 @@ class HomeViewModel extends ChangeNotifier {
     } catch (e) {
       debugPrint('[SeerrHomeRow] Failed to load Because rows: $e');
       return [];
+    }
+  }
+
+  /// The TMDB genre ids a suggestion card carries, for "Not interested".
+  static const tasteGenreIdsKey = 'SeerrGenreIds';
+
+  /// Asks the screen to show the taste questionnaire. [firstTime] opens it
+  /// outright; otherwise it is a gentle reminder the viewer can ignore.
+  void Function({required bool firstTime})? onTastePrompt;
+
+  bool _tastePromptChecked = false;
+
+  /// How often the taste reminder may come back.
+  static const tasteReminderInterval = Duration(days: 30);
+
+  ({TasteProfile profile, TasteFeedback feedback, TasteWeigher weigh})
+  _taste() {
+    final prefs = GetIt.instance<SeerrPreferences>();
+    final profile = TasteProfile.decode(prefs.tasteProfileJson);
+    final feedback = TasteFeedback.decode(prefs.tasteFeedbackJson);
+    return (
+      profile: profile,
+      feedback: feedback,
+      weigh: (item, mediaType) =>
+          tasteFactor(item, mediaType, profile, feedback),
+    );
+  }
+
+  /// Picked favourites, the Seerr watchlist and the viewer's own requests,
+  /// as interest the watch history can't show.
+  Future<TasteExtras> _loadTasteExtras(
+    SeerrRepository repo,
+    TasteProfile profile,
+  ) async {
+    final picked = [
+      for (final pick in profile.favorites)
+        TasteSignal(
+          tmdbId: pick.tmdbId,
+          mediaType: pick.mediaType,
+          title: pick.title,
+        ),
+    ];
+
+    Future<List<TasteSignal>> watchlist() async {
+      try {
+        final page = await repo.getWatchlist(page: 1);
+        return [
+          for (final item in page.results)
+            if (item.mediaType == 'movie' || item.mediaType == 'tv')
+              TasteSignal(
+                tmdbId: item.id,
+                mediaType: item.mediaType!,
+                title: item.displayTitle,
+              ),
+        ];
+      } catch (e) {
+        debugPrint('[ForYou] Watchlist signals failed: $e');
+        return const [];
+      }
+    }
+
+    Future<List<TasteSignal>> requested() async {
+      try {
+        final user = await repo.getCurrentUser();
+        final response = await repo.getRequests(
+          requestedBy: user.id,
+          limit: 30,
+        );
+        return [
+          for (final request in response.results)
+            if (request.status != SeerrRequest.statusDeclined &&
+                request.media?.tmdbId != null)
+              TasteSignal(
+                tmdbId: request.media!.tmdbId!,
+                mediaType: request.type == 'tv' ? 'tv' : 'movie',
+                title: request.media!.title ?? request.media!.name ?? '',
+              ),
+        ];
+      } catch (e) {
+        debugPrint('[ForYou] Request signals failed: $e');
+        return const [];
+      }
+    }
+
+    final results = await Future.wait([watchlist(), requested()]);
+    return TasteExtras(
+      picked: picked,
+      watchlist: results[0],
+      requested: results[1],
+    );
+  }
+
+  /// Opens the questionnaire the first time Seerr suggestions show, then
+  /// reminds about it now and then, never more than once per session.
+  void _maybePromptTaste(TasteProfile profile) {
+    if (_tastePromptChecked || onTastePrompt == null) return;
+    _tastePromptChecked = true;
+    final prefs = GetIt.instance<SeerrPreferences>();
+    final now = DateTime.now();
+    final promptedMs = prefs.tastePromptedAt;
+    final prompted = promptedMs == null
+        ? null
+        : DateTime.fromMillisecondsSinceEpoch(promptedMs);
+
+    final bool firstTime;
+    if (prompted == null) {
+      firstTime = !profile.answered;
+      if (profile.answered) return;
+    } else {
+      if (now.difference(prompted) < tasteReminderInterval) return;
+      final updated = profile.updatedAt;
+      if (updated != null && now.difference(updated) < tasteReminderInterval) {
+        return;
+      }
+      firstTime = false;
+    }
+    unawaited(prefs.setTastePromptedAt(now.millisecondsSinceEpoch));
+    onTastePrompt?.call(firstTime: firstTime);
+  }
+
+  /// Rebuilds the suggestion rows after the taste answers changed.
+  Future<void> refreshAfterTasteChange() async {
+    ForYouService.instance.clearCache();
+    await load(preserveExisting: true);
+  }
+
+  /// Hides a suggestion for good and makes titles of its genres rarer.
+  Future<void> markNotInterested(AggregatedItem item) async {
+    final mediaType = item.rawData['SeerrMediaType'] as String? ??
+        (item.type == 'Series' ? 'tv' : 'movie');
+    final tmdbId = int.tryParse(item.id);
+    if (tmdbId == null) return;
+    final ids = [
+      for (final id in (item.rawData[tasteGenreIdsKey] as List?) ?? const [])
+        if (id is int) id,
+    ];
+    final prefs = GetIt.instance<SeerrPreferences>();
+    final feedback = TasteFeedback.decode(prefs.tasteFeedbackJson)
+        .notInterested(
+          forYouKey(mediaType, tmdbId),
+          TasteGenre.of(ids, mediaType),
+        );
+    await prefs.setTasteFeedbackJson(feedback.encode());
+
+    for (final row in _rows.toList()) {
+      if (row.id != forYouRowId && !row.id.startsWith(becauseRowIdPrefix)) {
+        continue;
+      }
+      if (!row.items.any((i) => i.id == item.id)) continue;
+      final items = row.items.where((i) => i.id != item.id).toList();
+      _replaceRowById(row.copyWith(items: items, totalCount: items.length));
     }
   }
 

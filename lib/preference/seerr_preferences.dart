@@ -80,6 +80,22 @@ class SeerrPreferences {
   Future<void> setShowRequestStatus(bool value) =>
       _store.setBool(_userKey('show_request_status'), value);
 
+  /// The taste questionnaire's answers, as `TasteProfile.encode` wrote them.
+  String? get tasteProfileJson => _store.getString(_userKey('taste_profile'));
+  Future<void> setTasteProfileJson(String value) =>
+      _store.setString(_userKey('taste_profile'), value);
+
+  /// Titles and genres turned down, as `TasteFeedback.encode` wrote them.
+  String? get tasteFeedbackJson => _store.getString(_userKey('taste_feedback'));
+  Future<void> setTasteFeedbackJson(String value) =>
+      _store.setString(_userKey('taste_feedback'), value);
+
+  /// When the viewer was last asked about their taste, in milliseconds since
+  /// the epoch, so the reminder comes back at a sane pace.
+  int? get tastePromptedAt => _store.getInt(_userKey('taste_prompted_at'));
+  Future<void> setTastePromptedAt(int value) =>
+      _store.setInt(_userKey('taste_prompted_at'), value);
+
   /// Requests already announced as ready, so each is announced once. Null
   /// until the first load, which only takes note of what is ready.
   List<String>? get announcedReadyRequests =>

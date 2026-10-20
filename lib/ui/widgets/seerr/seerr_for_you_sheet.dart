@@ -10,7 +10,13 @@ import '../focusable_dialog_row.dart';
 import '../track_selector_dialog.dart';
 
 /// What the viewer picked on the For You sheet.
-enum _ForYouChoice { request, requestAllSeasons, details }
+enum _ForYouChoice {
+  request,
+  requestAllSeasons,
+  details,
+  notInterested,
+  editTaste,
+}
 
 /// Offers to request a For You pick straight away, with the full page one
 /// row down for anyone who wants to read about it first.
@@ -28,6 +34,8 @@ Future<void> showSeerrForYouSheet({
   required String? because,
   required VoidCallback openDetails,
   VoidCallback? onRequested,
+  Future<void> Function()? onNotInterested,
+  VoidCallback? onEditTaste,
 }) async {
   final l10n = AppLocalizations.of(context);
   final isTv = (item.rawData['SeerrMediaType'] as String?) == 'tv';
@@ -63,6 +71,19 @@ Future<void> showSeerrForYouSheet({
           label: l10n.seerrForYouOpenDetails,
           onTap: () => Navigator.pop(dialogContext, _ForYouChoice.details),
         ),
+        if (onNotInterested != null)
+          FocusableDialogRow(
+            icon: Icons.thumb_down_alt_outlined,
+            label: l10n.notInterested,
+            onTap: () =>
+                Navigator.pop(dialogContext, _ForYouChoice.notInterested),
+          ),
+        if (onEditTaste != null)
+          FocusableDialogRow(
+            icon: Icons.tune_rounded,
+            label: l10n.tasteEdit,
+            onTap: () => Navigator.pop(dialogContext, _ForYouChoice.editTaste),
+          ),
       ],
     ),
   );
@@ -70,6 +91,22 @@ Future<void> showSeerrForYouSheet({
   if (choice == null || !context.mounted) return;
   if (choice == _ForYouChoice.details) {
     openDetails();
+    return;
+  }
+  if (choice == _ForYouChoice.editTaste) {
+    onEditTaste?.call();
+    return;
+  }
+  if (choice == _ForYouChoice.notInterested) {
+    // Notify first: the context may belong to the card about to go.
+    FloatingNotification.show(
+      context,
+      l10n.notInterestedDone,
+      l10n.notInterestedDoneBody(title),
+      null,
+      icon: Icons.thumb_down_alt_outlined,
+    );
+    await onNotInterested?.call();
     return;
   }
 

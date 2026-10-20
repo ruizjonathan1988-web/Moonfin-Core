@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'package:collection/collection.dart' show mergeSort;
+
 import 'seerr_api_models.dart';
 
 /// A title the viewer has shown interest in, used to pull recommendations
@@ -13,11 +15,15 @@ class TasteSeed {
   final String title;
   final double weight;
 
+  /// Where the interest came from, which decides how a row about it reads.
+  final TasteSource source;
+
   const TasteSeed({
     required this.tmdbId,
     required this.mediaType,
     required this.title,
     required this.weight,
+    this.source = TasteSource.watched,
   });
 
   String get key => forYouKey(mediaType, tmdbId);
@@ -27,8 +33,22 @@ class TasteSeed {
     mediaType: mediaType,
     title: title,
     weight: weight,
+    source: source,
   );
+
+  TasteSeed copyWith({double? weight, TasteSource? source, String? title}) =>
+      TasteSeed(
+        tmdbId: tmdbId,
+        mediaType: mediaType,
+        title: title ?? this.title,
+        weight: weight ?? this.weight,
+        source: source ?? this.source,
+      );
 }
+
+/// Where a seed's interest came from, strongest claim first: something
+/// watched beats something only favourited, picked or asked for.
+enum TasteSource { watched, favorite, picked, watchlist, requested }
 
 /// A title the viewer could have, with why it is suggested.
 class ForYouPick {
@@ -62,7 +82,14 @@ class BecauseItem {
   /// Seerr's media type, `movie` or `tv`.
   final String mediaType;
 
-  const BecauseItem({required this.item, required this.mediaType});
+  /// How much the viewer's stated taste wants it, 1 when nothing was said.
+  final double taste;
+
+  const BecauseItem({
+    required this.item,
+    required this.mediaType,
+    this.taste = 1,
+  });
 
   String get key => forYouKey(mediaType, item.id);
 }
@@ -75,6 +102,10 @@ class BecauseRow {
   const BecauseRow({required this.seed, required this.items});
 }
 
+/// How much the viewer's taste wants a candidate, as a factor on its score.
+/// Zero or less drops it.
+typedef TasteWeigher = double Function(SeerrDiscoverItem item, String mediaType);
+
 /// One identity per TMDB title, since TMDB reuses ids across movies and tv.
 String forYouKey(String mediaType, int tmdbId) => '$mediaType:$tmdbId';
 
@@ -84,10 +115,15 @@ class TasteSignal {
   final String mediaType;
   final String title;
 
+  /// Scales how much this signal counts, such as more for a film watched
+  /// several times.
+  final double strength;
+
   const TasteSignal({
     required this.tmdbId,
     required this.mediaType,
     required this.title,
+    this.strength = 1,
   });
 
   String get key => forYouKey(mediaType, tmdbId);
@@ -111,6 +147,9 @@ abstract final class ForYouRanker {
   static const _recentWeight = 1.0;
   static const _recentDecay = 0.88;
   static const _favoriteWeight = 1.4;
+  static const _pickedWeight = 1.6;
+  static const _watchlistWeight = 1.1;
+  static const _requestedWeight = 0.9;
 
   /// Weights the viewer's history into seeds.
   ///
@@ -119,21 +158,40 @@ abstract final class ForYouRanker {
   static List<TasteSeed> buildSeeds({
     required List<TasteSignal> recent,
     List<TasteSignal> favorites = const [],
+    List<TasteSignal> picked = const [],
+    List<TasteSignal> watchlist = const [],
+    List<TasteSignal> requested = const [],
     int limit = maxSeeds,
   }) {
     final seeds = <String, TasteSeed>{};
 
-    void add(TasteSignal signal, double weight) {
+    void add(
+      TasteSignal signal,
+      double weight, [
+      TasteSource source = TasteSource.watched,
+    ]) {
       if (signal.tmdbId <= 0) return;
+      final scaled = weight * signal.strength;
       final existing = seeds[signal.key];
-      seeds[signal.key] = existing == null
-          ? TasteSeed(
-              tmdbId: signal.tmdbId,
-              mediaType: signal.mediaType,
-              title: signal.title,
-              weight: weight,
-            )
-          : existing.withWeight(existing.weight + weight);
+      if (existing == null) {
+        seeds[signal.key] = TasteSeed(
+          tmdbId: signal.tmdbId,
+          mediaType: signal.mediaType,
+          title: signal.title,
+          weight: scaled,
+          source: source,
+        );
+        return;
+      }
+      // The strongest source names the seed, and a title fills in once a
+      // source that knows it shows up.
+      seeds[signal.key] = existing.copyWith(
+        weight: existing.weight + scaled,
+        source: source.index < existing.source.index ? source : null,
+        title: existing.title.isEmpty && signal.title.isNotEmpty
+            ? signal.title
+            : null,
+      );
     }
 
     final seenRecent = <String>{};
@@ -146,7 +204,16 @@ abstract final class ForYouRanker {
       position++;
     }
     for (final signal in favorites) {
-      add(signal, _favoriteWeight);
+      add(signal, _favoriteWeight, TasteSource.favorite);
+    }
+    for (final signal in picked) {
+      add(signal, _pickedWeight, TasteSource.picked);
+    }
+    for (final signal in watchlist) {
+      add(signal, _watchlistWeight, TasteSource.watchlist);
+    }
+    for (final signal in requested) {
+      add(signal, _requestedWeight, TasteSource.requested);
     }
 
     final ordered = seeds.values.toList()
@@ -166,6 +233,7 @@ abstract final class ForYouRanker {
     bool blockAdult = true,
     int limit = 30,
     DateTime? now,
+    TasteWeigher? weigh,
   }) {
     final today = now ?? DateTime.now();
     final seedKeys = {for (final seed in seeds) seed.key};
@@ -188,19 +256,25 @@ abstract final class ForYouRanker {
       }
     }
 
-    final scored = [
-      for (final c in candidates.values)
+    final scored = <ForYouPick>[];
+    for (final c in candidates.values) {
+      final taste = weigh?.call(c.item, c.mediaType) ?? 1.0;
+      if (taste <= 0) continue;
+      scored.add(
         ForYouPick(
           item: c.item,
           mediaType: c.mediaType,
           score:
               c.support *
               (1 + 0.35 * (c.seedCount - 1)) *
-              qualityFactor(c.item),
+              qualityFactor(c.item) *
+              taste,
           because: c.strongestSeed,
           seedCount: c.seedCount,
         ),
-    ]..sort(_byScore);
+      );
+    }
+    scored.sort(_byScore);
 
     // Keep the row varied: past [maxPerSeed] picks owed to one seed, the
     // rest wait until the row is otherwise short.
@@ -240,6 +314,7 @@ abstract final class ForYouRanker {
     int minItems = 5,
     int perRow = 15,
     DateTime? now,
+    TasteWeigher? weigh,
   }) {
     final today = now ?? DateTime.now();
     final seedKeys = {for (final seed in seeds) seed.key};
@@ -248,6 +323,8 @@ abstract final class ForYouRanker {
 
     for (final seed in seeds) {
       if (result.length >= rows) break;
+      // A row needs a title to be about.
+      if (seed.title.trim().isEmpty) continue;
       final recs = recommendationsBySeed[seed.key];
       if (recs == null) continue;
       final playable = <BecauseItem>[];
@@ -263,8 +340,14 @@ abstract final class ForYouRanker {
           continue;
         }
         if (!_isShowable(item, blockAdult: blockAdult, now: today)) continue;
+        final taste = weigh?.call(item, mediaType) ?? 1.0;
+        if (taste <= 0) continue;
         final status = item.mediaInfo?.status;
-        final entry = BecauseItem(item: item, mediaType: mediaType);
+        final entry = BecauseItem(
+          item: item,
+          mediaType: mediaType,
+          taste: taste,
+        );
         if (status == SeerrMediaStatus.available ||
             status == SeerrMediaStatus.partiallyAvailable) {
           playable.add(entry);
@@ -272,6 +355,10 @@ abstract final class ForYouRanker {
           others.add(entry);
         }
       }
+      // TMDB's order is a fine start; taste reorders it, stable on ties.
+      int byTaste(BecauseItem a, BecauseItem b) => b.taste.compareTo(a.taste);
+      mergeSort(playable, compare: byTaste);
+      mergeSort(others, compare: byTaste);
       final items = [...playable, ...others].take(perRow).toList();
       if (items.length < minItems) continue;
       used.addAll(items.map((i) => i.key));

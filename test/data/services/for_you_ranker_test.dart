@@ -378,7 +378,7 @@ void main() {
       Future<SeerrDiscoverPage> fetch(TasteSeed seed) async {
         calls++;
         return SeerrDiscoverPage(
-          results: [for (var i = 0; i < 6; i++) _item(800 + i)],
+          results: [for (var i = 0; i < 16; i++) _item(800 + i)],
         );
       }
 
@@ -404,6 +404,11 @@ void main() {
       final rows = results[1] as List<BecauseRow>;
       expect(rows, hasLength(1));
       expect(rows.single.seed.title, 'The Matrix');
+      // The ten For You leads stay out of the row.
+      final forYou = results[0] as List<ForYouPick>;
+      final leads = forYou.take(10).map((p) => p.key).toSet();
+      expect(rows.single.items, hasLength(6));
+      expect(rows.single.items.where((i) => leads.contains(i.key)), isEmpty);
     });
   });
 }

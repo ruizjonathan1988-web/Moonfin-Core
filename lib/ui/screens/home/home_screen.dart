@@ -28,6 +28,7 @@ import '../../widgets/seerr/seerr_shortcuts.dart';
 import '../../widgets/seerr/seerr_for_you_sheet.dart';
 import '../../widgets/card_highlights.dart';
 import '../../widgets/floating_notification.dart';
+import '../taste/taste_questionnaire_screen.dart';
 import '../../../data/services/seerr/my_requests.dart';
 import '../../../data/services/home_highlights.dart';
 import '../../../data/services/background_service.dart';
@@ -977,6 +978,10 @@ class _ContentRowsState extends State<_ContentRows>
         oldWidget.viewModel.onRequestsReady = null;
       }
       widget.viewModel.onRequestsReady = _announceReadyRequests;
+      if (oldWidget.viewModel.onTastePrompt == _promptTaste) {
+        oldWidget.viewModel.onTastePrompt = null;
+      }
+      widget.viewModel.onTastePrompt = _promptTaste;
     }
     final rowsChanged = !listEquals(oldWidget.viewModel.rows, widget.viewModel.rows);
     if (rowsChanged || oldWidget.prefs != widget.prefs) {
@@ -1226,6 +1231,7 @@ class _ContentRowsState extends State<_ContentRows>
   void initState() {
     super.initState();
     widget.viewModel.onRequestsReady = _announceReadyRequests;
+    widget.viewModel.onTastePrompt = _promptTaste;
     HardwareKeyboard.instance.addHandler(_handleGlobalHardwareKey);
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addObserver(this);
@@ -1399,6 +1405,9 @@ class _ContentRowsState extends State<_ContentRows>
   void dispose() {
     if (widget.viewModel.onRequestsReady == _announceReadyRequests) {
       widget.viewModel.onRequestsReady = null;
+    }
+    if (widget.viewModel.onTastePrompt == _promptTaste) {
+      widget.viewModel.onTastePrompt = null;
     }
     HardwareKeyboard.instance.removeHandler(_handleGlobalHardwareKey);
     _rowPrefetchDebounce?.cancel();
@@ -5001,6 +5010,8 @@ class _ContentRowsState extends State<_ContentRows>
               item,
               onForYouRequested: () =>
                   widget.viewModel.removeFromForYouRow(item),
+              onNotInterested: () => widget.viewModel.markNotInterested(item),
+              onEditTaste: _openTasteQuestionnaire,
             );
           } else {
             context.push(
@@ -5116,6 +5127,9 @@ class _ContentRowsState extends State<_ContentRows>
                         item,
                         onForYouRequested: () =>
                             widget.viewModel.removeFromForYouRow(item),
+                        onNotInterested: () =>
+                            widget.viewModel.markNotInterested(item),
+                        onEditTaste: _openTasteQuestionnaire,
                       );
                     } else {
                       context.push(
@@ -5585,6 +5599,8 @@ class _ContentRowsState extends State<_ContentRows>
     BuildContext context,
     AggregatedItem item, {
     VoidCallback? onForYouRequested,
+    Future<void> Function()? onNotInterested,
+    VoidCallback? onEditTaste,
   }) {
     if (item.rawData[HomeViewModel.forYouFlag] == true) {
       showSeerrForYouSheet(
@@ -5593,6 +5609,8 @@ class _ContentRowsState extends State<_ContentRows>
         because: item.rawData[HomeViewModel.forYouReasonKey] as String?,
         openDetails: () => _openSeerrMediaPage(context, item),
         onRequested: onForYouRequested,
+        onNotInterested: onNotInterested,
+        onEditTaste: onEditTaste,
       );
       return;
     }
@@ -5620,6 +5638,42 @@ class _ContentRowsState extends State<_ContentRows>
     } else {
       _openSeerrMediaPage(context, item);
     }
+  }
+
+  /// Opens the taste questionnaire and rebuilds the suggestions once saved.
+  Future<void> _openTasteQuestionnaire() async {
+    if (!mounted) return;
+    final saved = await openTasteQuestionnaire(context);
+    if (!saved || !mounted) return;
+    final l10n = AppLocalizations.of(context);
+    FloatingNotification.show(
+      context,
+      l10n.tasteSaved,
+      l10n.tasteSavedBody,
+      null,
+      icon: Icons.tune_rounded,
+    );
+    await widget.viewModel.refreshAfterTasteChange();
+  }
+
+  /// The first time, the questionnaire opens by itself; after that a quiet
+  /// reminder offers it.
+  void _promptTaste({required bool firstTime}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (firstTime) {
+        _openTasteQuestionnaire();
+        return;
+      }
+      final l10n = AppLocalizations.of(context);
+      FloatingNotification.show(
+        context,
+        l10n.tasteReminderTitle,
+        l10n.tasteReminderBody,
+        _openTasteQuestionnaire,
+        icon: Icons.tune_rounded,
+      );
+    });
   }
 
   /// Says which requested titles came into the library since the last look.

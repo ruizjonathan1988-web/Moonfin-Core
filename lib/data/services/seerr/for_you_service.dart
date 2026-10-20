@@ -50,6 +50,9 @@ class ForYouService {
     loadHistory,
     required Future<SeerrDiscoverPage> Function(TasteSeed seed)
     fetchRecommendations,
+    Future<TasteExtras> Function()? loadExtras,
+    TasteWeigher? weigh,
+    Set<String> hidden = const {},
     bool blockAdult = true,
     bool forceRefresh = false,
     int limit = 30,
@@ -58,15 +61,17 @@ class ForYouService {
       serverId: serverId,
       loadHistory: loadHistory,
       fetchRecommendations: fetchRecommendations,
+      loadExtras: loadExtras,
       forceRefresh: forceRefresh,
     );
     if (snapshot.seeds.isEmpty) return const [];
     return ForYouRanker.rank(
       seeds: snapshot.seeds,
       recommendationsBySeed: snapshot.recommendations,
-      excludeKeys: _requested,
+      excludeKeys: {..._requested, ...hidden},
       blockAdult: blockAdult,
       limit: limit,
+      weigh: weigh,
     );
   }
 
@@ -79,6 +84,9 @@ class ForYouService {
     loadHistory,
     required Future<SeerrDiscoverPage> Function(TasteSeed seed)
     fetchRecommendations,
+    Future<TasteExtras> Function()? loadExtras,
+    TasteWeigher? weigh,
+    Set<String> hidden = const {},
     bool blockAdult = true,
     bool forceRefresh = false,
     int rows = 2,
@@ -87,17 +95,34 @@ class ForYouService {
       serverId: serverId,
       loadHistory: loadHistory,
       fetchRecommendations: fetchRecommendations,
+      loadExtras: loadExtras,
       forceRefresh: forceRefresh,
     );
     if (snapshot.seeds.isEmpty) return const [];
+    final exclude = {..._requested, ...hidden};
+    // What leads the For You row stays there, so the same poster doesn't
+    // show twice on one screen.
+    final forYouLead = ForYouRanker.rank(
+      seeds: snapshot.seeds,
+      recommendationsBySeed: snapshot.recommendations,
+      excludeKeys: exclude,
+      blockAdult: blockAdult,
+      limit: forYouLeadCount,
+      weigh: weigh,
+    );
     return ForYouRanker.becauseRows(
       seeds: snapshot.seeds,
       recommendationsBySeed: snapshot.recommendations,
-      excludeKeys: _requested,
+      excludeKeys: {...exclude, for (final pick in forYouLead) pick.key},
       blockAdult: blockAdult,
       rows: rows,
+      weigh: weigh,
     );
   }
+
+  /// How many For You picks the Because rows leave alone: about what a
+  /// screen shows before scrolling the row.
+  static const forYouLeadCount = 10;
 
   Future<_Snapshot> _snapshot({
     required String serverId,
@@ -106,6 +131,7 @@ class ForYouService {
     loadHistory,
     required Future<SeerrDiscoverPage> Function(TasteSeed seed)
     fetchRecommendations,
+    Future<TasteExtras> Function()? loadExtras,
     required bool forceRefresh,
   }) {
     final cached = _cache[serverId];
@@ -116,7 +142,11 @@ class ForYouService {
     }
     final running = _inflight[serverId];
     if (running != null) return running;
-    final future = _gather(loadHistory, fetchRecommendations).then((snapshot) {
+    final future = _gather(
+      loadHistory,
+      fetchRecommendations,
+      loadExtras,
+    ).then((snapshot) {
       _cache[serverId] = snapshot;
       return snapshot;
     });
@@ -129,11 +159,29 @@ class ForYouService {
     Function()
     loadHistory,
     Future<SeerrDiscoverPage> Function(TasteSeed seed) fetchRecommendations,
+    Future<TasteExtras> Function()? loadExtras,
   ) async {
-    final history = await loadHistory();
+    final results = await Future.wait([
+      loadHistory(),
+      if (loadExtras != null)
+        loadExtras().catchError((Object e) {
+          // Extras sharpen the row; without them it still works.
+          debugPrint('[ForYou] Extra taste signals failed: $e');
+          return TasteExtras.none;
+        }),
+    ]);
+    final history =
+        results[0]
+            as ({List<AggregatedItem> recent, List<AggregatedItem> favorites});
+    final extras = results.length > 1
+        ? results[1] as TasteExtras
+        : TasteExtras.none;
     final seeds = ForYouRanker.buildSeeds(
       recent: signalsFrom(history.recent),
       favorites: signalsFrom(history.favorites),
+      picked: extras.picked,
+      watchlist: extras.watchlist,
+      requested: extras.requested,
     );
 
     final recommendations = <String, List<SeerrDiscoverItem>>{};
@@ -174,7 +222,15 @@ class ForYouService {
       _ => null,
     };
     if (mediaType == null) return null;
-    return TasteSignal(tmdbId: tmdbId, mediaType: mediaType, title: item.name);
+    final userData = item.rawData['UserData'];
+    final plays = userData is Map ? (userData['PlayCount'] as num?) ?? 0 : 0;
+    return TasteSignal(
+      tmdbId: tmdbId,
+      mediaType: mediaType,
+      title: item.name,
+      // Watched more than once: it clearly landed.
+      strength: plays >= 2 ? 1.35 : 1,
+    );
   }
 }
 
@@ -189,4 +245,20 @@ class _Snapshot {
     required this.seeds,
     required this.recommendations,
   });
+}
+
+/// Interest the library's history doesn't hold: titles picked in the taste
+/// questionnaire, on the Seerr watchlist, or requested.
+class TasteExtras {
+  final List<TasteSignal> picked;
+  final List<TasteSignal> watchlist;
+  final List<TasteSignal> requested;
+
+  const TasteExtras({
+    this.picked = const [],
+    this.watchlist = const [],
+    this.requested = const [],
+  });
+
+  static const none = TasteExtras();
 }
