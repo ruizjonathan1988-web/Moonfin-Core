@@ -367,6 +367,67 @@ abstract final class ForYouRanker {
     return result;
   }
 
+  /// Well-loved titles few people know, among what the viewer's seeds
+  /// bring back: rated [minRating] or more by between [minVotes] and
+  /// [maxVotes] voters. What the library has stays in, to be played.
+  ///
+  /// Returns nothing when fewer than [minItems] qualify, since a row of two
+  /// gems looks like a mistake.
+  static List<ForYouPick> gems({
+    required List<TasteSeed> seeds,
+    required Map<String, List<SeerrDiscoverItem>> recommendationsBySeed,
+    Set<String> excludeKeys = const {},
+    bool blockAdult = true,
+    TasteWeigher? weigh,
+    DateTime? now,
+    double minRating = 7.2,
+    int minVotes = 60,
+    int maxVotes = 2500,
+    int minItems = 5,
+    int limit = 15,
+  }) {
+    final today = now ?? DateTime.now();
+    final seedKeys = {for (final seed in seeds) seed.key};
+    final candidates = <String, _Candidate>{};
+
+    for (final seed in seeds) {
+      final recs = recommendationsBySeed[seed.key];
+      if (recs == null) continue;
+      for (var position = 0; position < recs.length; position++) {
+        final item = recs[position];
+        final mediaType = _mediaTypeOf(item, seed.mediaType);
+        final key = forYouKey(mediaType, item.id);
+        if (seedKeys.contains(key) || excludeKeys.contains(key)) continue;
+        if (!_isShowable(item, blockAdult: blockAdult, now: today)) continue;
+        final votes = item.voteCount ?? 0;
+        if ((item.voteAverage ?? 0) < minRating) continue;
+        if (votes < minVotes || votes > maxVotes) continue;
+        candidates
+            .putIfAbsent(key, () => _Candidate(item, mediaType))
+            .add(seed, seed.weight / math.sqrt(position + 1));
+      }
+    }
+
+    final scored = <ForYouPick>[];
+    for (final c in candidates.values) {
+      final taste = weigh?.call(c.item, c.mediaType) ?? 1.0;
+      if (taste <= 0) continue;
+      scored.add(
+        ForYouPick(
+          item: c.item,
+          mediaType: c.mediaType,
+          // Rating counts for more here than in For You: it is the point.
+          score: c.support * (c.item.voteAverage ?? 0) * taste,
+          because: c.strongestSeed,
+          seedCount: c.seedCount,
+        ),
+      );
+    }
+    scored.sort(_byScore);
+    if (scored.length < minItems) return const [];
+    return scored.take(limit).toList();
+  }
+
   /// Fit for a card at all: a poster, out already, not blocked.
   static bool _isShowable(
     SeerrDiscoverItem item, {

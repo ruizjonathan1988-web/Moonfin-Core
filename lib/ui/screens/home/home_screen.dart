@@ -5756,6 +5756,16 @@ class _ContentRowsState extends State<_ContentRows>
     return [
       if (row.id == HomeViewModel.myRequestsRowId)
         ?_myRequestPill(l10n, item)
+      else if (row.id == HomeViewModel.sagaRowId)
+        CardHighlightPill(
+          label: l10n.sagaNextBadge,
+          icon: Icons.skip_next_rounded,
+        )
+      else if (row.id == HomeViewModel.gemsRowId)
+        CardHighlightPill(
+          label: l10n.gemBadge,
+          icon: Icons.diamond_outlined,
+        )
       else if (row.id == HomeViewModel.top10RowId)
         RankNumberOverlay(rank: index + 1)
       else if (row.id == HomeViewModel.surpriseRowId)

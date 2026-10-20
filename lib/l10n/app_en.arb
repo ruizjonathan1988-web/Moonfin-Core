@@ -14358,5 +14358,25 @@
         "type": "String"
       }
     }
+  },
+  "sagaRow": "Continue the saga",
+  "@sagaRow": {
+    "description": "Home row with the next film of sagas the viewer started"
+  },
+  "gemsRow": "Hidden gems for you",
+  "@gemsRow": {
+    "description": "Home row of well-loved, little-known titles"
+  },
+  "familyNightRow": "Family night",
+  "@familyNightRow": {
+    "description": "Home row of unwatched family films"
+  },
+  "sagaNextBadge": "Next",
+  "@sagaNextBadge": {
+    "description": "Card badge on the next film of a saga"
+  },
+  "gemBadge": "Gem",
+  "@gemBadge": {
+    "description": "Card badge on a hidden gem"
   }
 }

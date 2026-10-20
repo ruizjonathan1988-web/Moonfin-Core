@@ -212,6 +212,21 @@ class HomeSectionConfig {
       order: 4,
     ),
     HomeSectionConfig(
+      type: HomeSectionType.seerrSagas,
+      enabled: true,
+      order: 4,
+    ),
+    HomeSectionConfig(
+      type: HomeSectionType.seerrGems,
+      enabled: true,
+      order: 4,
+    ),
+    HomeSectionConfig(
+      type: HomeSectionType.familyNight,
+      enabled: true,
+      order: 4,
+    ),
+    HomeSectionConfig(
       type: HomeSectionType.latestMedia,
       enabled: true,
       order: 3,

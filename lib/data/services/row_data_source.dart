@@ -2574,6 +2574,34 @@ class RowDataSource {
     return found;
   }
 
+  /// Unwatched family and animated films, drawn at random each load, for
+  /// the Family night row.
+  Future<List<AggregatedItem>> loadFamilyNight(String serverId) async {
+    try {
+      final draw = await _searchVisibleLibraryItems(
+        serverId,
+        const ['Movie'],
+        (parentId) => _client.itemsApi.getItems(
+          parentId: parentId,
+          includeItemTypes: const ['Movie'],
+          genres: familyGenreNames,
+          filters: const ['IsUnplayed'],
+          sortBy: 'Random',
+          recursive: true,
+          limit: 40,
+          fields: _fields,
+          enableImageTypes: _imageTypes,
+          imageTypeLimit: _imageTypeLimit,
+        ),
+      );
+      draw.shuffle();
+      return pickFamilyNight(draw);
+    } catch (e) {
+      debugPrint('[RowDataSource] Family night failed: $e');
+      return const [];
+    }
+  }
+
   /// One movie and one series nobody finished, drawn at random and leaning
   /// towards well-rated ones, for the Surprise row.
   Future<List<AggregatedItem>> loadSurprisePicks(String serverId) async {

@@ -36,6 +36,10 @@ const freshlyAddedWindow = Duration(days: 10);
 bool isFreshlyAdded(AggregatedItem item, {DateTime? now}) {
   final type = item.type;
   if (type != 'Movie' && type != 'Episode') return false;
+  // A file the server couldn't identify has no poster and no series: a
+  // loose download, not something new to watch.
+  if (type == 'Movie' && item.primaryImageTag == null) return false;
+  if (type == 'Episode' && item.rawData['SeriesId'] == null) return false;
   if (item.isPlayed) return false;
   if ((item.playedPercentage ?? 0) > 0) return false;
   final created = item.dateCreated;
@@ -54,4 +58,41 @@ AggregatedItem? pickSurprise(
     if ((item.communityRating ?? 0) >= minRating) return item;
   }
   return randomDraw.isEmpty ? null : randomDraw.first;
+}
+
+/// Genre names a family film can carry. The server names genres in its
+/// metadata language, so English and French both appear.
+const familyGenreNames = [
+  'Family',
+  'Familial',
+  'Famille',
+  'Animation',
+  'Kids',
+  'Children',
+  'Jeunesse',
+];
+
+/// Family night: unwatched family films, best rated first among a random
+/// draw so the row changes from one evening to the next.
+List<AggregatedItem> pickFamilyNight(
+  List<AggregatedItem> randomDraw, {
+  int limit = 15,
+  double minRating = 6.0,
+}) {
+  final seen = <String>{};
+  final rated = <AggregatedItem>[];
+  final rest = <AggregatedItem>[];
+  for (final item in randomDraw) {
+    if (!seen.add(item.id)) continue;
+    if (item.primaryImageTag == null) continue;
+    if ((item.communityRating ?? 0) >= minRating) {
+      rated.add(item);
+    } else {
+      rest.add(item);
+    }
+  }
+  rated.sort(
+    (a, b) => (b.communityRating ?? 0).compareTo(a.communityRating ?? 0),
+  );
+  return [...rated, ...rest].take(limit).toList();
 }

@@ -1708,6 +1708,9 @@ class PluginSyncService extends ChangeNotifier {
       type == prefs.HomeSectionType.seerrForYou ||
       type == prefs.HomeSectionType.seerrMyRequests ||
       type == prefs.HomeSectionType.seerrBecause ||
+      type == prefs.HomeSectionType.seerrSagas ||
+      type == prefs.HomeSectionType.seerrGems ||
+      type == prefs.HomeSectionType.familyNight ||
       type == prefs.HomeSectionType.top10 ||
       type == prefs.HomeSectionType.surprise;
 

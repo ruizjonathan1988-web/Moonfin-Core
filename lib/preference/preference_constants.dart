@@ -524,6 +524,15 @@ enum HomeSectionType {
 
   /// "Because you watched X" rows, built from the viewer's history.
   seerrBecause('seerr_because'),
+
+  /// The next film of each saga the viewer is part way through.
+  seerrSagas('seerr_sagas'),
+
+  /// Well-loved, little-known titles close to the viewer's taste.
+  seerrGems('seerr_gems'),
+
+  /// Unwatched family films from the library.
+  familyNight('family_night'),
   seerrShortcuts('seerr_shortcuts'),
   seerrRecentRequests('seerr_recent_requests'),
   seerrWatchlist('seerr_watchlist'),

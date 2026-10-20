@@ -120,6 +120,60 @@ class ForYouService {
     );
   }
 
+  /// Hidden gems from the same recommendations, minus what the For You
+  /// lead and the Because rows already show.
+  Future<List<ForYouPick>> loadGems({
+    required String serverId,
+    required Future<({List<AggregatedItem> recent, List<AggregatedItem> favorites})>
+    Function()
+    loadHistory,
+    required Future<SeerrDiscoverPage> Function(TasteSeed seed)
+    fetchRecommendations,
+    Future<TasteExtras> Function()? loadExtras,
+    TasteWeigher? weigh,
+    Set<String> hidden = const {},
+    bool blockAdult = true,
+    bool forceRefresh = false,
+  }) async {
+    final snapshot = await _snapshot(
+      serverId: serverId,
+      loadHistory: loadHistory,
+      fetchRecommendations: fetchRecommendations,
+      loadExtras: loadExtras,
+      forceRefresh: forceRefresh,
+    );
+    if (snapshot.seeds.isEmpty) return const [];
+    final exclude = {..._requested, ...hidden};
+    final forYouLead = ForYouRanker.rank(
+      seeds: snapshot.seeds,
+      recommendationsBySeed: snapshot.recommendations,
+      excludeKeys: exclude,
+      blockAdult: blockAdult,
+      limit: forYouLeadCount,
+      weigh: weigh,
+    );
+    final leadKeys = {for (final pick in forYouLead) pick.key};
+    final because = ForYouRanker.becauseRows(
+      seeds: snapshot.seeds,
+      recommendationsBySeed: snapshot.recommendations,
+      excludeKeys: {...exclude, ...leadKeys},
+      blockAdult: blockAdult,
+      weigh: weigh,
+    );
+    return ForYouRanker.gems(
+      seeds: snapshot.seeds,
+      recommendationsBySeed: snapshot.recommendations,
+      excludeKeys: {
+        ...exclude,
+        ...leadKeys,
+        for (final row in because)
+          for (final item in row.items) item.key,
+      },
+      blockAdult: blockAdult,
+      weigh: weigh,
+    );
+  }
+
   /// How many For You picks the Because rows leave alone: about what a
   /// screen shows before scrolling the row.
   static const forYouLeadCount = 10;

@@ -26,6 +26,8 @@ AggregatedItem _item({
   serverId: 'server',
   rawData: {
     'Type': type,
+    'ImageTags': {'Primary': 'tag'},
+    if (type == 'Episode') 'SeriesId': 'series',
     'DateCreated': ?created,
     'CommunityRating': ?rating,
     'UserData': {
@@ -120,6 +122,40 @@ void main() {
     test('falls back to the first title, or nothing', () {
       expect(pickSurprise([_item(id: 'only', rating: 4)])?.id, 'only');
       expect(pickSurprise(const []), isNull);
+    });
+  });
+
+  group('loose downloads', () {
+    final now = DateTime.utc(2026, 10, 19, 20);
+
+    test('an unidentified file is not new', () {
+      final loose = AggregatedItem(
+        id: 'raw',
+        serverId: 'server',
+        rawData: const {
+          'Type': 'Movie',
+          'DateCreated': '2026-10-18T10:00:00Z',
+          'UserData': {'Played': false},
+        },
+      );
+      expect(isFreshlyAdded(loose, now: now), isFalse);
+    });
+  });
+
+  group('pickFamilyNight', () {
+    test('best rated first, posterless dropped, no repeats', () {
+      final picks = pickFamilyNight([
+        _item(id: 'ok', rating: 6.4),
+        _item(id: 'top', rating: 8.1),
+        _item(id: 'low', rating: 4.0),
+        _item(id: 'top', rating: 8.1),
+        AggregatedItem(
+          id: 'bare',
+          serverId: 'server',
+          rawData: const {'Type': 'Movie', 'CommunityRating': 9.0},
+        ),
+      ]);
+      expect(picks.map((i) => i.id), ['top', 'ok', 'low']);
     });
   });
 

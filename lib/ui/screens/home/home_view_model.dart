@@ -36,6 +36,7 @@ import '../../../data/services/seerr/for_you_service.dart';
 import '../../../data/services/seerr/my_requests.dart';
 import '../../../data/services/seerr/for_you_ranker.dart';
 import '../../../data/services/seerr/taste_profile.dart';
+import '../../../data/services/seerr/saga_service.dart';
 import '../../../data/services/home_highlights.dart';
 import '../../../data/utils/bounded_concurrency.dart';
 import '../../../util/platform_detection.dart';
@@ -246,6 +247,9 @@ class HomeViewModel extends ChangeNotifier {
       HomeSectionType.sonarrCalendar ||
       HomeSectionType.seerrForYou ||
       HomeSectionType.seerrMyRequests ||
+      HomeSectionType.seerrSagas ||
+      HomeSectionType.seerrGems ||
+      HomeSectionType.familyNight ||
       HomeSectionType.seerrBecause ||
       HomeSectionType.top10 ||
       HomeSectionType.surprise ||
@@ -490,6 +494,8 @@ class HomeViewModel extends ChangeNotifier {
                 (showSeerrRows || !isSeerrSliderSection(c)) &&
                 ((c.type != HomeSectionType.seerrForYou &&
                         c.type != HomeSectionType.seerrMyRequests &&
+                        c.type != HomeSectionType.seerrSagas &&
+                        c.type != HomeSectionType.seerrGems &&
                         c.type != HomeSectionType.seerrBecause &&
                         c.type != HomeSectionType.top10) ||
                     showSeerrRows) &&
@@ -917,6 +923,12 @@ class HomeViewModel extends ChangeNotifier {
         return row.id == forYouRowId;
       case HomeSectionType.seerrMyRequests:
         return row.id == myRequestsRowId;
+      case HomeSectionType.seerrSagas:
+        return row.id == sagaRowId;
+      case HomeSectionType.seerrGems:
+        return row.id == gemsRowId;
+      case HomeSectionType.familyNight:
+        return row.id == familyRowId;
       case HomeSectionType.seerrBecause:
         return row.id.startsWith(becauseRowIdPrefix);
       case HomeSectionType.top10:
@@ -1275,6 +1287,12 @@ class HomeViewModel extends ChangeNotifier {
         return const {'seerrForYou'};
       case HomeSectionType.seerrMyRequests:
         return const {'seerrMyRequests'};
+      case HomeSectionType.seerrSagas:
+        return const {'seerrSagas'};
+      case HomeSectionType.seerrGems:
+        return const {'seerrGems'};
+      case HomeSectionType.familyNight:
+        return const {'familyNight'};
       case HomeSectionType.seerrBecause:
         return const {'seerrBecause'};
       case HomeSectionType.top10:
@@ -1633,6 +1651,12 @@ class HomeViewModel extends ChangeNotifier {
         return _loadSeerrForYouRow(l10n, forceRefresh: forceRefresh);
       case HomeSectionType.seerrMyRequests:
         return _loadMyRequestsRow(l10n);
+      case HomeSectionType.seerrSagas:
+        return _loadSagaRow(l10n, forceRefresh: forceRefresh);
+      case HomeSectionType.seerrGems:
+        return _loadGemsRow(l10n, forceRefresh: forceRefresh);
+      case HomeSectionType.familyNight:
+        return _loadFamilyRow(l10n);
       case HomeSectionType.seerrBecause:
         return _loadBecauseRows(l10n, forceRefresh: forceRefresh);
       case HomeSectionType.top10:
@@ -2109,6 +2133,11 @@ class HomeViewModel extends ChangeNotifier {
         );
       // How many rows this brings, and their titles, depend on the history.
       case HomeSectionType.seerrBecause:
+        return null;
+      // These only show when they have something, so no empty shell first.
+      case HomeSectionType.seerrSagas:
+      case HomeSectionType.seerrGems:
+      case HomeSectionType.familyNight:
         return null;
       case HomeSectionType.seerrForYou:
         return HomeRow(
@@ -3108,6 +3137,166 @@ class HomeViewModel extends ChangeNotifier {
     }
   }
 
+  static const sagaRowId = 'seerr_sagas';
+  static const gemsRowId = 'seerr_gems';
+  static const familyRowId = 'family_night';
+
+  /// A Seerr suggestion as a card. Something to ask for opens the request
+  /// sheet with [reason]; what the library holds or already awaits opens
+  /// its page.
+  AggregatedItem? _suggestionCard(
+    SeerrDiscoverItem item,
+    String mediaType, {
+    required String reason,
+    required bool blockNsfw,
+  }) {
+    // Kept like the request rows, so what the library holds stays.
+    final base = _seerrAggregatedItems(
+      [item],
+      SeerrRowType.recentRequests,
+      blockNsfw,
+    );
+    if (base.isEmpty) return null;
+    final status = item.mediaInfo?.status;
+    final requestable =
+        status == null ||
+        status == SeerrMediaStatus.unknown ||
+        status == SeerrMediaStatus.deleted;
+    return AggregatedItem(
+      id: base.first.id,
+      serverId: base.first.serverId,
+      rawData: {
+        ...base.first.rawData,
+        'Type': mediaType == 'tv' ? 'Series' : 'Movie',
+        'SeerrMediaType': mediaType,
+        tasteGenreIdsKey: item.genreIds,
+        if (requestable) forYouFlag: true,
+        if (requestable) forYouReasonKey: reason,
+      },
+    );
+  }
+
+  /// The next film of each saga the viewer is part way through, whether the
+  /// library has it or it is one request away.
+  Future<List<HomeRow>> _loadSagaRow(
+    AppLocalizations l10n, {
+    bool forceRefresh = false,
+  }) async {
+    try {
+      final repo = await GetIt.instance.getAsync<SeerrRepository>();
+      await repo.ensureInitialized();
+      if (!repo.isAvailable) return [];
+      final prefs = GetIt.instance<SeerrPreferences>();
+      final blockNsfw = prefs.blockNsfw;
+      final feedback = TasteFeedback.decode(prefs.tasteFeedbackJson);
+
+      final picks = await SagaService.instance.load(
+        serverId: _serverId,
+        loadWatched: () async {
+          final history = await _dataSource.loadTasteHistory(_serverId);
+          return [
+            for (final item in history.recent)
+              if (item.type == 'Movie')
+                if (int.tryParse(item.tmdbId ?? '') case final id?
+                    when id > 0)
+                  (tmdbId: id, title: item.name),
+          ];
+        },
+        collectionOf: (tmdbId) async =>
+            (await repo.getMovieDetails(tmdbId)).collection?.id,
+        fetchCollection: repo.getCollectionDetails,
+        exclude: feedback.hiddenKeys,
+        blockAdult: blockNsfw,
+        forceRefresh: forceRefresh,
+      );
+
+      final items = [
+        for (final pick in picks)
+          if (_suggestionCard(
+                pick.item,
+                'movie',
+                reason: pick.afterTitle,
+                blockNsfw: blockNsfw,
+              )
+              case final card?)
+            card,
+      ];
+      if (items.isEmpty) return [];
+      return [
+        _seerrRow(sagaRowId, l10n.sagaRow, items, totalCount: items.length),
+      ];
+    } catch (e) {
+      debugPrint('[SeerrHomeRow] Failed to load Saga row: $e');
+      return [];
+    }
+  }
+
+  /// Well-loved titles few people know, close to what the viewer likes.
+  Future<List<HomeRow>> _loadGemsRow(
+    AppLocalizations l10n, {
+    bool forceRefresh = false,
+  }) async {
+    try {
+      final repo = await GetIt.instance.getAsync<SeerrRepository>();
+      await repo.ensureInitialized();
+      if (!repo.isAvailable) return [];
+      final blockNsfw = GetIt.instance<SeerrPreferences>().blockNsfw;
+      final taste = _taste();
+
+      final picks = await ForYouService.instance.loadGems(
+        serverId: _serverId,
+        loadHistory: () => _dataSource.loadTasteHistory(_serverId),
+        fetchRecommendations: (seed) => seed.mediaType == 'tv'
+            ? repo.getTvRecommendations(seed.tmdbId)
+            : repo.getMovieRecommendations(seed.tmdbId),
+        loadExtras: () => _loadTasteExtras(repo, taste.profile),
+        weigh: taste.weigh,
+        hidden: taste.feedback.hiddenKeys,
+        blockAdult: blockNsfw,
+        forceRefresh: forceRefresh,
+      );
+
+      final items = [
+        for (final pick in picks)
+          if (_suggestionCard(
+                pick.item,
+                pick.mediaType,
+                reason: pick.because.title,
+                blockNsfw: blockNsfw,
+              )
+              case final card?)
+            card,
+      ];
+      if (items.length < 5) return [];
+      return [
+        _seerrRow(gemsRowId, l10n.gemsRow, items, totalCount: items.length),
+      ];
+    } catch (e) {
+      debugPrint('[SeerrHomeRow] Failed to load Gems row: $e');
+      return [];
+    }
+  }
+
+  /// Unwatched family films from the library, best rated first.
+  Future<List<HomeRow>> _loadFamilyRow(AppLocalizations l10n) async {
+    try {
+      final items = await _dataSource.loadFamilyNight(_serverId);
+      if (items.length < 4) return [];
+      return [
+        HomeRow(
+          id: familyRowId,
+          title: l10n.familyNightRow,
+          rowType: HomeRowType.pluginDynamic,
+          items: items,
+          totalCount: items.length,
+        ),
+      ];
+    } catch (e) {
+      debugPrint('[FamilyNight] Failed to load the Family night row: $e');
+      return [];
+    }
+  }
+
   /// The TMDB genre ids a suggestion card carries, for "Not interested".
   static const tasteGenreIdsKey = 'SeerrGenreIds';
 
@@ -3250,7 +3439,10 @@ class HomeViewModel extends ChangeNotifier {
     await prefs.setTasteFeedbackJson(feedback.encode());
 
     for (final row in _rows.toList()) {
-      if (row.id != forYouRowId && !row.id.startsWith(becauseRowIdPrefix)) {
+      if (row.id != forYouRowId &&
+          row.id != sagaRowId &&
+          row.id != gemsRowId &&
+          !row.id.startsWith(becauseRowIdPrefix)) {
         continue;
       }
       if (!row.items.any((i) => i.id == item.id)) continue;
@@ -3275,7 +3467,11 @@ class HomeViewModel extends ChangeNotifier {
     // A Because row keeps the card, now marked as requested, since its row
     // is about one title rather than a list of things to ask for.
     for (final row in _rows.toList()) {
-      if (!row.id.startsWith(becauseRowIdPrefix)) continue;
+      if (!row.id.startsWith(becauseRowIdPrefix) &&
+          row.id != sagaRowId &&
+          row.id != gemsRowId) {
+        continue;
+      }
       if (!row.items.any((i) => i.id == item.id)) continue;
       final items = [
         for (final i in row.items)
