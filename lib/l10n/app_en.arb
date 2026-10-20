@@ -14014,5 +14014,77 @@
   "tabletopForward": "Forward 10 seconds",
   "@tabletopForward": {
     "description": "Fold tabletop player: fast-forward button label"
+  },
+  "myRequestsRow": "My Requests",
+  "@myRequestsRow": {
+    "description": "Home row with the viewer's own Seerr requests"
+  },
+  "becauseYouWatched": "Because you watched {title}",
+  "@becauseYouWatched": {
+    "description": "Title of a home row of titles close to one the viewer watched",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "becauseYouWatchedSection": "Because you watched…",
+  "@becauseYouWatchedSection": {
+    "description": "Home sections setting: the rows built around titles the viewer watched"
+  },
+  "requestStateReady": "Ready",
+  "@requestStateReady": {
+    "description": "Card badge: a requested title is in the library"
+  },
+  "requestStateDownloading": "Downloading {percent}%",
+  "@requestStateDownloading": {
+    "description": "Card badge: a requested title is downloading",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "requestStateDownloadingShort": "Downloading",
+  "@requestStateDownloadingShort": {
+    "description": "Card badge: a requested title is downloading, size unknown"
+  },
+  "requestStateApproved": "Approved",
+  "@requestStateApproved": {
+    "description": "Card badge: a request was approved and waits for a download"
+  },
+  "requestStatePending": "Awaiting approval",
+  "@requestStatePending": {
+    "description": "Card badge: a request waits for an admin"
+  },
+  "requestStateFailed": "Failed",
+  "@requestStateFailed": {
+    "description": "Card badge: a request failed"
+  },
+  "requestStateDeclined": "Declined",
+  "@requestStateDeclined": {
+    "description": "Card badge: a request was declined"
+  },
+  "requestReadyTitle": "Ready to watch",
+  "@requestReadyTitle": {
+    "description": "Notification title when a requested title came into the library"
+  },
+  "requestReadyBody": "{title} is in your library.",
+  "@requestReadyBody": {
+    "description": "Notification body for one title now available",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "requestReadyBodyMany": "{count} requested titles are in your library.",
+  "@requestReadyBodyMany": {
+    "description": "Notification body for several titles now available",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

@@ -33,6 +33,7 @@ import '../../../data/services/plugin_sync_service.dart';
 import '../../../data/services/seerr/seerr_api_models.dart';
 import '../../../data/services/seerr/seerr_discover_sliders.dart';
 import '../../../data/services/seerr/for_you_service.dart';
+import '../../../data/services/seerr/my_requests.dart';
 import '../../../data/services/home_highlights.dart';
 import '../../../data/utils/bounded_concurrency.dart';
 import '../../../util/platform_detection.dart';
@@ -242,6 +243,8 @@ class HomeViewModel extends ChangeNotifier {
       HomeSectionType.radarrCalendar ||
       HomeSectionType.sonarrCalendar ||
       HomeSectionType.seerrForYou ||
+      HomeSectionType.seerrMyRequests ||
+      HomeSectionType.seerrBecause ||
       HomeSectionType.top10 ||
       HomeSectionType.surprise ||
       HomeSectionType.seasonal =>
@@ -484,6 +487,8 @@ class HomeViewModel extends ChangeNotifier {
                 (!_isSeerrSectionType(c.type) || (showSeerrRows && seerrPrefs.isSeerrHomeRowEnabled(c.type))) &&
                 (showSeerrRows || !isSeerrSliderSection(c)) &&
                 ((c.type != HomeSectionType.seerrForYou &&
+                        c.type != HomeSectionType.seerrMyRequests &&
+                        c.type != HomeSectionType.seerrBecause &&
                         c.type != HomeSectionType.top10) ||
                     showSeerrRows) &&
                 (!_isImdbSectionType(c.type) || (showImdbRows && _isImdbSectionEnabled(c.type))) &&
@@ -908,6 +913,10 @@ class HomeViewModel extends ChangeNotifier {
         return row.rowType == HomeRowType.activeRecordings;
       case HomeSectionType.seerrForYou:
         return row.id == forYouRowId;
+      case HomeSectionType.seerrMyRequests:
+        return row.id == myRequestsRowId;
+      case HomeSectionType.seerrBecause:
+        return row.id.startsWith(becauseRowIdPrefix);
       case HomeSectionType.top10:
         return row.id == top10RowId;
       case HomeSectionType.surprise:
@@ -1262,6 +1271,10 @@ class HomeViewModel extends ChangeNotifier {
         return const {'activeRecordings'};
       case HomeSectionType.seerrForYou:
         return const {'seerrForYou'};
+      case HomeSectionType.seerrMyRequests:
+        return const {'seerrMyRequests'};
+      case HomeSectionType.seerrBecause:
+        return const {'seerrBecause'};
       case HomeSectionType.top10:
         return const {'top10'};
       case HomeSectionType.surprise:
@@ -1616,6 +1629,10 @@ class HomeViewModel extends ChangeNotifier {
         return [];
       case HomeSectionType.seerrForYou:
         return _loadSeerrForYouRow(l10n, forceRefresh: forceRefresh);
+      case HomeSectionType.seerrMyRequests:
+        return _loadMyRequestsRow(l10n);
+      case HomeSectionType.seerrBecause:
+        return _loadBecauseRows(l10n, forceRefresh: forceRefresh);
       case HomeSectionType.top10:
         return _loadTop10Row(l10n);
       case HomeSectionType.surprise:
@@ -2081,6 +2098,16 @@ class HomeViewModel extends ChangeNotifier {
           rowType: HomeRowType.pluginDynamic,
           isLoading: true,
         );
+      case HomeSectionType.seerrMyRequests:
+        return HomeRow(
+          id: myRequestsRowId,
+          title: l10n.myRequestsRow,
+          rowType: HomeRowType.pluginDynamic,
+          isLoading: true,
+        );
+      // How many rows this brings, and their titles, depend on the history.
+      case HomeSectionType.seerrBecause:
+        return null;
       case HomeSectionType.seerrForYou:
         return HomeRow(
           id: forYouRowId,
@@ -2888,6 +2915,168 @@ class HomeViewModel extends ChangeNotifier {
   /// The title that earned a For You card its place.
   static const forYouReasonKey = 'SeerrForYouBecause';
 
+  static const myRequestsRowId = 'seerr_my_requests';
+  static const becauseRowIdPrefix = 'seerr_because_';
+
+  /// Where a My Requests card stands, a [MyRequestState] name.
+  static const myRequestStateKey = 'MoonfinRequestState';
+
+  /// How far a My Requests download got, from 0 to 1.
+  static const myRequestProgressKey = 'MoonfinRequestProgress';
+
+  /// Told the titles of requests that came through since the last look, so
+  /// the screen can announce them. Set by the home screen.
+  void Function(List<String> titles)? onRequestsReady;
+
+  /// The viewer's own requests, what can be watched first, then what is
+  /// downloading or waiting, with how far each one got.
+  Future<List<HomeRow>> _loadMyRequestsRow(AppLocalizations l10n) async {
+    try {
+      final repo = await GetIt.instance.getAsync<SeerrRepository>();
+      await repo.ensureInitialized();
+      if (!repo.isAvailable) return [];
+      final seerrPrefs = GetIt.instance<SeerrPreferences>();
+
+      final user = await repo.getCurrentUser();
+      final response = await repo.getRequests(
+        requestedBy: user.id,
+        sort: 'modified',
+        limit: 50,
+      );
+      final entries = myRequestEntries(response.results, now: DateTime.now());
+
+      final ready = newlyReady(entries, seerrPrefs.announcedReadyRequests);
+      final announced = {
+        ...?seerrPrefs.announcedReadyRequests,
+        for (final e in entries)
+          if (e.state == MyRequestState.ready) e.readyKey,
+      };
+      // Old keys add up: keep only the latest few hundred.
+      final keep = announced.length > 300
+          ? announced.skip(announced.length - 300).toList()
+          : announced.toList();
+      await seerrPrefs.setAnnouncedReadyRequests(keep);
+
+      if (entries.isEmpty) return [];
+      final enriched = await _enrichSeerrItems(
+        repo,
+        _seerrItemsFromRequests([for (final e in entries) e.request]),
+      );
+      final byKey = {
+        for (final e in entries) e.key: e,
+      };
+      final items = <AggregatedItem>[];
+      for (final raw in enriched) {
+        final entry = byKey['${raw.mediaType}:${raw.id}'];
+        if (entry == null) continue;
+        final base = _seerrAggregatedItems(
+          [raw],
+          SeerrRowType.recentRequests,
+          seerrPrefs.blockNsfw,
+        );
+        if (base.isEmpty) continue;
+        items.add(
+          AggregatedItem(
+            id: base.first.id,
+            serverId: base.first.serverId,
+            rawData: {
+              ...base.first.rawData,
+              myRequestStateKey: entry.state.name,
+              myRequestProgressKey: ?entry.progress,
+            },
+          ),
+        );
+      }
+
+      if (ready.isNotEmpty) {
+        onRequestsReady?.call([
+          for (final e in ready)
+            e.media.title ?? e.media.name ?? '',
+        ]..removeWhere((t) => t.isEmpty));
+      }
+      if (items.isEmpty) return [];
+      return [
+        _seerrRow(myRequestsRowId, l10n.myRequestsRow, items,
+            totalCount: items.length),
+      ];
+    } catch (e) {
+      debugPrint('[SeerrHomeRow] Failed to load My Requests row: $e');
+      return [];
+    }
+  }
+
+  /// "Because you watched X" rows, one per title the viewer cares about
+  /// most, from the same Seerr calls as the For You row.
+  Future<List<HomeRow>> _loadBecauseRows(
+    AppLocalizations l10n, {
+    bool forceRefresh = false,
+  }) async {
+    try {
+      final repo = await GetIt.instance.getAsync<SeerrRepository>();
+      await repo.ensureInitialized();
+      if (!repo.isAvailable) return [];
+      final blockNsfw = GetIt.instance<SeerrPreferences>().blockNsfw;
+
+      final rows = await ForYouService.instance.loadBecauseRows(
+        serverId: _serverId,
+        loadHistory: () => _dataSource.loadTasteHistory(_serverId),
+        fetchRecommendations: (seed) => seed.mediaType == 'tv'
+            ? repo.getTvRecommendations(seed.tmdbId)
+            : repo.getMovieRecommendations(seed.tmdbId),
+        blockAdult: blockNsfw,
+        forceRefresh: forceRefresh,
+      );
+
+      final result = <HomeRow>[];
+      for (final row in rows) {
+        final items = <AggregatedItem>[];
+        for (final entry in row.items) {
+          // Kept like the request rows, so what the library holds stays.
+          final base = _seerrAggregatedItems(
+            [entry.item],
+            SeerrRowType.recentRequests,
+            blockNsfw,
+          );
+          if (base.isEmpty) continue;
+          final status = entry.item.mediaInfo?.status;
+          final inLibrary = status == SeerrMediaStatus.available ||
+              status == SeerrMediaStatus.partiallyAvailable;
+          final requestable = status == null ||
+              status == SeerrMediaStatus.unknown ||
+              status == SeerrMediaStatus.deleted;
+          items.add(
+            AggregatedItem(
+              id: base.first.id,
+              serverId: base.first.serverId,
+              rawData: {
+                ...base.first.rawData,
+                'Type': entry.mediaType == 'tv' ? 'Series' : 'Movie',
+                'SeerrMediaType': entry.mediaType,
+                // Something to ask for opens the request sheet; what the
+                // library holds or already awaits opens its page.
+                if (requestable && !inLibrary) forYouFlag: true,
+                if (requestable && !inLibrary) forYouReasonKey: row.seed.title,
+              },
+            ),
+          );
+        }
+        if (items.length < 5) continue;
+        result.add(
+          _seerrRow(
+            '$becauseRowIdPrefix${row.seed.mediaType}_${row.seed.tmdbId}',
+            l10n.becauseYouWatched(row.seed.title),
+            items,
+            totalCount: items.length,
+          ),
+        );
+      }
+      return result;
+    } catch (e) {
+      debugPrint('[SeerrHomeRow] Failed to load Because rows: $e');
+      return [];
+    }
+  }
+
   /// Takes a requested title out of the For You row right away.
   void removeFromForYouRow(AggregatedItem item) {
     final mediaType = item.rawData['SeerrMediaType'] as String? ?? 'movie';
@@ -2896,10 +3085,33 @@ class HomeViewModel extends ChangeNotifier {
       ForYouService.instance.markRequested(mediaType, tmdbId);
     }
     final index = _rows.indexWhere((r) => r.id == forYouRowId);
-    if (index < 0) return;
-    final row = _rows[index];
-    final items = row.items.where((i) => i.id != item.id).toList();
-    _replaceRowById(row.copyWith(items: items, totalCount: items.length));
+    if (index >= 0) {
+      final row = _rows[index];
+      final items = row.items.where((i) => i.id != item.id).toList();
+      _replaceRowById(row.copyWith(items: items, totalCount: items.length));
+    }
+    // A Because row keeps the card, now marked as requested, since its row
+    // is about one title rather than a list of things to ask for.
+    for (final row in _rows.toList()) {
+      if (!row.id.startsWith(becauseRowIdPrefix)) continue;
+      if (!row.items.any((i) => i.id == item.id)) continue;
+      final items = [
+        for (final i in row.items)
+          if (i.id == item.id)
+            AggregatedItem(
+              id: i.id,
+              serverId: i.serverId,
+              rawData: {
+                ...i.rawData,
+                forYouFlag: false,
+                'SeerrStatus': SeerrMediaStatus.pending,
+              },
+            )
+          else
+            i,
+      ];
+      _replaceRowById(row.copyWith(items: items));
+    }
   }
 
   /// Appends the next Seerr page to [rowIndex]. Called from [loadMoreForRow],

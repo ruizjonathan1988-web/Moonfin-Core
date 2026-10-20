@@ -65,7 +65,19 @@ class CardHighlightPill extends StatelessWidget {
   final String label;
   final IconData? icon;
 
-  const CardHighlightPill({super.key, required this.label, this.icon});
+  /// Defaults to the accent colour.
+  final Color? color;
+
+  /// Draws a small bar under the label, from 0 to 1, for a download.
+  final double? progress;
+
+  const CardHighlightPill({
+    super.key,
+    required this.label,
+    this.icon,
+    this.color,
+    this.progress,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -77,7 +89,7 @@ class CardHighlightPill extends StatelessWidget {
         child: Center(
           child: DecoratedBox(
             decoration: BoxDecoration(
-              color: AppColorScheme.accent,
+              color: color ?? AppColorScheme.accent,
               borderRadius: BorderRadius.circular(4),
               boxShadow: const [
                 BoxShadow(blurRadius: 6, color: Colors.black45),
@@ -85,23 +97,43 @@ class CardHighlightPill extends StatelessWidget {
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              child: Row(
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (icon != null) ...[
-                    Icon(icon, size: 14, color: Colors.white),
-                    const SizedBox(width: 3),
-                  ],
-                  Text(
-                    label.toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.6,
-                      height: 1.1,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (icon != null) ...[
+                        Icon(icon, size: 14, color: Colors.white),
+                        const SizedBox(width: 3),
+                      ],
+                      Text(
+                        label.toUpperCase(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.6,
+                          height: 1.1,
+                        ),
+                      ),
+                    ],
                   ),
+                  if (progress case final value?) ...[
+                    const SizedBox(height: 3),
+                    SizedBox(
+                      width: 72,
+                      height: 3,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(2),
+                        child: LinearProgressIndicator(
+                          value: value.clamp(0.0, 1.0),
+                          color: Colors.white,
+                          backgroundColor: Colors.white24,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

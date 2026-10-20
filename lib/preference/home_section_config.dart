@@ -200,6 +200,17 @@ class HomeSectionConfig {
     // Also needs Seerr, for what is trending.
     HomeSectionConfig(type: HomeSectionType.top10, enabled: true, order: 3),
     HomeSectionConfig(type: HomeSectionType.surprise, enabled: true, order: 4),
+    // Seerr again: the viewer's own requests, and rows built on their taste.
+    HomeSectionConfig(
+      type: HomeSectionType.seerrMyRequests,
+      enabled: true,
+      order: 4,
+    ),
+    HomeSectionConfig(
+      type: HomeSectionType.seerrBecause,
+      enabled: true,
+      order: 4,
+    ),
     HomeSectionConfig(
       type: HomeSectionType.latestMedia,
       enabled: true,

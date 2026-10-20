@@ -247,6 +247,48 @@ void main() {
     });
   });
 
+  group('becauseRows', () {
+    List<BecauseRow> rows(
+      List<TasteSeed> seeds,
+      Map<String, List<SeerrDiscoverItem>> recs, {
+      int minItems = 2,
+    }) => ForYouRanker.becauseRows(
+      seeds: seeds,
+      recommendationsBySeed: recs,
+      minItems: minItems,
+      now: _now,
+    );
+
+    test('puts what the server can play first and keeps the rest', () {
+      final seed = _seed(1);
+      final result = rows([seed], {
+        seed.key: [
+          _item(10),
+          _item(11, status: SeerrMediaStatus.available),
+          _item(12, status: SeerrMediaStatus.pending),
+          _item(13, status: SeerrMediaStatus.blocklisted),
+          _item(14, poster: null),
+        ],
+      });
+      expect(result.single.items.map((i) => i.item.id), [11, 10, 12]);
+    });
+
+    test('skips short lists and never repeats a title across rows', () {
+      final a = _seed(1);
+      final b = _seed(2);
+      final c = _seed(3);
+      final result = rows([a, b, c], {
+        a.key: [_item(10), _item(11), _item(2)],
+        b.key: [_item(20)],
+        c.key: [_item(10), _item(30), _item(31)],
+      });
+      expect(result.map((r) => r.seed.tmdbId), [1, 3]);
+      // 2 is a seed, 10 already sits in the first row.
+      expect(result[0].items.map((i) => i.item.id), [10, 11]);
+      expect(result[1].items.map((i) => i.item.id), [30, 31]);
+    });
+  });
+
   group('ForYouService', () {
     setUp(() => ForYouService.instance.reset());
 
@@ -329,6 +371,39 @@ void main() {
         fetchRecommendations: fetch,
       );
       expect(_ids(picks), [900]);
+    });
+
+    test('the For You and Because rows share one round of calls', () async {
+      var calls = 0;
+      Future<SeerrDiscoverPage> fetch(TasteSeed seed) async {
+        calls++;
+        return SeerrDiscoverPage(
+          results: [for (var i = 0; i < 6; i++) _item(800 + i)],
+        );
+      }
+
+      Future<({List<AggregatedItem> recent, List<AggregatedItem> favorites})>
+      history() async => (
+        recent: [libraryItem('Movie', '603', 'The Matrix')],
+        favorites: const <AggregatedItem>[],
+      );
+
+      final results = await Future.wait([
+        ForYouService.instance.load(
+          serverId: 's3',
+          loadHistory: history,
+          fetchRecommendations: fetch,
+        ),
+        ForYouService.instance.loadBecauseRows(
+          serverId: 's3',
+          loadHistory: history,
+          fetchRecommendations: fetch,
+        ),
+      ]);
+      expect(calls, 1);
+      final rows = results[1] as List<BecauseRow>;
+      expect(rows, hasLength(1));
+      expect(rows.single.seed.title, 'The Matrix');
     });
   });
 }

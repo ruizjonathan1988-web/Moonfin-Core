@@ -13838,5 +13838,18 @@
     "surprisePlayNow": "Lecture",
     "cardNewBadge": "Nouveau",
     "tabletopRewind": "Reculer de 10 secondes",
-    "tabletopForward": "Avancer de 10 secondes"
+    "tabletopForward": "Avancer de 10 secondes",
+    "myRequestsRow": "Mes demandes",
+    "becauseYouWatched": "Parce que vous avez regardé {title}",
+    "becauseYouWatchedSection": "Parce que vous avez regardé…",
+    "requestStateReady": "Prêt",
+    "requestStateDownloading": "Téléchargement {percent} %",
+    "requestStateDownloadingShort": "Téléchargement",
+    "requestStateApproved": "Validé",
+    "requestStatePending": "En attente",
+    "requestStateFailed": "Échec",
+    "requestStateDeclined": "Refusé",
+    "requestReadyTitle": "Prêt à regarder",
+    "requestReadyBody": "{title} est dans votre bibliothèque.",
+    "requestReadyBodyMany": "{count} titres demandés sont dans votre bibliothèque."
 }

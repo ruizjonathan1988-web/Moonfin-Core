@@ -518,6 +518,12 @@ enum HomeSectionType {
 
   /// One movie and one series picked at random, played on a single press.
   surprise('surprise'),
+
+  /// The viewer's own Seerr requests, what came through first.
+  seerrMyRequests('seerr_my_requests'),
+
+  /// "Because you watched X" rows, built from the viewer's history.
+  seerrBecause('seerr_because'),
   seerrShortcuts('seerr_shortcuts'),
   seerrRecentRequests('seerr_recent_requests'),
   seerrWatchlist('seerr_watchlist'),

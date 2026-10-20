@@ -55,6 +55,26 @@ class ForYouPick {
   String get key => forYouKey(mediaType, item.id);
 }
 
+/// One card of a "Because you watched" row.
+class BecauseItem {
+  final SeerrDiscoverItem item;
+
+  /// Seerr's media type, `movie` or `tv`.
+  final String mediaType;
+
+  const BecauseItem({required this.item, required this.mediaType});
+
+  String get key => forYouKey(mediaType, item.id);
+}
+
+/// A "Because you watched [seed]" row.
+class BecauseRow {
+  final TasteSeed seed;
+  final List<BecauseItem> items;
+
+  const BecauseRow({required this.seed, required this.items});
+}
+
 /// One identity per TMDB title, since TMDB reuses ids across movies and tv.
 String forYouKey(String mediaType, int tmdbId) => '$mediaType:$tmdbId';
 
@@ -202,6 +222,77 @@ abstract final class ForYouRanker {
       picks.add(pick);
     }
     return picks;
+  }
+
+  /// "Because you watched X" rows: for the strongest seeds, what TMDB lists
+  /// next to each, titles the server can already play first.
+  ///
+  /// Unlike [rank], these rows keep what the library holds, since a row
+  /// about one title reads better whole. A seed whose list comes back
+  /// shorter than [minItems] once filtered is skipped, and no title shows
+  /// in two rows.
+  static List<BecauseRow> becauseRows({
+    required List<TasteSeed> seeds,
+    required Map<String, List<SeerrDiscoverItem>> recommendationsBySeed,
+    Set<String> excludeKeys = const {},
+    bool blockAdult = true,
+    int rows = 2,
+    int minItems = 5,
+    int perRow = 15,
+    DateTime? now,
+  }) {
+    final today = now ?? DateTime.now();
+    final seedKeys = {for (final seed in seeds) seed.key};
+    final used = <String>{};
+    final result = <BecauseRow>[];
+
+    for (final seed in seeds) {
+      if (result.length >= rows) break;
+      final recs = recommendationsBySeed[seed.key];
+      if (recs == null) continue;
+      final playable = <BecauseItem>[];
+      final others = <BecauseItem>[];
+      final keys = <String>{};
+      for (final item in recs) {
+        final mediaType = _mediaTypeOf(item, seed.mediaType);
+        final key = forYouKey(mediaType, item.id);
+        if (seedKeys.contains(key) ||
+            excludeKeys.contains(key) ||
+            used.contains(key) ||
+            !keys.add(key)) {
+          continue;
+        }
+        if (!_isShowable(item, blockAdult: blockAdult, now: today)) continue;
+        final status = item.mediaInfo?.status;
+        final entry = BecauseItem(item: item, mediaType: mediaType);
+        if (status == SeerrMediaStatus.available ||
+            status == SeerrMediaStatus.partiallyAvailable) {
+          playable.add(entry);
+        } else {
+          others.add(entry);
+        }
+      }
+      final items = [...playable, ...others].take(perRow).toList();
+      if (items.length < minItems) continue;
+      used.addAll(items.map((i) => i.key));
+      result.add(BecauseRow(seed: seed, items: items));
+    }
+    return result;
+  }
+
+  /// Fit for a card at all: a poster, out already, not blocked.
+  static bool _isShowable(
+    SeerrDiscoverItem item, {
+    required bool blockAdult,
+    required DateTime now,
+  }) {
+    if (blockAdult && item.adult) return false;
+    final poster = item.posterPath;
+    if (poster == null || poster.isEmpty) return false;
+    if (item.mediaInfo?.status == SeerrMediaStatus.blocklisted) return false;
+    final released = _parseDate(item.releaseDate ?? item.firstAirDate);
+    if (released == null || released.isAfter(now)) return false;
+    return true;
   }
 
   /// Whether a title is worth offering as something to request.

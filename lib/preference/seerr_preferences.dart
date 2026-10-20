@@ -80,6 +80,13 @@ class SeerrPreferences {
   Future<void> setShowRequestStatus(bool value) =>
       _store.setBool(_userKey('show_request_status'), value);
 
+  /// Requests already announced as ready, so each is announced once. Null
+  /// until the first load, which only takes note of what is ready.
+  List<String>? get announcedReadyRequests =>
+      _store.getStringList(_userKey('announced_ready_requests'));
+  Future<void> setAnnouncedReadyRequests(List<String> keys) =>
+      _store.setStringList(_userKey('announced_ready_requests'), keys);
+
   bool get blockNsfw => _store.getBool(_userKey('block_nsfw')) ?? true;
   Future<void> setBlockNsfw(bool value) => _store.setBool(_userKey('block_nsfw'), value);
 

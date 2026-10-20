@@ -27,6 +27,8 @@ import '../../../data/repositories/seerr_repository.dart';
 import '../../widgets/seerr/seerr_shortcuts.dart';
 import '../../widgets/seerr/seerr_for_you_sheet.dart';
 import '../../widgets/card_highlights.dart';
+import '../../widgets/floating_notification.dart';
+import '../../../data/services/seerr/my_requests.dart';
 import '../../../data/services/home_highlights.dart';
 import '../../../data/services/background_service.dart';
 import '../../widgets/modern_row.dart';
@@ -970,6 +972,12 @@ class _ContentRowsState extends State<_ContentRows>
   @override
   void didUpdateWidget(covariant _ContentRows oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.viewModel != widget.viewModel) {
+      if (oldWidget.viewModel.onRequestsReady == _announceReadyRequests) {
+        oldWidget.viewModel.onRequestsReady = null;
+      }
+      widget.viewModel.onRequestsReady = _announceReadyRequests;
+    }
     final rowsChanged = !listEquals(oldWidget.viewModel.rows, widget.viewModel.rows);
     if (rowsChanged || oldWidget.prefs != widget.prefs) {
       _invalidateStaticRowHeightCache();
@@ -1217,6 +1225,7 @@ class _ContentRowsState extends State<_ContentRows>
   @override
   void initState() {
     super.initState();
+    widget.viewModel.onRequestsReady = _announceReadyRequests;
     HardwareKeyboard.instance.addHandler(_handleGlobalHardwareKey);
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addObserver(this);
@@ -1388,6 +1397,9 @@ class _ContentRowsState extends State<_ContentRows>
 
   @override
   void dispose() {
+    if (widget.viewModel.onRequestsReady == _announceReadyRequests) {
+      widget.viewModel.onRequestsReady = null;
+    }
     HardwareKeyboard.instance.removeHandler(_handleGlobalHardwareKey);
     _rowPrefetchDebounce?.cancel();
     _v2Expansion.dispose();
@@ -5610,6 +5622,67 @@ class _ContentRowsState extends State<_ContentRows>
     }
   }
 
+  /// Says which requested titles came into the library since the last look.
+  void _announceReadyRequests(List<String> titles) {
+    if (titles.isEmpty) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context);
+      FloatingNotification.show(
+        context,
+        l10n.requestReadyTitle,
+        titles.length == 1
+            ? l10n.requestReadyBody(titles.first)
+            : l10n.requestReadyBodyMany(titles.length),
+        null,
+        icon: Icons.check_circle_outline_rounded,
+      );
+    });
+  }
+
+  /// The badge a My Requests card wears: where the request stands.
+  static Widget? _myRequestPill(AppLocalizations l10n, AggregatedItem item) {
+    final name = item.rawData[HomeViewModel.myRequestStateKey] as String?;
+    final state = MyRequestState.values.asNameMap()[name];
+    if (state == null) return null;
+    final progress =
+        (item.rawData[HomeViewModel.myRequestProgressKey] as num?)?.toDouble();
+    return switch (state) {
+      MyRequestState.ready => CardHighlightPill(
+        label: l10n.requestStateReady,
+        icon: Icons.play_arrow_rounded,
+        color: const Color(0xFF2E7D32),
+      ),
+      MyRequestState.downloading => CardHighlightPill(
+        label: progress == null
+            ? l10n.requestStateDownloadingShort
+            : l10n.requestStateDownloading((progress * 100).round()),
+        icon: Icons.downloading_rounded,
+        progress: progress,
+      ),
+      MyRequestState.approved => CardHighlightPill(
+        label: l10n.requestStateApproved,
+        icon: Icons.schedule_rounded,
+        color: const Color(0xE6303036),
+      ),
+      MyRequestState.pending => CardHighlightPill(
+        label: l10n.requestStatePending,
+        icon: Icons.hourglass_empty_rounded,
+        color: const Color(0xE6303036),
+      ),
+      MyRequestState.failed => CardHighlightPill(
+        label: l10n.requestStateFailed,
+        icon: Icons.error_outline_rounded,
+        color: const Color(0xFFC62828),
+      ),
+      MyRequestState.declined => CardHighlightPill(
+        label: l10n.requestStateDeclined,
+        icon: Icons.block_rounded,
+        color: const Color(0xFFC62828),
+      ),
+    };
+  }
+
   /// Surprise cards skip the details page and start straight away.
   static void _playSurprise(BuildContext context, AggregatedItem item) {
     context.push(
@@ -5627,7 +5700,9 @@ class _ContentRowsState extends State<_ContentRows>
   ) {
     final l10n = AppLocalizations.of(context);
     return [
-      if (row.id == HomeViewModel.top10RowId)
+      if (row.id == HomeViewModel.myRequestsRowId)
+        ?_myRequestPill(l10n, item)
+      else if (row.id == HomeViewModel.top10RowId)
         RankNumberOverlay(rank: index + 1)
       else if (row.id == HomeViewModel.surpriseRowId)
         CardHighlightPill(

@@ -40,7 +40,7 @@ jobs:
       - name: Tests des ajouts
         run: |
           set +e
-          flutter test test/data/services/for_you_ranker_test.dart test/data/services/home_highlights_test.dart test/ui/screens/home/home_row_image_type_test.dart test/ui/kids_mode_test.dart > tests.txt 2>&1
+          flutter test test/data/services/for_you_ranker_test.dart test/data/services/home_highlights_test.dart test/data/services/my_requests_test.dart test/ui/screens/home/home_row_image_type_test.dart test/ui/kids_mode_test.dart > tests.txt 2>&1
           status=$?
           if [ $status -ne 0 ]; then
             grep -E "Error|Expected|Actual|FAILED|\.dart:[0-9]+" tests.txt | head -40 | while IFS= read -r line; do

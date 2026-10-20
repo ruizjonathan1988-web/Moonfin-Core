@@ -532,6 +532,8 @@ class _HomeSectionsScreenState extends State<HomeSectionsScreen>
     }
     if (_isSeerrSectionType(section.type) ||
         section.type == HomeSectionType.seerrForYou ||
+        section.type == HomeSectionType.seerrMyRequests ||
+        section.type == HomeSectionType.seerrBecause ||
         section.type == HomeSectionType.top10 ||
         section.type == HomeSectionType.radarrCalendar ||
         section.type == HomeSectionType.sonarrCalendar) {
@@ -1822,6 +1824,8 @@ class _HomeSectionsScreenState extends State<HomeSectionsScreen>
         HomeSectionType.seerrForYou => l10n.seerrForYouRow,
         HomeSectionType.top10 => l10n.top10Row,
         HomeSectionType.surprise => l10n.surpriseRow,
+        HomeSectionType.seerrMyRequests => l10n.myRequestsRow,
+        HomeSectionType.seerrBecause => l10n.becauseYouWatchedSection,
         HomeSectionType.seerrRecentRequests => l10n.recentRequests,
         HomeSectionType.seerrWatchlist => l10n.yourWatchlist,
         HomeSectionType.seerrRecentlyAdded => l10n.recentlyAdded,
