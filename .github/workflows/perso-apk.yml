@@ -13,6 +13,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # One fixed key for every build, so a new APK installs over the last.
+      - name: Signature perso
+        run: |
+          cp .github/perso-signing/perso.keystore android/app/release.keystore
+          cp .github/perso-signing/keystore.properties android/keystore.properties
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -71,6 +77,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      # One fixed key for every build, so a new APK installs over the last.
+      - name: Signature perso
+        run: |
+          cp .github/perso-signing/perso.keystore android/app/release.keystore
+          cp .github/perso-signing/keystore.properties android/keystore.properties
 
       - uses: actions/setup-java@v4
         with:
