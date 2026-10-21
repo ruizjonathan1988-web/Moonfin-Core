@@ -130,10 +130,13 @@ class _TraktConnectDialogState extends State<_TraktConnectDialog> {
   }
 
   Future<void> _start() async {
-    setState(() {
-      _code = null;
-      _failure = null;
-    });
+    // A retry starts from a blank dialog; the first run already is one.
+    if (_code != null || _failure != null) {
+      setState(() {
+        _code = null;
+        _failure = null;
+      });
+    }
     try {
       final code = await _account.startConnecting();
       if (_closed) return;

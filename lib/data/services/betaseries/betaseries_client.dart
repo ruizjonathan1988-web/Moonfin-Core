@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
+import '../../utils/bounded_concurrency.dart';
+
 /// The key BetaSeries gave this app. Like any API key of an app it travels
 /// with every request. The secret that goes with it is not needed here.
 const betaSeriesApiKey = '09fe278bf39e';
@@ -60,10 +62,12 @@ class BetaSeriesClient {
         'limit': limit,
       },
     );
-    final shows = await Future.wait([
-      for (final showId in parseBetaSeriesRanking(response.data))
-        _showOf(showId),
-    ]);
+    // A few lookups at a time, to stay polite with BetaSeries.
+    final shows = await mapBounded(
+      parseBetaSeriesRanking(response.data),
+      4,
+      _showOf,
+    );
     return [for (final show in shows) ?show];
   }
 

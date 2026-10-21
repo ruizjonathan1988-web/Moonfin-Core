@@ -3175,20 +3175,22 @@ class HomeViewModel extends ChangeNotifier {
   }) async {
     final now = DateTime.now();
     final head = chart.take(depth).toList();
-    final keep = await Future.wait([
-      for (final film in head)
-        SeerrMediaStatus.isAvailable(film.mediaInfo?.status)
-            ? Future.value(true)
-            : repo
-                  .getMovieReleases(film.id)
-                  .then(
-                    (releases) => isOutAtHome(releases, now),
-                    onError: (Object e) => true,
-                  ),
-    ]);
+    // A few at a time, so the server isn't flooded.
+    final keep = await mapBounded<SeerrDiscoverItem, bool>(
+      head,
+      4,
+      (film) => SeerrMediaStatus.isAvailable(film.mediaInfo?.status)
+          ? Future.value(true)
+          : repo
+                .getMovieReleases(film.id)
+                .then(
+                  (releases) => isOutAtHome(releases, now),
+                  onError: (Object e) => true,
+                ),
+    );
     return [
       for (final (i, film) in head.indexed)
-        if (keep[i]) film,
+        if (keep[i] ?? true) film,
     ];
   }
 

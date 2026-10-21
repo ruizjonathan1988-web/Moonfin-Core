@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -86,5 +87,27 @@ void main() {
     await store.write('offline', const []);
 
     expect((await store.read('online'))?.map((r) => r.id), ['resume']);
+  });
+
+  test('rows an older build saved are not painted', () async {
+    File('${support.path}/home_rows_cache.json').writeAsStringSync(
+      jsonEncode({
+        'key': 'key',
+        'savedAt': DateTime.now().millisecondsSinceEpoch,
+        'rows': [
+          {
+            'id': 'top10',
+            'title': 'Top 10',
+            'rowType': 'pluginDynamic',
+            'totalCount': 1,
+            'items': [
+              {'id': '1', 'serverId': 'seerr', 'rawData': {'Name': 'x'}},
+            ],
+          },
+        ],
+      }),
+    );
+
+    expect(await store.read('key'), isNull);
   });
 }

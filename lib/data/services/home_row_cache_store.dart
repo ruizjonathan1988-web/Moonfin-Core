@@ -19,6 +19,10 @@ class HomeRowCacheStore {
 
   static const _maxAge = Duration(days: 3);
 
+  /// What the saved rows are shaped like. Raised whenever the rows change
+  /// what they carry, so rows an older build saved are never painted.
+  static const _format = 2;
+
   /// Rows whose items are only true for the minutes they describe. Replaying
   /// them from disk paints programs that already ended.
   static bool isTimeBound(HomeRowType rowType) =>
@@ -32,7 +36,7 @@ class HomeRowCacheStore {
   }
 
   /// Returns the cached rows for [cacheKey], or null on any miss (no file,
-  /// signature mismatch, too old, corrupt, or empty).
+  /// signature mismatch, another format, too old, corrupt, or empty).
   Future<List<HomeRow>?> read(String cacheKey) async {
     try {
       final file = await _file();
@@ -41,7 +45,9 @@ class HomeRowCacheStore {
       // The cache file can be hundreds of KB; keep JSON off the UI isolate.
       final decoded = await Isolate.run(() => jsonDecode(raw));
       if (decoded is! Map<String, dynamic>) return null;
-      if (decoded['key'] != cacheKey) return null;
+      if (decoded['key'] != cacheKey || decoded['format'] != _format) {
+        return null;
+      }
       final savedAt = decoded['savedAt'];
       if (savedAt is int) {
         final age = DateTime.now().millisecondsSinceEpoch - savedAt;
@@ -82,6 +88,7 @@ class HomeRowCacheStore {
     }
     final envelope = {
       'key': cacheKey,
+      'format': _format,
       'savedAt': DateTime.now().millisecondsSinceEpoch,
       'rows': serializable,
     };
