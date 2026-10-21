@@ -14001,11 +14001,15 @@
   },
   "frenchMoviesRow": "French Cinema",
   "@frenchMoviesRow": {
-    "description": "Home row: recent hits, best rated and award-winning French films"
+    "description": "Home row: the French films France saw most in cinemas and the best rated of each decade"
   },
   "frenchSeriesRow": "French Series",
   "@frenchSeriesRow": {
     "description": "Home row: French series watched in France this week, popular and acclaimed"
+  },
+  "frenchAwardsRow": "Award-Winning French Films",
+  "@frenchAwardsRow": {
+    "description": "Home row: French films that won the César, the Louis-Delluc prize or a top festival prize"
   },
   "top10YearBest": "Top 10: best of the year",
   "@top10YearBest": {

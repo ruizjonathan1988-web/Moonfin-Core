@@ -221,6 +221,11 @@ class HomeSectionConfig {
       enabled: true,
       order: 3,
     ),
+    HomeSectionConfig(
+      type: HomeSectionType.frenchAwards,
+      enabled: true,
+      order: 3,
+    ),
     HomeSectionConfig(type: HomeSectionType.surprise, enabled: true, order: 4),
     // Seerr again: the viewer's own requests, and rows built on their taste.
     HomeSectionConfig(
@@ -515,6 +520,7 @@ class HomeSectionConfig {
     HomeSectionType.top10Series: HomeSectionType.top10Movies,
     HomeSectionType.frenchMovies: HomeSectionType.top10Series,
     HomeSectionType.frenchSeries: HomeSectionType.frenchMovies,
+    HomeSectionType.frenchAwards: HomeSectionType.frenchSeries,
   };
 
   /// [config] placed right after [leader], everything below moved down one.

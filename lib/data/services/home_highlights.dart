@@ -91,20 +91,25 @@ String tmdbDay(DateTime d) =>
   to: tmdbDay(now),
 );
 
-/// One row from lists of a different nature, which take turns rather than
-/// compete on points: the first of each, then the second of each, and so
-/// on, each title once.
-List<SeerrDiscoverItem> takeTurns(List<List<SeerrDiscoverItem>> lists) {
-  final row = <SeerrDiscoverItem>[];
-  final seen = <int>{};
+/// One list from several of a different nature, which take turns rather
+/// than compete on points: the first of each, then the second of each, and
+/// so on, each one once by [keyOf], itself when none is given.
+List<T> takeTurns<T>(List<List<T>> lists, {Object? Function(T item)? keyOf}) {
+  final row = <T>[];
+  final seen = <Object?>{};
   final longest = lists.fold<int>(0, (m, l) => l.length > m ? l.length : m);
   for (var i = 0; i < longest; i++) {
     for (final list in lists) {
-      if (i < list.length && seen.add(list[i].id)) row.add(list[i]);
+      if (i >= list.length) continue;
+      final item = list[i];
+      if (seen.add(keyOf == null ? item : keyOf(item))) row.add(item);
     }
   }
   return row;
 }
+
+/// What tells one title from another in a chart: its TMDB id.
+Object tmdbKey(SeerrDiscoverItem item) => item.id;
 
 /// One way a film came out, as TMDB records it: [type] 1 premiere, 2 and 3
 /// cinemas, 4 digital, 5 disc, 6 television.

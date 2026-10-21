@@ -285,13 +285,23 @@ void main() {
         [t(1), t(2), t(3)],
         [t(10), t(1)],
         [t(20)],
-      ]);
+      ], keyOf: tmdbKey);
       expect(ids(row), [1, 10, 20, 2, 3]);
     });
 
     test('empty lists are skipped', () {
-      expect(ids(takeTurns([[], [t(5)]])), [5]);
-      expect(takeTurns(const []), isEmpty);
+      expect(ids(takeTurns([[], [t(5)]], keyOf: tmdbKey)), [5]);
+      expect(takeTurns(const <List<int>>[]), isEmpty);
+    });
+
+    test('plain ids need no key', () {
+      expect(
+        takeTurns([
+          [77338, 262391],
+          [8265, 77338],
+        ]),
+        [77338, 8265, 262391],
+      );
     });
   });
 }

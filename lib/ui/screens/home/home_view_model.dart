@@ -44,6 +44,7 @@ import '../../../data/services/betaseries/betaseries_client.dart';
 import '../../../data/services/chart_cards.dart';
 import '../../../data/services/trakt/trakt_client.dart';
 import '../../../data/services/wikidata/film_awards_client.dart';
+import '../../../data/services/french_box_office.dart';
 import '../../../data/services/home_highlights.dart';
 import '../../../data/services/home_row_tidy.dart';
 import '../../../data/utils/bounded_concurrency.dart';
@@ -109,6 +110,7 @@ class HomeViewModel extends ChangeNotifier {
         top10SeriesRowId,
         frenchMoviesRowId,
         frenchSeriesRowId,
+        frenchAwardsRowId,
       },
       requestedKeys: ForYouService.instance.requestedKeys,
       requestableFlag: forYouFlag,
@@ -296,6 +298,7 @@ class HomeViewModel extends ChangeNotifier {
       HomeSectionType.top10Series ||
       HomeSectionType.frenchMovies ||
       HomeSectionType.frenchSeries ||
+      HomeSectionType.frenchAwards ||
       HomeSectionType.surprise ||
       HomeSectionType.seasonal =>
         false,
@@ -552,7 +555,8 @@ class HomeViewModel extends ChangeNotifier {
                         c.type != HomeSectionType.top10Movies &&
                         c.type != HomeSectionType.top10Series &&
                         c.type != HomeSectionType.frenchMovies &&
-                        c.type != HomeSectionType.frenchSeries) ||
+                        c.type != HomeSectionType.frenchSeries &&
+                        c.type != HomeSectionType.frenchAwards) ||
                     showSeerrRows) &&
                 (!_isImdbSectionType(c.type) || (showImdbRows && _isImdbSectionEnabled(c.type))) &&
                 (!_isTmdbSectionType(c.type) || (showTmdbRows && _isTmdbSectionEnabled(c.type))) &&
@@ -994,6 +998,8 @@ class HomeViewModel extends ChangeNotifier {
         return row.id == frenchMoviesRowId;
       case HomeSectionType.frenchSeries:
         return row.id == frenchSeriesRowId;
+      case HomeSectionType.frenchAwards:
+        return row.id == frenchAwardsRowId;
       case HomeSectionType.surprise:
         return row.id == surpriseRowId;
       case HomeSectionType.seerrShortcuts:
@@ -1364,6 +1370,8 @@ class HomeViewModel extends ChangeNotifier {
         return const {'frenchMovies'};
       case HomeSectionType.frenchSeries:
         return const {'frenchSeries'};
+      case HomeSectionType.frenchAwards:
+        return const {'frenchAwards'};
       case HomeSectionType.surprise:
         return const {'surprise'};
       case HomeSectionType.seerrShortcuts:
@@ -1731,9 +1739,9 @@ class HomeViewModel extends ChangeNotifier {
       case HomeSectionType.top10Series:
         return _loadTop10Row(l10n, 'tv', forceRefresh: forceRefresh);
       case HomeSectionType.frenchMovies:
-        return _loadFrenchRow(l10n, 'movie', forceRefresh: forceRefresh);
       case HomeSectionType.frenchSeries:
-        return _loadFrenchRow(l10n, 'tv', forceRefresh: forceRefresh);
+      case HomeSectionType.frenchAwards:
+        return _loadFrenchRow(l10n, section, forceRefresh: forceRefresh);
       case HomeSectionType.surprise:
         return _loadSurpriseRow(l10n);
       case HomeSectionType.seerrShortcuts:
@@ -2244,6 +2252,13 @@ class HomeViewModel extends ChangeNotifier {
         return HomeRow(
           id: frenchSeriesRowId,
           title: l10n.frenchSeriesRow,
+          rowType: HomeRowType.pluginDynamic,
+          isLoading: true,
+        );
+      case HomeSectionType.frenchAwards:
+        return HomeRow(
+          id: frenchAwardsRowId,
+          title: l10n.frenchAwardsRow,
           rowType: HomeRowType.pluginDynamic,
           isLoading: true,
         );
@@ -3179,25 +3194,49 @@ class HomeViewModel extends ChangeNotifier {
 
   static const frenchMoviesRowId = 'french_movies';
   static const frenchSeriesRowId = 'french_series';
+  static const frenchAwardsRowId = 'french_awards';
 
-  /// French films or series ([mediaType] `movie` or `tv`), whatever the
+  /// A French row ([section] is one of the French sections), whatever the
   /// server holds; a title still to request opens the request sheet.
   Future<List<HomeRow>> _loadFrenchRow(
     AppLocalizations l10n,
-    String mediaType, {
+    HomeSectionType section, {
     bool forceRefresh = false,
   }) async {
-    final isTv = mediaType == 'tv';
+    final (id, title, mediaType) = switch (section) {
+      HomeSectionType.frenchSeries => (
+        frenchSeriesRowId,
+        l10n.frenchSeriesRow,
+        'tv',
+      ),
+      HomeSectionType.frenchAwards => (
+        frenchAwardsRowId,
+        l10n.frenchAwardsRow,
+        'movie',
+      ),
+      _ => (frenchMoviesRowId, l10n.frenchMoviesRow, 'movie'),
+    };
     try {
       final repo = await GetIt.instance.getAsync<SeerrRepository>();
       await repo.ensureInitialized();
       if (!repo.isAvailable) return [];
       final prefs = GetIt.instance<SeerrPreferences>();
-      final picks = await _frenchPicks(
-        repo,
-        mediaType,
-        forceRefresh: forceRefresh,
-      );
+      final cached = _chartCache[id];
+      final List<SeerrDiscoverItem> picks;
+      if (!forceRefresh &&
+          cached != null &&
+          DateTime.now().difference(cached.at) < _chartLifetime) {
+        picks = cached.chart;
+      } else {
+        picks = switch (section) {
+          HomeSectionType.frenchSeries => await _frenchSeries(repo),
+          HomeSectionType.frenchAwards => await _frenchAwards(repo),
+          _ => await _frenchMovies(repo),
+        };
+        if (picks.isNotEmpty) {
+          _chartCache[id] = (at: DateTime.now(), chart: picks);
+        }
+      }
       final items = [
         for (final pick in picks)
           ?_suggestionCard(pick, mediaType, blockNsfw: prefs.blockNsfw),
@@ -3206,115 +3245,126 @@ class HomeViewModel extends ChangeNotifier {
       if (items.length < 5) return [];
       return [
         HomeRow(
-          id: isTv ? frenchSeriesRowId : frenchMoviesRowId,
-          title: isTv ? l10n.frenchSeriesRow : l10n.frenchMoviesRow,
+          id: id,
+          title: title,
           rowType: HomeRowType.pluginDynamic,
           items: items,
           totalCount: items.length,
         ),
       ];
     } catch (e) {
-      debugPrint('[French] Failed to load the French $mediaType row: $e');
+      debugPrint('[French] Failed to load the $id row: $e');
       return [];
     }
   }
 
-  /// The titles of a French row, kept with the charts.
-  ///
-  /// Films: the hits of the last eighteen months, the award winners from
-  /// Wikidata and the best rated of the last five years, taking turns, then
-  /// only what can be watched at home. Series: what France watched most this
-  /// week on BetaSeries, the popular of the last three years and the best
-  /// rated of the last six. TMDB counts a title as French by its original
-  /// language. A source that fails is left out.
-  Future<List<SeerrDiscoverItem>> _frenchPicks(
+  /// The best rated French titles (TMDB counts a title as French by its
+  /// original language) between [from] and [to], among those enough people
+  /// rated. Either end may stay open.
+  static Future<List<SeerrDiscoverItem>> _frenchAcclaimed(
     SeerrRepository repo,
     String mediaType, {
-    required bool forceRefresh,
-  }) async {
-    final key = 'french|$mediaType';
-    final cached = _chartCache[key];
-    if (!forceRefresh &&
-        cached != null &&
-        DateTime.now().difference(cached.at) < _chartLifetime) {
-      return cached.chart;
-    }
+    DateTime? from,
+    DateTime? to,
+    required int minVotes,
+  }) => _chartPage(
+    () => mediaType == 'tv'
+        ? repo.discoverTv(
+            language: 'fr',
+            sortBy: 'vote_average.desc',
+            voteCountGte: minVotes,
+            firstAirDateGte: from == null ? null : tmdbDay(from),
+            firstAirDateLte: to == null ? null : tmdbDay(to),
+          )
+        : repo.discoverMovies(
+            language: 'fr',
+            sortBy: 'vote_average.desc',
+            voteCountGte: minVotes,
+            primaryReleaseDateGte: from == null ? null : tmdbDay(from),
+            primaryReleaseDateLte: to == null ? null : tmdbDay(to),
+          ),
+  );
 
-    final now = DateTime.now();
-    String yearsAgo(int years) =>
-        tmdbDay(DateTime(now.year - years, now.month, now.day));
-    final List<SeerrDiscoverItem> picks;
-    if (mediaType == 'tv') {
-      final watched = _chartSource(
-        () => GetIt.instance<BetaSeriesClient>().frenchShowChart(),
-      );
-      final (popular, acclaimed) = await (
-        _chartPage(
-          () => repo.discoverTv(language: 'fr', firstAirDateGte: yearsAgo(3)),
+  /// French cinema as France loved it: the films it went to see most in
+  /// cinemas, this decade, the last one and of all time, taking turns with
+  /// the best rated of each of the last three decades, then only what can be
+  /// watched at home.
+  Future<List<SeerrDiscoverItem>> _frenchMovies(SeerrRepository repo) async {
+    final acclaimed = await Future.wait([
+      for (final decade in const [2020, 2010, 2000])
+        _frenchAcclaimed(
+          repo,
+          'movie',
+          from: DateTime(decade),
+          to: DateTime(decade + 9, 12, 31),
+          minVotes: 300,
         ),
-        _chartPage(
-          () => repo.discoverTv(
-            language: 'fr',
-            sortBy: 'vote_average.desc',
-            voteCountGte: 50,
-            firstAirDateGte: yearsAgo(6),
-          ),
-        ),
-      ).wait;
-      final watchedCards = await chartCards(
-        await watched,
-        known: {
-          for (final show in [...popular, ...acclaimed]) show.id: show,
-        },
-        fetch: (tmdbId) => repo.getDiscoverItem('tv', tmdbId),
-      );
-      picks = takeTurns([
-        watchedCards,
-        _worthShowing(popular),
-        chartPicks(acclaimed, limit: 20),
-      ]);
-    } else {
-      final winners = _chartSource(
-        () => GetIt.instance<FilmAwardsClient>().frenchWinners(),
-      );
-      final (hits, acclaimed) = await (
-        _chartPage(
-          () => repo.discoverMovies(
-            language: 'fr',
-            primaryReleaseDateGte: tmdbDay(
-              DateTime(now.year, now.month - 18, now.day),
-            ),
-            primaryReleaseDateLte: tmdbDay(now),
-          ),
-        ),
-        _chartPage(
-          () => repo.discoverMovies(
-            language: 'fr',
-            sortBy: 'vote_average.desc',
-            voteCountGte: 300,
-            primaryReleaseDateGte: yearsAgo(5),
-          ),
-        ),
-      ).wait;
-      final winnerCards = await chartCards(
-        await winners,
-        known: {
-          for (final film in [...hits, ...acclaimed]) film.id: film,
-        },
-        fetch: (tmdbId) => repo.getDiscoverItem('movie', tmdbId),
-      );
-      picks = await _outAtHome(
-        repo,
+    ]);
+    final hits = await chartCards(
+      takeTurns([frenchHits2020s, frenchHits2010s, frenchHitsAllTime]),
+      known: {
+        for (final list in acclaimed)
+          for (final film in list) film.id: film,
+      },
+      fetch: (tmdbId) => repo.getDiscoverItem('movie', tmdbId),
+      depth: 15,
+    );
+    return _outAtHome(
+      repo,
+      takeTurns([
+        hits,
         takeTurns([
-          _worthShowing(hits),
-          winnerCards,
-          chartPicks(acclaimed, limit: 20),
-        ]),
-        depth: 24,
-      );
-    }
-    if (picks.isNotEmpty) _chartCache[key] = (at: now, chart: picks);
-    return picks;
+          for (final list in acclaimed) chartPicks(list, limit: 10),
+        ], keyOf: tmdbKey),
+      ], keyOf: tmdbKey),
+      depth: 24,
+    );
+  }
+
+  /// French series: what France watched most this week on BetaSeries, the
+  /// popular of the last three years and the best rated of all time, taking
+  /// turns.
+  Future<List<SeerrDiscoverItem>> _frenchSeries(SeerrRepository repo) async {
+    final now = DateTime.now();
+    final watched = _chartSource(
+      () => GetIt.instance<BetaSeriesClient>().frenchShowChart(),
+    );
+    final (popular, acclaimed) = await (
+      _chartPage(
+        () => repo.discoverTv(
+          language: 'fr',
+          firstAirDateGte: tmdbDay(DateTime(now.year - 3, now.month, now.day)),
+        ),
+      ),
+      _frenchAcclaimed(repo, 'tv', minVotes: 100),
+    ).wait;
+    final watchedCards = await chartCards(
+      await watched,
+      known: {
+        for (final show in [...popular, ...acclaimed]) show.id: show,
+      },
+      fetch: (tmdbId) => repo.getDiscoverItem('tv', tmdbId),
+    );
+    return takeTurns([
+      watchedCards,
+      _worthShowing(popular),
+      chartPicks(acclaimed, limit: 20),
+    ], keyOf: tmdbKey);
+  }
+
+  /// The award-winning French films from Wikidata, the latest winners
+  /// first, that can be watched at home.
+  Future<List<SeerrDiscoverItem>> _frenchAwards(SeerrRepository repo) async {
+    final winners = await _chartSource(
+      () => GetIt.instance<FilmAwardsClient>().frenchWinners(),
+    );
+    final cards = await chartCards(
+      winners,
+      known: const {},
+      fetch: (tmdbId) => repo.getDiscoverItem('movie', tmdbId),
+      depth: 24,
+    );
+    return _outAtHome(repo, chartPicks(cards, limit: 24), depth: 24);
   }
 
   /// The titles of a popularity list fit to show: with a poster, each once,
