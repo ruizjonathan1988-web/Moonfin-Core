@@ -14003,7 +14003,7 @@
   "@top10YearBest": {
     "description": "Seerr setting: rank the Top 10 rows by rating over the last twelve months"
   },
-  "top10YearBestSubtitle": "Best rated releases of the last 12 months, instead of this week's trends",
+  "top10YearBestSubtitle": "Best rated releases of the last 12 months, instead of the streaming services' charts",
   "@top10YearBestSubtitle": {
     "description": "Subtitle of the Top 10 ranking setting"
   },

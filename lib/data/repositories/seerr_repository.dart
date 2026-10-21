@@ -431,6 +431,24 @@ class SeerrRepository {
     (c) async => SeerrDiscoverPage.fromJson(await c.getUpcomingTv(page: page)),
   );
 
+  /// The most popular [mediaType] titles (`movie` or `tv`) on the streaming
+  /// service [providerId] in [region], as TMDB ranks them. The same route
+  /// Seerr's own streaming service sliders use.
+  Future<SeerrDiscoverPage> discoverOnStreamingService({
+    required String mediaType,
+    required String region,
+    required int providerId,
+    int page = 1,
+  }) => _withClient(
+    (c) async => SeerrDiscoverPage.fromJson(
+      await c.getSliderPage(
+        mediaType == 'tv' ? 'discover/tv' : 'discover/movies',
+        {'watchRegion': region, 'watchProviders': '$providerId'},
+        page: page,
+      ),
+    ),
+  );
+
   Future<SeerrDiscoverPage> getWatchlist({int page = 1}) => _withClient(
     (c) async => SeerrDiscoverPage.fromJson(await c.getWatchlist(page: page)),
   );

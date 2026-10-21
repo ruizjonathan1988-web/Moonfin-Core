@@ -51,6 +51,44 @@ void main() {
     });
   });
 
+  group('fuseCharts', () {
+    List<int> ids(List<SeerrDiscoverItem> chart) => [for (final i in chart) i.id];
+
+    test('a title in several charts shows once and ranks higher', () {
+      final fused = fuseCharts([
+        [_charted(1), _charted(2), _charted(3)],
+        [_charted(4), _charted(2), _charted(5)],
+      ]);
+      expect(ids(fused), [2, 1, 4, 3, 5]);
+    });
+
+    test('equal points go to the title in more charts', () {
+      // 1 tops one chart: 10 points. 2 is sixth in both: 5 + 5.
+      List<SeerrDiscoverItem> chart(int top) => [
+        _charted(top),
+        for (var i = 1; i < 5; i++) _charted(top * 10 + i),
+        _charted(2),
+      ];
+      final fused = fuseCharts([chart(1), chart(3)]);
+      expect(fused.first.id, 2);
+    });
+
+    test('only the first ten of each chart count', () {
+      final fused = fuseCharts([
+        [for (var i = 0; i < 15; i++) _charted(i)],
+      ]);
+      expect(fused, hasLength(10));
+    });
+
+    test('an empty source changes nothing', () {
+      final fused = fuseCharts([
+        const [],
+        [_charted(7), _charted(8)],
+      ]);
+      expect(ids(fused), [7, 8]);
+    });
+  });
+
   test('the year chart looks at the last twelve months', () {
     final window = yearChartWindow(DateTime(2026, 2, 5));
     expect(window.from, '2025-02-05');

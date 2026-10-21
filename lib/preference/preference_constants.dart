@@ -513,8 +513,8 @@ enum HomeSectionType {
   /// request in one click.
   seerrForYou('seerr_for_you'),
 
-  /// The Top 10 films, ranked: trending this week, or the best rated of the
-  /// year. On the server or one request away.
+  /// The Top 10 films, ranked: the streaming services' charts fused, or the
+  /// best rated of the year. On the server or one request away.
   top10Movies('top10_movies'),
 
   /// The same chart for series.

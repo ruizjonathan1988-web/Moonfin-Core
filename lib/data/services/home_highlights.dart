@@ -21,6 +21,50 @@ List<SeerrDiscoverItem> chartPicks(
   return picks;
 }
 
+/// The streaming services whose charts make the Top 10, by TMDB provider id:
+/// Netflix, Prime Video, Disney+, Apple TV+, Canal+, Max and Paramount+.
+const chartStreamingServices = [8, 119, 337, 350, 381, 1899, 531];
+
+/// One chart made of several, each title once.
+///
+/// A title earns points in every chart it is in, more the higher it ranks
+/// among the first [depth], so one that tops several services comes first.
+/// Ties go to the title in more charts, then to the best single rank, then
+/// to the chart listed first.
+List<SeerrDiscoverItem> fuseCharts(
+  List<List<SeerrDiscoverItem>> charts, {
+  int depth = 10,
+}) {
+  final points = <int, int>{};
+  final count = <int, int>{};
+  final best = <int, int>{};
+  final first = <int, SeerrDiscoverItem>{};
+  for (final chart in charts) {
+    final seen = <int>{};
+    for (final item in chart) {
+      if (seen.length >= depth) break;
+      if (!seen.add(item.id)) continue;
+      final rank = seen.length - 1;
+      points[item.id] = (points[item.id] ?? 0) + depth - rank;
+      count[item.id] = (count[item.id] ?? 0) + 1;
+      if (rank < (best[item.id] ?? depth)) best[item.id] = rank;
+      first.putIfAbsent(item.id, () => item);
+    }
+  }
+  final order = {for (final (i, id) in first.keys.indexed) id: i};
+  final ids = first.keys.toList()
+    ..sort((a, b) {
+      final byPoints = points[b]!.compareTo(points[a]!);
+      if (byPoints != 0) return byPoints;
+      final byCharts = count[b]!.compareTo(count[a]!);
+      if (byCharts != 0) return byCharts;
+      final byRank = best[a]!.compareTo(best[b]!);
+      if (byRank != 0) return byRank;
+      return order[a]!.compareTo(order[b]!);
+    });
+  return [for (final id in ids) first[id]!];
+}
+
 /// The release dates a "best of the year" chart looks at, as TMDB writes
 /// them: the twelve months up to [now], so the chart is full in January too.
 ({String from, String to}) yearChartWindow(DateTime now) {

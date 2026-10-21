@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show PlatformDispatcher;
 import 'dart:convert';
 import 'dart:io';
 
@@ -1707,9 +1708,9 @@ class HomeViewModel extends ChangeNotifier {
       case HomeSectionType.seerrBecause:
         return _loadBecauseRows(l10n, forceRefresh: forceRefresh);
       case HomeSectionType.top10Movies:
-        return _loadTop10Row(l10n, 'movie');
+        return _loadTop10Row(l10n, 'movie', forceRefresh: forceRefresh);
       case HomeSectionType.top10Series:
-        return _loadTop10Row(l10n, 'tv');
+        return _loadTop10Row(l10n, 'tv', forceRefresh: forceRefresh);
       case HomeSectionType.surprise:
         return _loadSurpriseRow(l10n);
       case HomeSectionType.seerrShortcuts:
@@ -2945,57 +2946,28 @@ class HomeViewModel extends ChangeNotifier {
   /// film rated 9 by a dozen people stays out of it.
   static const _yearChartMinVotes = {'movie': 300, 'tv': 150};
 
-  /// The Top 10 films or series ([mediaType] `movie` or `tv`): trending this
-  /// week, or the best rated of the last twelve months when the viewer chose
-  /// that. Whatever the server holds or not, a title still to request opens
-  /// the request sheet like the other suggestions.
+  /// The Top 10 films or series ([mediaType] `movie` or `tv`), whatever the
+  /// server holds: a title still to request opens the request sheet like the
+  /// other suggestions.
   Future<List<HomeRow>> _loadTop10Row(
     AppLocalizations l10n,
-    String mediaType,
-  ) async {
+    String mediaType, {
+    bool forceRefresh = false,
+  }) async {
     final isTv = mediaType == 'tv';
     try {
       final repo = await GetIt.instance.getAsync<SeerrRepository>();
       await repo.ensureInitialized();
       if (!repo.isAvailable) return [];
       final prefs = GetIt.instance<SeerrPreferences>();
-      final yearBest = prefs.top10YearBest;
-      final window = yearChartWindow(DateTime.now());
-
-      // Two pages leave room for what the adult filter takes out.
-      final chart = <SeerrDiscoverItem>[];
-      for (var page = 1; page <= 2; page++) {
-        final SeerrDiscoverPage result;
-        if (!yearBest) {
-          result = isTv
-              ? await repo.getTrendingTv(limit: 20, offset: (page - 1) * 20)
-              : await repo.getTrendingMovies(
-                  limit: 20,
-                  offset: (page - 1) * 20,
-                );
-        } else if (isTv) {
-          result = await repo.discoverTv(
-            page: page,
-            sortBy: 'vote_average.desc',
-            voteCountGte: _yearChartMinVotes['tv'],
-            firstAirDateGte: window.from,
-            firstAirDateLte: window.to,
-          );
-        } else {
-          result = await repo.discoverMovies(
-            page: page,
-            sortBy: 'vote_average.desc',
-            voteCountGte: _yearChartMinVotes['movie'],
-            primaryReleaseDateGte: window.from,
-            primaryReleaseDateLte: window.to,
-          );
-        }
-        chart.addAll(result.results);
-        if (result.results.isEmpty || result.page >= result.totalPages) break;
-      }
-
+      final chart = await _top10Chart(
+        repo,
+        mediaType,
+        yearBest: prefs.top10YearBest,
+        forceRefresh: forceRefresh,
+      );
       final items = [
-        for (final pick in chartPicks(chart, limit: chart.length))
+        for (final pick in chart)
           ?_suggestionCard(pick, mediaType, blockNsfw: prefs.blockNsfw),
       ].take(10).toList();
       // A Top 3 isn't much of a chart.
@@ -3013,6 +2985,91 @@ class HomeViewModel extends ChangeNotifier {
       debugPrint('[Top10] Failed to load the Top 10 $mediaType row: $e');
       return [];
     }
+  }
+
+  /// Charts move by the day at most, and one costs a call per streaming
+  /// service, so it is kept a few hours.
+  static const _chartLifetime = Duration(hours: 3);
+  final Map<String, ({DateTime at, List<SeerrDiscoverItem> chart})>
+  _chartCache = {};
+
+  /// The titles of a Top 10 in order, longer than ten so the adult filter
+  /// can take some out.
+  ///
+  /// By default, what is popular right now: the charts of every streaming
+  /// service in the viewer's country and the week's trends on TMDB, fused so
+  /// a title on several of them ranks higher and shows once. A source that
+  /// fails is left out. With [yearBest], the best rated releases of the last
+  /// twelve months instead.
+  Future<List<SeerrDiscoverItem>> _top10Chart(
+    SeerrRepository repo,
+    String mediaType, {
+    required bool yearBest,
+    required bool forceRefresh,
+  }) async {
+    final isTv = mediaType == 'tv';
+    final region = PlatformDispatcher.instance.locale.countryCode ?? 'FR';
+    final key = '$mediaType|$yearBest|$region';
+    final cached = _chartCache[key];
+    if (!forceRefresh &&
+        cached != null &&
+        DateTime.now().difference(cached.at) < _chartLifetime) {
+      return cached.chart;
+    }
+
+    Future<List<SeerrDiscoverItem>> source(
+      Future<SeerrDiscoverPage> Function() fetch,
+    ) async {
+      try {
+        return (await fetch()).results;
+      } catch (e) {
+        debugPrint('[Top10] A chart source failed: $e');
+        return const [];
+      }
+    }
+
+    final List<SeerrDiscoverItem> chart;
+    if (yearBest) {
+      final window = yearChartWindow(DateTime.now());
+      final results = await source(
+        () => isTv
+            ? repo.discoverTv(
+                sortBy: 'vote_average.desc',
+                voteCountGte: _yearChartMinVotes['tv'],
+                firstAirDateGte: window.from,
+                firstAirDateLte: window.to,
+              )
+            : repo.discoverMovies(
+                sortBy: 'vote_average.desc',
+                voteCountGte: _yearChartMinVotes['movie'],
+                primaryReleaseDateGte: window.from,
+                primaryReleaseDateLte: window.to,
+              ),
+      );
+      chart = chartPicks(results, limit: results.length);
+    } else {
+      final charts = await Future.wait([
+        source(
+          () => isTv
+              ? repo.getTrendingTv(limit: 20)
+              : repo.getTrendingMovies(limit: 20),
+        ),
+        for (final provider in chartStreamingServices)
+          source(
+            () => repo.discoverOnStreamingService(
+              mediaType: mediaType,
+              region: region,
+              providerId: provider,
+            ),
+          ),
+      ]);
+      chart = fuseCharts([for (final c in charts) chartPicks(c, limit: 20)]);
+    }
+    // Nothing came back: no row, and the next load asks again.
+    if (chart.isNotEmpty) {
+      _chartCache[key] = (at: DateTime.now(), chart: chart);
+    }
+    return chart;
   }
 
   /// A movie and a series to start without choosing, drawn fresh on each
