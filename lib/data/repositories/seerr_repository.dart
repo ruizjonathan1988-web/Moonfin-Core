@@ -600,6 +600,41 @@ class SeerrRepository {
     (c) async => SeerrTvDetails.fromJson(await c.getTvDetails(tmdbId)),
   );
 
+  /// The card a discovery row draws for [mediaType] (`movie` or `tv`) title
+  /// [tmdbId], built from its details.
+  Future<SeerrDiscoverItem> getDiscoverItem(String mediaType, int tmdbId) async {
+    if (mediaType == 'tv') {
+      final tv = await getTvDetails(tmdbId);
+      return SeerrDiscoverItem(
+        id: tv.id,
+        mediaType: 'tv',
+        name: tv.name ?? tv.title,
+        posterPath: tv.posterPath,
+        backdropPath: tv.backdropPath,
+        overview: tv.overview,
+        firstAirDate: tv.firstAirDate,
+        genreIds: [for (final genre in tv.genres) genre.id],
+        voteAverage: tv.voteAverage,
+        voteCount: tv.voteCount,
+        mediaInfo: tv.mediaInfo,
+      );
+    }
+    final movie = await getMovieDetails(tmdbId);
+    return SeerrDiscoverItem(
+      id: movie.id,
+      mediaType: 'movie',
+      title: movie.title,
+      posterPath: movie.posterPath,
+      backdropPath: movie.backdropPath,
+      overview: movie.overview,
+      releaseDate: movie.releaseDate,
+      genreIds: [for (final genre in movie.genres) genre.id],
+      voteAverage: movie.voteAverage,
+      voteCount: movie.voteCount,
+      mediaInfo: movie.mediaInfo,
+    );
+  }
+
   Future<SeerrTvDetails> getTvDetailsByTvdb(int tvdbId) => _withClient(
     (c) async => SeerrTvDetails.fromJson(await c.getTvDetailsByTvdb(tvdbId)),
   );

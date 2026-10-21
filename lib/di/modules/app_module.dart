@@ -20,6 +20,7 @@ import '../../data/services/blocked_content_gate.dart';
 import '../../data/services/library_scope_service.dart';
 import '../../data/services/media_server_client_factory.dart';
 import '../../data/repositories/seerr_repository.dart';
+import '../../data/services/trakt/trakt_client.dart';
 import '../../data/repositories/tmdb_repository.dart';
 import '../../data/repositories/user_views_repository.dart';
 import '../../data/repositories/search_repository.dart';
@@ -352,6 +353,7 @@ void _registerUserScopedSingletons() {
       _getIt<MediaServerClient>(),
     ),
   );
+  _getIt.registerLazySingleton(TraktClient.new);
   _getIt.registerLazySingletonAsync<SeerrDiscoverViewModel>(
     () async => SeerrDiscoverViewModel(
       await _getIt.getAsync<SeerrRepository>(),
