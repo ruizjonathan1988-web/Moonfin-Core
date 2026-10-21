@@ -18,7 +18,7 @@ class TraktAccountTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     final account = GetIt.instance<TraktAccount>();
     return ListenableBuilder(
       listenable: account,
@@ -80,7 +80,7 @@ class TraktAccountTile extends StatelessWidget {
     BuildContext context,
     TraktAccount account,
   ) async {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -157,7 +157,7 @@ class _TraktConnectDialogState extends State<_TraktConnectDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     final code = _code;
     final failure = _failure;
     return AlertDialog(
@@ -205,7 +205,7 @@ class _CodeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     final address = code.verificationUrl.replaceFirst(
       RegExp(r'^https?://'),
       '',
