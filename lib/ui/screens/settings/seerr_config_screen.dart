@@ -29,6 +29,7 @@ import '../../widgets/focus/request_initial_focus.dart';
 import '../../widgets/settings/clean_settings_typography.dart';
 import '../../widgets/settings/preference_tiles.dart';
 import 'settings_app_bar.dart';
+import 'trakt_account_tile.dart';
 import '../taste/taste_questionnaire_screen.dart';
 
 typedef _SeerrSignInAction =
@@ -610,6 +611,7 @@ class _SeerrConfigScreenState extends State<SeerrConfigScreen> {
               onChanged: _setTop10YearBest,
             ),
           ),
+        if (showSeerrSettings) const TraktAccountTile(),
         if (showSeerrSettings) ...[
           TvFocusHighlight(
             builder: (context, focused) => SwitchListTile.adaptive(

@@ -1,13 +1,19 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+import 'package:get_it/get_it.dart';
 
 import '../../repositories/seerr_repository.dart';
+import '../chart_cards.dart';
+import '../trakt/trakt_account.dart';
 import 'for_you_ranker.dart';
 import 'for_you_service.dart';
 import 'seerr_api_models.dart';
 import 'taste_profile.dart';
 
 /// Picked favourites, the Seerr watchlist and the viewer's own requests,
-/// as interest the watch history can't show.
+/// as interest the watch history can't show, and Trakt's recommendations
+/// when an account is linked.
 Future<TasteExtras> loadTasteExtras(
   SeerrRepository repo,
   TasteProfile profile,
@@ -67,10 +73,46 @@ Future<TasteExtras> loadTasteExtras(
     }
   }
 
-  final results = await Future.wait([watchlist(), requested()]);
+  Future<List<SeerrDiscoverItem>> traktPicks() async {
+    final trakt = GetIt.instance.isRegistered<TraktAccount>()
+        ? GetIt.instance<TraktAccount>()
+        : null;
+    if (trakt == null || !trakt.isConnected) return const [];
+    try {
+      final [movies, series] = await Future.wait([
+        for (final mediaType in const ['movie', 'tv'])
+          trakt
+              .recommendations(mediaType)
+              .then(
+                (ids) => chartCards(
+                  ids,
+                  known: const {},
+                  fetch: (tmdbId) => repo.getDiscoverItem(mediaType, tmdbId),
+                ),
+              ),
+      ]);
+      // Films and series take turns, so neither crowds out the other.
+      return [
+        for (var i = 0; i < movies.length || i < series.length; i++) ...[
+          if (i < movies.length) movies[i],
+          if (i < series.length) series[i],
+        ],
+      ];
+    } catch (e) {
+      debugPrint('[ForYou] Trakt recommendations failed: $e');
+      return const [];
+    }
+  }
+
+  final (watchlistSignals, requestedSignals, suggestedByTrakt) = await (
+    watchlist(),
+    requested(),
+    traktPicks(),
+  ).wait;
   return TasteExtras(
     picked: picked,
-    watchlist: results[0],
-    requested: results[1],
+    watchlist: watchlistSignals,
+    requested: requestedSignals,
+    traktPicks: suggestedByTrakt,
   );
 }

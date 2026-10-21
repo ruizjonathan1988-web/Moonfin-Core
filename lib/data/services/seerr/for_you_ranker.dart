@@ -47,8 +47,9 @@ class TasteSeed {
 }
 
 /// Where a seed's interest came from, strongest claim first: something
-/// watched beats something only favourited, picked or asked for.
-enum TasteSource { watched, favorite, picked, watchlist, requested }
+/// watched beats something only favourited, picked or asked for. [trakt]
+/// stands apart: what Trakt recommends from the viewer's whole history.
+enum TasteSource { watched, favorite, picked, watchlist, requested, trakt }
 
 /// A title the viewer could have, with why it is suggested.
 class ForYouPick {
@@ -150,6 +151,17 @@ abstract final class ForYouRanker {
   static const _pickedWeight = 1.6;
   static const _watchlistWeight = 1.1;
   static const _requestedWeight = 0.9;
+
+  /// Stands for Trakt's recommendations among the seeds. They come from all
+  /// the viewer watched rather than from one title, so they count for more
+  /// than any single watch, and the seed has no title to name a row after.
+  static const traktSeed = TasteSeed(
+    tmdbId: 0,
+    mediaType: 'movie',
+    title: '',
+    weight: 1.5,
+    source: TasteSource.trakt,
+  );
 
   /// Weights the viewer's history into seeds.
   ///

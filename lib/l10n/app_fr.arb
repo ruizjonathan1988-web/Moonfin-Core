@@ -14139,5 +14139,17 @@
     "gemsRow": "Pépites pour vous",
     "familyNightRow": "Soirée en famille",
     "sagaNextBadge": "Suite",
-    "gemBadge": "Pépite"
+    "gemBadge": "Pépite",
+    "traktConnect": "Relier Trakt",
+    "traktDisconnect": "Délier Trakt",
+    "traktNotConnected": "Des suggestions tirées de tout ce que vous avez regardé",
+    "traktConnectedAs": "Relié au compte {name}",
+    "traktUnavailable": "Cette version de l'app ne peut pas se relier à Trakt",
+    "traktConnectSteps": "Rendez-vous sur {address} et saisissez ce code :",
+    "traktWaiting": "En attente de votre validation sur Trakt…",
+    "traktOpenPage": "Ouvrir la page",
+    "traktCodeExpired": "Le code a expiré avant d'être validé.",
+    "traktDenied": "L'accès a été refusé sur Trakt.",
+    "traktFailed": "Impossible de relier Trakt pour le moment.",
+    "traktDisconnectBody": "Moonfin n'utilisera plus les recommandations de ce compte. Votre historique reste sur Trakt."
 }

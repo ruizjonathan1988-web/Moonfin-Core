@@ -296,9 +296,16 @@ class ForYouService {
         }),
       );
     }
+    // Trakt's picks need no call per seed: they join as one more seed.
+    final withTrakt = extras.traktPicks.isEmpty
+        ? seeds
+        : [...seeds, ForYouRanker.traktSeed];
+    if (extras.traktPicks.isNotEmpty) {
+      recommendations[ForYouRanker.traktSeed.key] = extras.traktPicks;
+    }
     return _Snapshot(
       at: DateTime.now(),
-      seeds: seeds,
+      seeds: withTrakt,
       recommendations: recommendations,
     );
   }
@@ -345,16 +352,21 @@ class _Snapshot {
 }
 
 /// Interest the library's history doesn't hold: titles picked in the taste
-/// questionnaire, on the Seerr watchlist, or requested.
+/// questionnaire, on the Seerr watchlist, or requested, and what Trakt
+/// recommends when an account is linked.
 class TasteExtras {
   final List<TasteSignal> picked;
   final List<TasteSignal> watchlist;
   final List<TasteSignal> requested;
 
+  /// Trakt's recommendations, best first, ready to rank rather than seeds.
+  final List<SeerrDiscoverItem> traktPicks;
+
   const TasteExtras({
     this.picked = const [],
     this.watchlist = const [],
     this.requested = const [],
+    this.traktPicks = const [],
   });
 
   static const none = TasteExtras();

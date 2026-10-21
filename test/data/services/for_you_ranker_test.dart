@@ -410,5 +410,53 @@ void main() {
       expect(rows.single.items, hasLength(6));
       expect(rows.single.items.where((i) => leads.contains(i.key)), isEmpty);
     });
+
+    test('Trakt recommendations join as a seed of their own', () async {
+      final asked = <int>[];
+      final picks = await ForYouService.instance.load(
+        serverId: 's4',
+        loadHistory: () async => (
+          recent: [libraryItem('Movie', '603', 'The Matrix')],
+          favorites: const <AggregatedItem>[],
+        ),
+        fetchRecommendations: (seed) async {
+          asked.add(seed.tmdbId);
+          return SeerrDiscoverPage(results: [_item(700)]);
+        },
+        loadExtras: () async =>
+            TasteExtras(traktPicks: [_item(950), _item(700)]),
+      );
+      // Trakt's seed costs no TMDB call, and what both agree on leads.
+      expect(asked, [603]);
+      expect(_ids(picks), [700, 950]);
+    });
+
+    test('Trakt alone fills For You but names no Because row', () async {
+      Future<({List<AggregatedItem> recent, List<AggregatedItem> favorites})>
+      history() async => (
+        recent: const <AggregatedItem>[],
+        favorites: const <AggregatedItem>[],
+      );
+      Future<SeerrDiscoverPage> fetch(TasteSeed seed) async =>
+          const SeerrDiscoverPage();
+      Future<TasteExtras> extras() async => TasteExtras(
+        traktPicks: [for (var i = 0; i < 8; i++) _item(960 + i)],
+      );
+
+      final picks = await ForYouService.instance.load(
+        serverId: 's5',
+        loadHistory: history,
+        fetchRecommendations: fetch,
+        loadExtras: extras,
+      );
+      expect(_ids(picks), contains(960));
+      final rows = await ForYouService.instance.loadBecauseRows(
+        serverId: 's5',
+        loadHistory: history,
+        fetchRecommendations: fetch,
+        loadExtras: extras,
+      );
+      expect(rows, isEmpty);
+    });
   });
 }

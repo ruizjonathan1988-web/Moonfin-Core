@@ -15401,5 +15401,63 @@
   "gemBadge": "Gem",
   "@gemBadge": {
     "description": "Card badge on a hidden gem"
+  },
+  "traktConnect": "Link Trakt",
+  "@traktConnect": {
+    "description": "Seerr setting: link a Trakt account"
+  },
+  "traktDisconnect": "Unlink Trakt",
+  "@traktDisconnect": {
+    "description": "Seerr setting: let the linked Trakt account go"
+  },
+  "traktNotConnected": "Suggestions drawn from everything you watched",
+  "@traktNotConnected": {
+    "description": "Subtitle of the Trakt setting when no account is linked"
+  },
+  "traktConnectedAs": "Linked to {name}",
+  "@traktConnectedAs": {
+    "description": "Subtitle of the Trakt setting: the linked account",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "traktUnavailable": "This build of the app can't link to Trakt",
+  "@traktUnavailable": {
+    "description": "Subtitle of the Trakt setting when the build has no Trakt secret"
+  },
+  "traktConnectSteps": "Go to {address} and enter this code:",
+  "@traktConnectSteps": {
+    "description": "Trakt linking dialog: where to type the code",
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "traktWaiting": "Waiting for your approval on Trakt…",
+  "@traktWaiting": {
+    "description": "Trakt linking dialog: polling for the approval"
+  },
+  "traktOpenPage": "Open the page",
+  "@traktOpenPage": {
+    "description": "Trakt linking dialog: opens the activation page"
+  },
+  "traktCodeExpired": "The code expired before it was approved.",
+  "@traktCodeExpired": {
+    "description": "Trakt linking dialog: the code ran out"
+  },
+  "traktDenied": "Access was declined on Trakt.",
+  "@traktDenied": {
+    "description": "Trakt linking dialog: the viewer declined"
+  },
+  "traktFailed": "Couldn't link Trakt right now.",
+  "@traktFailed": {
+    "description": "Trakt linking dialog: any other failure"
+  },
+  "traktDisconnectBody": "Moonfin will stop using this account's recommendations. Your history stays on Trakt.",
+  "@traktDisconnectBody": {
+    "description": "Confirmation before unlinking Trakt"
   }
 }

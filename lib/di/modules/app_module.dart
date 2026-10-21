@@ -21,6 +21,7 @@ import '../../data/services/library_scope_service.dart';
 import '../../data/services/media_server_client_factory.dart';
 import '../../data/repositories/seerr_repository.dart';
 import '../../data/services/betaseries/betaseries_client.dart';
+import '../../data/services/trakt/trakt_account.dart';
 import '../../data/services/trakt/trakt_client.dart';
 import '../../data/repositories/tmdb_repository.dart';
 import '../../data/repositories/user_views_repository.dart';
@@ -61,6 +62,7 @@ import '../../data/viewmodels/seerr_discover_view_model.dart';
 import '../../playback/current_playing_item.dart';
 import '../../playback/external_player_service.dart';
 import '../../preference/seerr_preferences.dart';
+import '../../preference/trakt_preferences.dart';
 import '../../preference/user_preferences.dart';
 import '../../ui/navigation/app_router.dart';
 import '../../ui/navigation/destinations.dart';
@@ -233,9 +235,18 @@ void registerAppModule() {
       _getIt<SessionRepository>(),
     ),
   );
-  // The charts' sources hold nothing of the user, so they live as long as
-  // the app.
+  _getIt.registerLazySingleton(
+    () => TraktPreferences(
+      _getIt<PreferenceStore>(),
+      _getIt<SessionRepository>(),
+    ),
+  );
+  // Nothing of the user lives in these: the account reads its tokens for
+  // whoever is signed in, so they last as long as the app.
   _getIt.registerLazySingleton(TraktClient.new);
+  _getIt.registerLazySingleton(
+    () => TraktAccount(_getIt<TraktClient>(), _getIt<TraktPreferences>()),
+  );
   _getIt.registerLazySingleton(BetaSeriesClient.new);
   _getIt.registerLazySingleton<SyncService>(
     () => SyncService(_getIt<OfflineRepository>(), _getIt<PendingRatingStore>()),
