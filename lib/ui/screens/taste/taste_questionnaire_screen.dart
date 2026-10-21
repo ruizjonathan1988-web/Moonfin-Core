@@ -538,10 +538,6 @@ class _TasteQuestionnaireScreenState extends State<TasteQuestionnaireScreen> {
 
     final form = ScreenForm.of(context);
     final compact = form == ScreenForm.cover;
-    final size = MediaQuery.sizeOf(context);
-    // An opened foldable held sideways keeps the question on the left and
-    // gives the posters the rest of the width.
-    final sideBySide = form == ScreenForm.unfolded && size.width > size.height;
 
     final header = <Widget>[
       Row(
@@ -615,35 +611,28 @@ class _TasteQuestionnaireScreenState extends State<TasteQuestionnaireScreen> {
             padding: compact
                 ? const EdgeInsets.fromLTRB(16, 10, 16, 10)
                 : const EdgeInsets.fromLTRB(24, 16, 24, 14),
-            child: sideBySide
-                ? Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      SizedBox(
-                        width: size.width * 0.34,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ...header,
-                            const Spacer(),
-                            _buildFooter(l10n, stacked: true),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 28),
-                      Expanded(child: screen),
-                    ],
-                  )
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ...header,
-                      SizedBox(height: compact ? 10 : 16),
-                      Expanded(child: screen),
-                      const SizedBox(height: 10),
-                      _buildFooter(l10n),
-                    ],
-                  ),
+            // An opened foldable held sideways keeps the questions in a
+            // column the eye can follow instead of running them across the
+            // whole width.
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: form == ScreenForm.unfolded
+                      ? 760
+                      : double.infinity,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ...header,
+                    SizedBox(height: compact ? 10 : 16),
+                    Expanded(child: screen),
+                    const SizedBox(height: 10),
+                    _buildFooter(l10n),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -1218,9 +1207,7 @@ class _TasteQuestionnaireScreenState extends State<TasteQuestionnaireScreen> {
     ),
   );
 
-  /// [stacked] puts the main button on a line of its own, for the narrow
-  /// column it gets beside the posters.
-  Widget _buildFooter(AppLocalizations l10n, {bool stacked = false}) {
+  Widget _buildFooter(AppLocalizations l10n) {
     if (_screen == _Screen.welcome) {
       return Row(
         children: [
@@ -1258,16 +1245,6 @@ class _TasteQuestionnaireScreenState extends State<TasteQuestionnaireScreen> {
             : (_screen == _Screen.duels ? l10n.quizSkip : l10n.tasteNext),
       ),
     );
-    if (stacked) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          next,
-          const SizedBox(height: 8),
-          Row(children: [back, const Spacer(), if (canFinishEarly) finishNow]),
-        ],
-      );
-    }
     return Row(
       children: [
         back,

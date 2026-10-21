@@ -3769,9 +3769,17 @@ class _ContentRowsState extends State<_ContentRows>
   double _libraryRowExtent(double rowHeight, {double metadataScale = 1.0}) =>
       rowHeight + (34 * metadataScale);
 
+  /// The interface scale setting. An opened foldable draws its rows a step
+  /// larger, so its wider screen shows bigger posters rather than more of
+  /// them.
   double _desktopUiScaleFactor() {
-    return widget.prefs.get(UserPreferences.desktopUiScale).scaleFactor;
+    final scale = widget.prefs.get(UserPreferences.desktopUiScale).scaleFactor;
+    return ScreenForm.of(context) == ScreenForm.unfolded
+        ? scale * _unfoldedRowScale
+        : scale;
   }
+
+  static const _unfoldedRowScale = 1.2;
 
   double _rowPlatformScale(HomeRow row, double desktopScale) {
     final base = PlatformDetection.isTV ? 0.8 * desktopScale : desktopScale;

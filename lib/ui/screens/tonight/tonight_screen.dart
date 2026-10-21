@@ -52,9 +52,9 @@ enum _Layout {
   /// A regular phone: one column.
   phone,
 
-  /// An opened foldable or a tablet: the suggestion and the other ideas
-  /// side by side.
-  split,
+  /// An opened foldable or a tablet: one roomy column, the other ideas in a
+  /// single row across the width.
+  open,
 
   /// TV and desktop: a wide banner with the details over the picture.
   wide;
@@ -62,7 +62,7 @@ enum _Layout {
   static _Layout of(BuildContext context) => switch (ScreenForm.of(context)) {
     ScreenForm.cover => compact,
     ScreenForm.phone => phone,
-    ScreenForm.unfolded => split,
+    ScreenForm.unfolded => open,
     ScreenForm.large => wide,
   };
 }
@@ -400,69 +400,57 @@ class _TonightScreenState extends State<TonightScreen> {
             style: TextStyle(color: onBg.withValues(alpha: 0.55), fontSize: 12.5),
           );
 
-    if (layout == _Layout.split) {
-      return FocusTraversalGroup(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ...header,
-              const SizedBox(height: 14),
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(flex: 3, child: hero),
-                    if (others.isNotEmpty) ...[
-                      const SizedBox(width: 20),
-                      Expanded(
-                        flex: 2,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            othersTitle,
-                            const SizedBox(height: 10),
-                            Expanded(
-                              child: GridView.builder(
-                                gridDelegate:
-                                    const SliverGridDelegateWithMaxCrossAxisExtent(
-                                      maxCrossAxisExtent: 150,
-                                      childAspectRatio: 2 / 3.5,
-                                      crossAxisSpacing: 12,
-                                      mainAxisSpacing: 12,
-                                    ),
-                                itemCount: others.length,
-                                itemBuilder: (context, index) => _PosterCard(
-                                  pick: others[index],
-                                  onTap: () => _show(others[index]),
-                                ),
-                              ),
-                            ),
-                            ?precision,
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
     final wide = layout == _Layout.wide;
     final posterWidth = switch (layout) {
       _Layout.wide => 140.0,
       _Layout.compact => 100.0,
       _ => 116.0,
     };
+    const gap = 12.0;
+    // Opened, the five ideas share the width instead of scrolling sideways.
+    final Widget othersRow = layout == _Layout.open
+        ? Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (var i = 0; i < 5; i++) ...[
+                if (i > 0) const SizedBox(width: gap),
+                Expanded(
+                  child: i < others.length
+                      ? _PosterCard(
+                          pick: others[i],
+                          onTap: () => _show(others[i]),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            ],
+          )
+        : SizedBox(
+            // The poster, its title and the room a focused card grows into.
+            height: posterWidth * 1.5 + 36,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              clipBehavior: Clip.none,
+              itemCount: others.length,
+              separatorBuilder: (_, _) => const SizedBox(width: gap),
+              itemBuilder: (context, index) => SizedBox(
+                width: posterWidth,
+                child: _PosterCard(
+                  pick: others[index],
+                  onTap: () => _show(others[index]),
+                ),
+              ),
+            ),
+          );
     return FocusTraversalGroup(
       child: SingleChildScrollView(
         padding: EdgeInsets.symmetric(
-          horizontal: wide ? 32 : (layout == _Layout.compact ? 12 : 16),
+          horizontal: switch (layout) {
+            _Layout.wide => 32,
+            _Layout.open => 24,
+            _Layout.compact => 12,
+            _Layout.phone => 16,
+          },
           vertical: layout == _Layout.compact ? 8 : 12,
         ),
         child: Column(
@@ -475,23 +463,7 @@ class _TonightScreenState extends State<TonightScreen> {
               SizedBox(height: layout == _Layout.compact ? 14 : 22),
               othersTitle,
               const SizedBox(height: 10),
-              SizedBox(
-                // The poster, its title and the room a focused card grows into.
-                height: posterWidth * 1.5 + 36,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  clipBehavior: Clip.none,
-                  itemCount: others.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 12),
-                  itemBuilder: (context, index) => SizedBox(
-                    width: posterWidth,
-                    child: _PosterCard(
-                      pick: others[index],
-                      onTap: () => _show(others[index]),
-                    ),
-                  ),
-                ),
-              ),
+              othersRow,
             ],
             if (precision != null) ...[const SizedBox(height: 18), precision],
             const SizedBox(height: 16),
@@ -574,7 +546,7 @@ class _Questions extends StatelessWidget {
             color: onBg,
             fontSize: switch (layout) {
               _Layout.wide => 30,
-              _Layout.split => 28,
+              _Layout.open => 28,
               _Layout.compact => 21,
               _Layout.phone => 24,
             },
@@ -669,13 +641,13 @@ class _Questions extends StatelessWidget {
         padding: EdgeInsets.symmetric(
           horizontal: switch (layout) {
             _Layout.wide => 48,
-            _Layout.split => 32,
+            _Layout.open => 32,
             _Layout.compact => 16,
             _Layout.phone => 20,
           },
           vertical: compact ? 12 : 20,
         ),
-        child: layout == _Layout.split
+        child: layout == _Layout.open
             ? Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 720),
@@ -852,7 +824,7 @@ class _Hero extends StatelessWidget {
             color: Colors.white,
             fontSize: switch (layout) {
               _Layout.wide => 36,
-              _Layout.split => 32,
+              _Layout.open => 32,
               _Layout.compact => 22,
               _Layout.phone => 26,
             },
@@ -993,35 +965,6 @@ class _Hero extends StatelessWidget {
       );
     }
 
-    if (layout == _Layout.split) {
-      // Fills its column. The details sit at the foot of the picture and
-      // scroll if the window is too short for them.
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(18),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            picture,
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0x00000000), Color(0xB3000000), Color(0xF5000000)],
-                  stops: [0.15, 0.5, 0.85],
-                ),
-              ),
-            ),
-            SingleChildScrollView(
-              reverse: true,
-              padding: const EdgeInsets.all(24),
-              child: details,
-            ),
-          ],
-        ),
-      );
-    }
-
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: Stack(
@@ -1040,9 +983,12 @@ class _Hero extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: compact
-                ? const EdgeInsets.fromLTRB(14, 72, 14, 14)
-                : const EdgeInsets.fromLTRB(18, 120, 18, 18),
+            // The room above the details is the picture you see.
+            padding: switch (layout) {
+              _Layout.compact => const EdgeInsets.fromLTRB(14, 72, 14, 14),
+              _Layout.open => const EdgeInsets.fromLTRB(24, 240, 24, 22),
+              _ => const EdgeInsets.fromLTRB(18, 120, 18, 18),
+            },
             child: details,
           ),
         ],

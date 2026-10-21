@@ -775,10 +775,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     setImmersive(true);
     if (PlatformDetection.isMobile) {
       _forcedLandscape = true;
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
-      ]);
+      _applyMobileOrientation();
     } else if (!PlatformDetection.isTV) {
       SystemChrome.setPreferredOrientations([
         DeviceOrientation.landscapeLeft,
@@ -1500,18 +1497,22 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   void _toggleOrientationLock() {
     setState(() => _forcedLandscape = !_forcedLandscape);
-    if (_forcedLandscape) {
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
-      ]);
-    } else {
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
-        DeviceOrientation.portraitUp,
-      ]);
-    }
+    _applyMobileOrientation();
+  }
+
+  /// Landscape to watch, unless the lock is off. Standing half folded, the
+  /// fold runs across a screen taller than wide, so tabletop asks for
+  /// portrait either way up.
+  void _applyMobileOrientation() {
+    SystemChrome.setPreferredOrientations(
+      Tabletop.forced.value
+          ? const [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]
+          : [
+              DeviceOrientation.landscapeLeft,
+              DeviceOrientation.landscapeRight,
+              if (!_forcedLandscape) DeviceOrientation.portraitUp,
+            ],
+    );
   }
 
   void _onPiPChanged(bool isInPiP) {
@@ -1523,12 +1524,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     if (!isInPiP) {
       _didRequestIosPiPForBackground = false;
       setImmersive(true);
-      if (PlatformDetection.isMobile && _forcedLandscape) {
-        SystemChrome.setPreferredOrientations([
-          DeviceOrientation.landscapeLeft,
-          DeviceOrientation.landscapeRight,
-        ]);
-      }
+      if (PlatformDetection.isMobile) _applyMobileOrientation();
       _showControls();
     }
   }
@@ -3983,9 +3979,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     }
   }
 
-  // The controls move between the picture and the deck below the fold.
+  // The controls move between the picture and the deck below the fold, and
+  // the screen turns to stand up.
   void _onTabletopChanged() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    setState(() {});
+    if (PlatformDetection.isMobile && !_isInPiP) _applyMobileOrientation();
   }
 
   @override
