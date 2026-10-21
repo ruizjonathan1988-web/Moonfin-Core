@@ -14223,11 +14223,11 @@
   "@foldTabletopExit": {
     "description": "Foldable"
   },
-  "foldTabletopSubtitle": "Phone opened and standing half folded, screen sideways: picture on top, controls below.",
+  "foldTabletopSubtitle": "Phone opened and standing half folded: picture above the fold, controls below.",
   "@foldTabletopSubtitle": {
     "description": "Foldable"
   },
-  "foldTabletopUnavailable": "Available when the phone is unfolded and held sideways.",
+  "foldTabletopUnavailable": "Available when the phone is unfolded.",
   "@foldTabletopUnavailable": {
     "description": "Foldable"
   },

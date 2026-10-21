@@ -53,17 +53,17 @@ enum ScreenForm {
 ///
 /// Phones that report their hinge posture get it on their own. The Galaxy Z
 /// Fold8 has no Flex mode and reports nothing, so the viewer can also turn it
-/// on by hand with [forced]. It stays on only while it makes sense: folding
-/// the phone or turning it upright switches it off.
+/// on by hand with [forced]. Folding the phone switches it off.
 abstract final class Tabletop {
   static final ValueNotifier<bool> forced = _ForcedTabletop();
 
-  /// Whether the screen can be split by hand: opened and held sideways, so
-  /// the fold runs across it.
+  /// Whether the screen can be split by hand: opened. Either way up, since
+  /// without a hinge report only the viewer knows where the fold runs: a
+  /// Fold8, wider than tall when opened, stands in portrait, older Folds in
+  /// landscape. The split always runs across the screen.
   static bool canForce(Size size) =>
       ScreenForm.classify(size, mobileUi: PlatformDetection.useMobileUi) ==
-          ScreenForm.unfolded &&
-      size.width > size.height;
+      ScreenForm.unfolded;
 
   /// Where the screen folds in tabletop posture, or null when it doesn't.
   /// A forced fold is a line across the middle of the screen.
@@ -111,7 +111,7 @@ abstract final class Tabletop {
 enum HingePosture { none, flat, halfOpened }
 
 /// Watches the window while tabletop is forced and lets go of it as soon as
-/// the phone is folded or turned upright.
+/// the phone is folded.
 class _ForcedTabletop extends ValueNotifier<bool> with WidgetsBindingObserver {
   _ForcedTabletop() : super(false);
 

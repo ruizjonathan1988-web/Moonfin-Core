@@ -61,8 +61,8 @@ void main() {
     expect(find.byType(BottomNavbar), findsNothing);
     expect(content?.width, _openPortrait.width - FoldNavMetrics.railWidth);
     expect(content?.height, _openPortrait.height);
-    // Held upright the fold runs down the screen: no tabletop to offer.
-    expect(find.byIcon(Icons.laptop_rounded), findsNothing);
+    // A Fold8 stands half folded in portrait.
+    expect(find.byIcon(Icons.laptop_rounded), findsOneWidget);
   });
 
   testWidgets('the rail can be turned off', (tester) async {

@@ -54,9 +54,9 @@ void main() {
   });
 
   group('Tabletop', () {
-    test('can only be forced opened and held sideways', () {
+    test('can be forced opened, either way up', () {
       expect(Tabletop.canForce(_openLandscape), isTrue);
-      expect(Tabletop.canForce(_openPortrait), isFalse);
+      expect(Tabletop.canForce(_openPortrait), isTrue);
       expect(Tabletop.canForce(_coverLandscape), isFalse);
       expect(Tabletop.canForce(_phone), isFalse);
     });
@@ -67,7 +67,7 @@ void main() {
       final fold = Tabletop.foldOf(_openLandscape, const []);
       expect(fold?.top, 367);
       expect(fold?.width, 974);
-      expect(Tabletop.foldOf(_openPortrait, const []), isNull);
+      expect(Tabletop.foldOf(_openPortrait, const [])?.top, 487);
     });
 
     test('finds a half-open fold across the screen', () {
