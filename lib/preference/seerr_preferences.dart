@@ -138,6 +138,12 @@ class SeerrPreferences {
   Future<void> setTonightPendingJson(String value) =>
       _store.setString(_userKey('tonight_pending'), value);
 
+  /// Sittings the monthly check-in already asked about.
+  List<String> get tasteCheckInAsked =>
+      _store.getStringList(_userKey('taste_checkin_asked')) ?? const [];
+  Future<void> setTasteCheckInAsked(List<String> keys) =>
+      _store.setStringList(_userKey('taste_checkin_asked'), keys);
+
   /// Requests already announced as ready, so each is announced once. Null
   /// until the first load, which only takes note of what is ready.
   List<String>? get announcedReadyRequests =>

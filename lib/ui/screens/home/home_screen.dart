@@ -29,6 +29,7 @@ import '../../widgets/seerr/seerr_for_you_sheet.dart';
 import '../../widgets/card_highlights.dart';
 import '../../widgets/floating_notification.dart';
 import '../taste/taste_questionnaire_screen.dart';
+import '../taste/taste_check_in_screen.dart';
 import '../tonight/tonight_screen.dart';
 import '../../../data/services/seerr/my_requests.dart';
 import '../../../data/services/home_highlights.dart';
@@ -5671,6 +5672,21 @@ class _ContentRowsState extends State<_ContentRows>
     await widget.viewModel.refreshAfterTasteChange();
   }
 
+  Future<void> _openTasteCheckIn() async {
+    if (!mounted) return;
+    final saved = await openTasteCheckIn(context);
+    if (!saved || !mounted) return;
+    final l10n = AppLocalizations.of(context);
+    FloatingNotification.show(
+      context,
+      l10n.tasteSaved,
+      l10n.tasteSavedBody,
+      null,
+      icon: Icons.tune_rounded,
+    );
+    await widget.viewModel.refreshAfterTasteChange();
+  }
+
   /// The first time, the questionnaire opens by itself; after that a quiet
   /// reminder offers it.
   void _promptTaste({required bool firstTime}) {
@@ -5685,8 +5701,8 @@ class _ContentRowsState extends State<_ContentRows>
         context,
         l10n.tasteReminderTitle,
         l10n.tasteReminderBody,
-        _openTasteQuestionnaire,
-        icon: Icons.tune_rounded,
+        _openTasteCheckIn,
+        icon: Icons.event_repeat_rounded,
       );
     });
   }

@@ -14931,6 +14931,100 @@
   "@quizAxisIntimate": {
     "description": "Taste questionnaire"
   },
+  "checkInTitle": "Monthly check-in",
+  "@checkInTitle": {
+    "description": "Monthly taste check-in"
+  },
+  "checkInFull": "Redo the full questionnaire",
+  "@checkInFull": {
+    "description": "Monthly taste check-in"
+  },
+  "checkInNothing": "Nothing new to ask you this month.",
+  "@checkInNothing": {
+    "description": "Monthly taste check-in"
+  },
+  "checkInFinished": "You watched {title} to the end. Verdict?",
+  "@checkInFinished": {
+    "description": "Monthly taste check-in",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "checkInLoved": "Loved it",
+  "@checkInLoved": {
+    "description": "Monthly taste check-in"
+  },
+  "checkInGood": "Good",
+  "@checkInGood": {
+    "description": "Monthly taste check-in"
+  },
+  "checkInMeh": "So-so",
+  "@checkInMeh": {
+    "description": "Monthly taste check-in"
+  },
+  "checkInDisliked": "Didn't like it",
+  "@checkInDisliked": {
+    "description": "Monthly taste check-in"
+  },
+  "checkInDropped": "You stopped {title} after {minutes} min. Why?",
+  "@checkInDropped": {
+    "description": "Monthly taste check-in",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "checkInNotNow": "Not the right time",
+  "@checkInNotNow": {
+    "description": "Monthly taste check-in"
+  },
+  "checkInTooSlow": "Too slow",
+  "@checkInTooSlow": {
+    "description": "Monthly taste check-in"
+  },
+  "checkInTooDark": "Too violent or bleak",
+  "@checkInTooDark": {
+    "description": "Monthly taste check-in"
+  },
+  "checkInNotMyGenre": "Not my kind of thing",
+  "@checkInNotMyGenre": {
+    "description": "Monthly taste check-in"
+  },
+  "checkInLater": "I'll get back to it",
+  "@checkInLater": {
+    "description": "Monthly taste check-in"
+  },
+  "checkInStillAvoided": "Still no {genre} for you?",
+  "@checkInStillAvoided": {
+    "description": "Monthly taste check-in",
+    "placeholders": {
+      "genre": {
+        "type": "String"
+      }
+    }
+  },
+  "checkInStillNoSubtitles": "Still no subtitles?",
+  "@checkInStillNoSubtitles": {
+    "description": "Monthly taste check-in"
+  },
+  "checkInStillNoViolence": "Still no violence?",
+  "@checkInStillNoViolence": {
+    "description": "Monthly taste check-in"
+  },
+  "checkInYes": "Yes, still",
+  "@checkInYes": {
+    "description": "Monthly taste check-in"
+  },
+  "checkInNotAnymore": "Not really anymore",
+  "@checkInNotAnymore": {
+    "description": "Monthly taste check-in"
+  },
   "tasteTitle": "Your taste",
   "@tasteTitle": {
     "description": "Taste questionnaire title"
@@ -15041,11 +15135,11 @@
   "@tasteSavedBody": {
     "description": "Notification body after saving"
   },
-  "tasteReminderTitle": "Has your taste changed?",
+  "tasteReminderTitle": "Monthly check-in",
   "@tasteReminderTitle": {
     "description": "Monthly reminder to update the questionnaire"
   },
-  "tasteReminderBody": "Tap here to update your suggestions.",
+  "tasteReminderBody": "A minute to keep your suggestions spot on. Tap here.",
   "@tasteReminderBody": {
     "description": "Reminder body"
   },
