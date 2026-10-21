@@ -39,7 +39,8 @@ import '../../../data/services/seerr/for_you_ranker.dart';
 import '../../../data/services/seerr/taste_profile.dart';
 import '../../../data/services/seerr/taste_extras.dart';
 import '../../../data/services/seerr/saga_service.dart';
-import '../../../data/services/trakt/trakt_chart_cards.dart';
+import '../../../data/services/betaseries/betaseries_client.dart';
+import '../../../data/services/chart_cards.dart';
 import '../../../data/services/trakt/trakt_client.dart';
 import '../../../data/services/home_highlights.dart';
 import '../../../data/services/home_row_tidy.dart';
@@ -3000,9 +3001,10 @@ class HomeViewModel extends ChangeNotifier {
   ///
   /// By default, what is popular right now: the charts of every streaming
   /// service in the viewer's country, the week's trends on TMDB and what
-  /// Trakt's members watch most, fused so a title on several of them ranks
-  /// higher and shows once. A source that fails is left out. With [yearBest],
-  /// the best rated releases of the last twelve months instead.
+  /// the members of Trakt and BetaSeries watch most, fused so a title on
+  /// several of them ranks higher and shows once. A source that fails is left
+  /// out. With [yearBest], the best rated releases of the last twelve months
+  /// instead.
   Future<List<SeerrDiscoverItem>> _top10Chart(
     SeerrRepository repo,
     String mediaType, {
@@ -3052,11 +3054,17 @@ class HomeViewModel extends ChangeNotifier {
       );
       chart = chartPicks(results, limit: results.length);
     } else {
-      final trakt = Future.wait([
+      // Charts that only name TMDB ids, to turn into cards below.
+      final idCharts = Future.wait([
         for (final traktChart in TraktChart.values)
           source(
             () => GetIt.instance<TraktClient>().chart(traktChart, mediaType),
           ),
+        source(
+          () => isTv
+              ? GetIt.instance<BetaSeriesClient>().showChart(country: region)
+              : GetIt.instance<BetaSeriesClient>().movieChart(),
+        ),
       ]);
       final charts = await Future.wait([
         page(
@@ -3073,21 +3081,21 @@ class HomeViewModel extends ChangeNotifier {
             ),
           ),
       ]);
-      // A title Trakt ranks that no other chart shows has no card yet.
+      // A title those rank that no other chart shows has no card yet.
       final known = {
         for (final c in charts)
           for (final item in c) item.id: item,
       };
-      final traktCharts = await Future.wait([
-        for (final ids in await trakt)
-          traktChartCards(
+      final idCards = await Future.wait([
+        for (final ids in await idCharts)
+          chartCards(
             ids,
             known: known,
             fetch: (tmdbId) => repo.getDiscoverItem(mediaType, tmdbId),
           ),
       ]);
       chart = fuseCharts([
-        for (final c in [...charts, ...traktCharts]) chartPicks(c, limit: 20),
+        for (final c in [...charts, ...idCards]) chartPicks(c, limit: 20),
       ]);
     }
     // Nothing came back: no row, and the next load asks again.

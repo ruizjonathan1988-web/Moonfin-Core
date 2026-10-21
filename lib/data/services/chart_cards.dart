@@ -1,14 +1,14 @@
 import 'package:flutter/foundation.dart';
 
-import '../seerr/seerr_api_models.dart';
+import 'seerr/seerr_api_models.dart';
 
-/// A Trakt chart, made of TMDB ids, as the discovery cards the other charts
-/// are made of.
+/// A chart made of TMDB ids, as the discovery cards the other charts are
+/// made of.
 ///
 /// Only the first [depth] titles are looked at. One that another chart
 /// already holds reuses its card from [known], so only the rest costs a call
 /// to [fetch]. A title whose card can't be fetched is left out.
-Future<List<SeerrDiscoverItem>> traktChartCards(
+Future<List<SeerrDiscoverItem>> chartCards(
   List<int> chart, {
   required Map<int, SeerrDiscoverItem> known,
   required Future<SeerrDiscoverItem> Function(int tmdbId) fetch,
@@ -20,7 +20,7 @@ Future<List<SeerrDiscoverItem>> traktChartCards(
     try {
       return await fetch(tmdbId);
     } catch (e) {
-      debugPrint('[Trakt] No card for TMDB $tmdbId: $e');
+      debugPrint('[Charts] No card for TMDB $tmdbId: $e');
       return null;
     }
   }
