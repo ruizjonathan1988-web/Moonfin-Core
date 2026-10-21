@@ -22,7 +22,10 @@ jobs:
               -A 'Moonfin-perso' "$2")
             echo "::notice title=$1::HTTP $code $(head -c "${3:-700}" body.json | tr '\n' ' ')"
           }
-          call ranking-all 'https://api.betaseries.com/stats/shows_ranking?country=fr&period=7&type=all&svod=only&genre=all&limit=3' 1400
-          call ranking-default 'https://api.betaseries.com/stats/shows_ranking?limit=2' 500
-          call movies-discover 'https://api.betaseries.com/movies/discover?limit=2' 500
-          call movies-list 'https://api.betaseries.com/movies/list?order=popularity&limit=2' 500
+          call rank-type-all 'https://api.betaseries.com/stats/shows_ranking?type=all&limit=3' 500
+          call rank-genre-all 'https://api.betaseries.com/stats/shows_ranking?genre=all&limit=3' 500
+          call rank-both 'https://api.betaseries.com/stats/shows_ranking?type=all&genre=all&limit=3' 500
+          call rank-30d 'https://api.betaseries.com/stats/shows_ranking?period=30&limit=10' 1500
+          call show-display 'https://api.betaseries.com/shows/display?id=36263' 2500
+          call movies-pop10 'https://api.betaseries.com/movies/list?order=popularity&limit=10' 2500
+          call movies-alpha 'https://api.betaseries.com/movies/list?order=alphabetical&limit=2' 500
