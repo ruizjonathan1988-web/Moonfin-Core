@@ -29,9 +29,19 @@ class ForYouService {
   /// requested soon enough, but until the next fetch they'd come back.
   final Set<String> _requested = {};
 
-  /// Remembers a request made from the row so it stays gone.
+  /// Counts the requests made this session, for the home screen to mark
+  /// the cards it already shows.
+  final ValueNotifier<int> requestedChanges = ValueNotifier(0);
+
+  /// The titles requested this session, as [forYouKey] keys.
+  Set<String> get requestedKeys => Set.unmodifiable(_requested);
+
+  /// Remembers a request so the title stays out of For You and shows as
+  /// requested on the cards already drawn.
   void markRequested(String mediaType, int tmdbId) {
-    _requested.add(forYouKey(mediaType, tmdbId));
+    if (_requested.add(forYouKey(mediaType, tmdbId))) {
+      requestedChanges.value++;
+    }
   }
 
   void clearCache() => _cache.clear();

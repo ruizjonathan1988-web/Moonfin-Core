@@ -39,6 +39,7 @@ import '../../../data/services/seerr/taste_profile.dart';
 import '../../../data/services/seerr/taste_extras.dart';
 import '../../../data/services/seerr/saga_service.dart';
 import '../../../data/services/home_highlights.dart';
+import '../../../data/services/home_row_tidy.dart';
 import '../../../data/utils/bounded_concurrency.dart';
 import '../../../util/platform_detection.dart';
 import '../../../util/server_url.dart';
@@ -75,9 +76,35 @@ class HomeViewModel extends ChangeNotifier {
   final TvChannelsService _tvChannels = TvChannelsService();
 
   List<HomeRow> _rows = [];
-  List<HomeRow> get rows => _emptySectionIds.isEmpty
-      ? _rows
-      : _rows.where((row) => !_isEmptySectionPlaceholder(row)).toList();
+
+  /// The rows as drawn: without the placeholders of sections expected to be
+  /// empty, and tidied by [tidyHomeRows]. Kept until the rows or the
+  /// session's requests change, so the screen's layout caches see the same
+  /// rows from one frame to the next.
+  List<HomeRow> get rows {
+    final visible = _emptySectionIds.isEmpty
+        ? _rows
+        : _rows.where((row) => !_isEmptySectionPlaceholder(row)).toList();
+    final requested = ForYouService.instance.requestedChanges.value;
+    final cached = _tidyRows;
+    if (cached != null &&
+        _tidyRequested == requested &&
+        listEquals(_tidySource, visible)) {
+      return cached;
+    }
+    _tidySource = List.of(visible);
+    _tidyRequested = requested;
+    return _tidyRows = tidyHomeRows(
+      visible,
+      keptRowIds: const {myRequestsRowId, sagaRowId, top10RowId},
+      requestedKeys: ForYouService.instance.requestedKeys,
+      requestableFlag: forYouFlag,
+    );
+  }
+
+  List<HomeRow>? _tidySource;
+  List<HomeRow>? _tidyRows;
+  int? _tidyRequested;
 
   /// Placeholder ids of sections expected to come back empty, because their
   /// last load did or a cold start found nothing cached for them. Their
@@ -343,7 +370,15 @@ class HomeViewModel extends ChangeNotifier {
        _mediaBarViewModel = mediaBarViewModel,
        _multiServerRepo = multiServerRepo,
        _cacheStore = cacheStore ?? HomeRowCacheStore(),
-       _ownerUserId = client.userId ?? '';
+       _ownerUserId = client.userId ?? '' {
+    ForYouService.instance.requestedChanges.addListener(notifyListeners);
+  }
+
+  @override
+  void dispose() {
+    ForYouService.instance.requestedChanges.removeListener(notifyListeners);
+    super.dispose();
+  }
 
   /// Whether a section whose load threw keeps what is already on screen.
   ///

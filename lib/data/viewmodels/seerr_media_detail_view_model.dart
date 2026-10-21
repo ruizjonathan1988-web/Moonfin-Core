@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart' show AppLifecycleState, WidgetsBinding;
 
 import '../../preference/seerr_preferences.dart';
 import '../repositories/seerr_repository.dart';
+import '../services/seerr/for_you_service.dart';
 import '../services/seerr/seerr_api_models.dart';
 import '../services/seerr/seerr_download_progress.dart';
 import '../services/seerr/seerr_error.dart';
@@ -646,6 +647,8 @@ class SeerrMediaDetailViewModel extends ChangeNotifier {
         rootFolder: rootFolder,
         serverId: serverId,
       );
+      // The home cards already drawn show it as requested.
+      ForYouService.instance.markRequested(mediaType, _state.tmdbId);
 
       await _reloadDetails('Request submitted');
     } catch (e) {
