@@ -3,7 +3,8 @@
 ///
 /// Admissions are history, so the lists live here. Sources: the CNC for the
 /// 2010s, CBO Box-Office for all time, and each year's tallies for the
-/// 2020s, as of October 2026. The 2020s list wants a look once a year.
+/// 2020s, as of October 2026. The decade under way also follows TMDB's box
+/// office live, so its new hits show up without touching these lists.
 library;
 
 /// The 2020s so far.
@@ -51,3 +52,9 @@ const frenchHitsAllTime = [
   1152014, // Un p'tit truc en plus (2024), 10.8 M
   2332, // Taxi 2 (2000), 10.3 M
 ];
+
+/// The lists by the year their decade starts.
+const frenchHitsByDecade = {2020: frenchHits2020s, 2010: frenchHits2010s};
+
+/// The year the decade of [now] starts.
+int decadeOf(DateTime now) => now.year ~/ 10 * 10;

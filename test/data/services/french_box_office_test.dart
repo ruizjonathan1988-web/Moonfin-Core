@@ -17,4 +17,15 @@ void main() {
     expect(frenchHitsAllTime, contains(frenchHits2010s.first));
     expect(frenchHitsAllTime, contains(frenchHits2020s.first));
   });
+
+  test('a year belongs to the decade it falls in', () {
+    expect(decadeOf(DateTime(2026, 10, 22)), 2020);
+    expect(decadeOf(DateTime(2030, 1, 1)), 2030);
+    expect(decadeOf(DateTime(2019, 12, 31)), 2010);
+  });
+
+  test('every recorded decade has its list', () {
+    expect(frenchHitsByDecade[2020], same(frenchHits2020s));
+    expect(frenchHitsByDecade[2010], same(frenchHits2010s));
+  });
 }

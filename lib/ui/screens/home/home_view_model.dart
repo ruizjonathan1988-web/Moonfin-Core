@@ -3289,12 +3289,25 @@ class HomeViewModel extends ChangeNotifier {
   /// went to see most in cinemas this decade first, then the award winners
   /// and the best rated of the last five years, taking turns, then only what
   /// can be watched at home.
+  ///
+  /// This decade's hits are the admissions recorded in the app, taking turns
+  /// with the French films TMDB ranks highest at the box office since the
+  /// decade began, so a new hit shows up on its own.
   Future<List<SeerrDiscoverItem>> _frenchMovies(SeerrRepository repo) async {
     final now = DateTime.now();
+    final decade = decadeOf(now);
     final winners = _chartSource(
       () => GetIt.instance<FilmAwardsClient>().frenchWinners(),
     );
-    final (recent, acclaimed) = await (
+    final (boxOffice, recent, acclaimed) = await (
+      _chartPage(
+        () => repo.discoverMovies(
+          language: 'fr',
+          sortBy: 'revenue.desc',
+          primaryReleaseDateGte: tmdbDay(DateTime(decade)),
+          primaryReleaseDateLte: tmdbDay(now),
+        ),
+      ),
       _chartPage(
         () => repo.discoverMovies(
           language: 'fr',
@@ -3312,14 +3325,22 @@ class HomeViewModel extends ChangeNotifier {
       ),
     ).wait;
     final known = {
-      for (final film in [...recent, ...acclaimed]) film.id: film,
+      for (final film in [...boxOffice, ...recent, ...acclaimed]) film.id: film,
     };
     Future<SeerrDiscoverItem> fetch(int tmdbId) =>
         repo.getDiscoverItem('movie', tmdbId);
-    final (hits, awarded) = await (
-      chartCards(frenchHits2020s, known: known, fetch: fetch),
+    final (recorded, awarded) = await (
+      chartCards(
+        frenchHitsByDecade[decade] ?? const [],
+        known: known,
+        fetch: fetch,
+      ),
       winners.then((ids) => chartCards(ids, known: known, fetch: fetch)),
     ).wait;
+    final hits = takeTurns([
+      recorded,
+      chartPicks(boxOffice, limit: 10),
+    ], keyOf: tmdbKey);
     return _outAtHome(
       repo,
       takeTurns([
@@ -3368,12 +3389,20 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   /// The classics of French cinema: the films France went to see most of
-  /// all time and in the 2010s, taking turns with the best rated French
-  /// films of all time. All long out, so no release check.
+  /// all time and in the decades before this one, the latest first, taking
+  /// turns with the best rated French films of all time. All long out, so no
+  /// release check.
   Future<List<SeerrDiscoverItem>> _frenchClassics(SeerrRepository repo) async {
+    final decade = decadeOf(DateTime.now());
+    final pastDecades =
+        frenchHitsByDecade.keys.where((d) => d < decade).toList()
+          ..sort((a, b) => b.compareTo(a));
     final acclaimed = await _frenchAcclaimed(repo, 'movie', minVotes: 1000);
     final hits = await chartCards(
-      takeTurns([frenchHitsAllTime, frenchHits2010s]),
+      takeTurns([
+        frenchHitsAllTime,
+        for (final past in pastDecades) frenchHitsByDecade[past]!,
+      ]),
       known: {for (final film in acclaimed) film.id: film},
       fetch: (tmdbId) => repo.getDiscoverItem('movie', tmdbId),
       depth: 20,
