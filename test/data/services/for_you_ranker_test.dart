@@ -36,6 +36,33 @@ TasteSignal _signal(int id, {String type = 'movie'}) =>
 List<int> _ids(List<ForYouPick> picks) => [for (final p in picks) p.item.id];
 
 void main() {
+  group('requestStrength', () {
+    double strength(int? status, String? since) => ForYouRanker.requestStrength(
+      status: status,
+      availableSince: since,
+      now: _now,
+    );
+
+    test('a request still on its way counts in full', () {
+      expect(strength(SeerrMediaStatus.processing, null), 1);
+      expect(strength(SeerrMediaStatus.pending, '2026-01-01'), 1);
+    });
+
+    test('an available title fades once it waits unwatched', () {
+      expect(strength(SeerrMediaStatus.available, '2026-10-10'), 1);
+      expect(
+        strength(SeerrMediaStatus.available, '2026-09-12'),
+        closeTo(0.6, 0.01),
+      );
+      expect(strength(SeerrMediaStatus.partiallyAvailable, '2026-06-01'), 0.2);
+    });
+
+    test('an unknown date keeps the full weight', () {
+      expect(strength(SeerrMediaStatus.available, null), 1);
+      expect(strength(SeerrMediaStatus.available, 'soon'), 1);
+    });
+  });
+
   group('buildSeeds', () {
     test('newer watches weigh more than older ones', () {
       final seeds = ForYouRanker.buildSeeds(

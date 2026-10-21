@@ -57,6 +57,7 @@ Future<TasteExtras> loadTasteExtras(
     try {
       final user = await repo.getCurrentUser();
       final response = await repo.getRequests(requestedBy: user.id, limit: 30);
+      final now = DateTime.now();
       return [
         for (final request in response.results)
           if (request.status != SeerrRequest.statusDeclined &&
@@ -65,6 +66,11 @@ Future<TasteExtras> loadTasteExtras(
               tmdbId: request.media!.tmdbId!,
               mediaType: request.type == 'tv' ? 'tv' : 'movie',
               title: request.media!.title ?? request.media!.name ?? '',
+              strength: ForYouRanker.requestStrength(
+                status: request.media!.status,
+                availableSince: request.media!.mediaAddedAt,
+                now: now,
+              ),
             ),
       ];
     } catch (e) {

@@ -163,6 +163,26 @@ abstract final class ForYouRanker {
     source: TasteSource.trakt,
   );
 
+  /// How much a request still says about the viewer's taste.
+  ///
+  /// Until the title can be watched, all of it. Once it can, a request left
+  /// waiting says less week after week: the full weight for two weeks, then
+  /// fading to a fifth after two months. A title the viewer did watch counts
+  /// through the watch history instead.
+  static double requestStrength({
+    required int? status,
+    required String? availableSince,
+    required DateTime now,
+  }) {
+    if (!SeerrMediaStatus.isAvailable(status)) return 1;
+    final since = DateTime.tryParse(availableSince ?? '');
+    if (since == null) return 1;
+    final days = now.difference(since).inDays;
+    if (days <= 14) return 1;
+    if (days >= 60) return 0.2;
+    return 1 - 0.8 * (days - 14) / 46;
+  }
+
   /// Weights the viewer's history into seeds.
   ///
   /// [recent] is newest first and fades with age. [favorites] count a fixed
