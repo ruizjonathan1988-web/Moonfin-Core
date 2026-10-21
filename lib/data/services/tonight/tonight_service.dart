@@ -17,6 +17,7 @@ import '../seerr/for_you_service.dart';
 import '../seerr/seerr_api_models.dart';
 import '../seerr/seerr_error.dart';
 import '../seerr/taste_extras.dart';
+import '../seerr/seed_recommendations.dart';
 import '../seerr/taste_profile.dart';
 import 'evening_journal.dart';
 import 'habit_model.dart';
@@ -607,9 +608,7 @@ class TonightService {
   ) => ForYouService.instance.loadRaw(
     serverId: serverId,
     loadHistory: () => source.loadTasteHistory(serverId),
-    fetchRecommendations: (seed) => seed.mediaType == 'tv'
-        ? repo.getTvRecommendations(seed.tmdbId)
-        : repo.getMovieRecommendations(seed.tmdbId),
+    fetchRecommendations: (seed) => seedRecommendations(repo, seed),
     loadExtras: () => loadTasteExtras(repo, profile),
   );
 

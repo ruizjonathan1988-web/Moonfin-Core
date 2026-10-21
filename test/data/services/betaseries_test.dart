@@ -70,4 +70,62 @@ void main() {
       expect(parseBetaSeriesShowTmdbId(null), isNull);
     });
   });
+
+  group('parseBetaSeriesSimilars', () {
+    Map<String, Object?> similar(String key, String idField, int id, int followers) =>
+        {
+          'id': 1,
+          'login': 'member',
+          key: {idField: id, 'followers': followers},
+        };
+
+    test('puts the most followed series first', () {
+      final ids = parseBetaSeriesSimilars({
+        'similars': [
+          similar('show', 'themoviedb_id', 100, 500),
+          similar('show', 'themoviedb_id', 200, 60000),
+          similar('show', 'themoviedb_id', 300, 500),
+        ],
+      }, mediaType: 'tv');
+      // Ties keep the order the members added them in.
+      expect(ids, [200, 100, 300]);
+    });
+
+    test('reads films by their own key and id field', () {
+      final ids = parseBetaSeriesSimilars({
+        'similars': [
+          similar('movie', 'tmdb_id', 6479, 10),
+          similar('show', 'themoviedb_id', 1, 99),
+        ],
+      }, mediaType: 'movie');
+      expect(ids, [6479]);
+    });
+
+    test('skips a title twice or without a TMDB id', () {
+      final ids = parseBetaSeriesSimilars({
+        'similars': [
+          similar('show', 'themoviedb_id', 0, 10),
+          similar('show', 'themoviedb_id', 7, 10),
+          similar('show', 'themoviedb_id', 7, 10),
+          {'show_title': 'No details'},
+        ],
+      }, mediaType: 'tv');
+      expect(ids, [7]);
+    });
+
+    test('an error gives nothing', () {
+      expect(
+        parseBetaSeriesSimilars({
+          'errors': [{'code': 4001}],
+        }, mediaType: 'movie'),
+        isEmpty,
+      );
+    });
+  });
+
+  test('parseBetaSeriesMovieId reads BetaSeries own id', () {
+    expect(parseBetaSeriesMovieId({'movie': {'id': 130330}}), 130330);
+    expect(parseBetaSeriesMovieId({'movie': {'id': null}}), isNull);
+    expect(parseBetaSeriesMovieId('oops'), isNull);
+  });
 }

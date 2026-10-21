@@ -39,6 +39,7 @@ import '../../../data/services/seerr/for_you_ranker.dart';
 import '../../../data/services/seerr/taste_profile.dart';
 import '../../../data/services/seerr/taste_extras.dart';
 import '../../../data/services/seerr/saga_service.dart';
+import '../../../data/services/seerr/seed_recommendations.dart';
 import '../../../data/services/betaseries/betaseries_client.dart';
 import '../../../data/services/chart_cards.dart';
 import '../../../data/services/trakt/trakt_client.dart';
@@ -2890,9 +2891,7 @@ class HomeViewModel extends ChangeNotifier {
       final picks = await ForYouService.instance.load(
         serverId: _serverId,
         loadHistory: () => _dataSource.loadTasteHistory(_serverId),
-        fetchRecommendations: (seed) => seed.mediaType == 'tv'
-            ? repo.getTvRecommendations(seed.tmdbId)
-            : repo.getMovieRecommendations(seed.tmdbId),
+        fetchRecommendations: (seed) => seedRecommendations(repo, seed),
         loadExtras: () => _loadTasteExtras(repo, taste.profile),
         weigh: taste.weigh,
         hidden: {...taste.feedback.hiddenKeys, ...taste.profile.seenKeys},
@@ -3262,9 +3261,7 @@ class HomeViewModel extends ChangeNotifier {
       final rows = await ForYouService.instance.loadBecauseRows(
         serverId: _serverId,
         loadHistory: () => _dataSource.loadTasteHistory(_serverId),
-        fetchRecommendations: (seed) => seed.mediaType == 'tv'
-            ? repo.getTvRecommendations(seed.tmdbId)
-            : repo.getMovieRecommendations(seed.tmdbId),
+        fetchRecommendations: (seed) => seedRecommendations(repo, seed),
         loadExtras: () => _loadTasteExtras(repo, taste.profile),
         weigh: taste.weigh,
         hidden: {...taste.feedback.hiddenKeys, ...taste.profile.seenKeys},
@@ -3408,9 +3405,7 @@ class HomeViewModel extends ChangeNotifier {
       final picks = await ForYouService.instance.loadGems(
         serverId: _serverId,
         loadHistory: () => _dataSource.loadTasteHistory(_serverId),
-        fetchRecommendations: (seed) => seed.mediaType == 'tv'
-            ? repo.getTvRecommendations(seed.tmdbId)
-            : repo.getMovieRecommendations(seed.tmdbId),
+        fetchRecommendations: (seed) => seedRecommendations(repo, seed),
         loadExtras: () => _loadTasteExtras(repo, taste.profile),
         weigh: taste.weigh,
         hidden: {...taste.feedback.hiddenKeys, ...taste.profile.seenKeys},
