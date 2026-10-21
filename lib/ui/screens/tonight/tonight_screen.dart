@@ -400,7 +400,6 @@ class _TonightScreenState extends State<TonightScreen> {
             style: TextStyle(color: onBg.withValues(alpha: 0.55), fontSize: 12.5),
           );
 
-    final wide = layout == _Layout.wide;
     final posterWidth = switch (layout) {
       _Layout.wide => 140.0,
       _Layout.compact => 100.0,
