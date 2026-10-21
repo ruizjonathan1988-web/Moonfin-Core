@@ -34,7 +34,7 @@ List<HomeRow> tidyHomeRows(
       ];
       // A row with nothing new keeps what it has rather than vanish
       // while its next page could still bring something.
-      if (fresh.isNotEmpty) items = fresh;
+      if (fresh.isNotEmpty && fresh.length < items.length) items = fresh;
     }
     if (row.rowType != HomeRowType.mediaBar) {
       for (final item in items) {
