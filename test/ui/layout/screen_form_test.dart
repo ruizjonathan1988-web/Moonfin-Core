@@ -13,6 +13,9 @@ const _openLandscape = Size(974, 734);
 const _phone = Size(412, 915);
 
 void main() {
+  // A forced posture watches the window through the binding.
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   setUp(() => PlatformDetection.setInterfaceLayout(InterfaceLayout.phone));
   tearDown(() {
     Tabletop.forced.value = false;
