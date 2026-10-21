@@ -1,5 +1,5 @@
 /// Small decisions behind the streaming-style touches on the home screen:
-/// the Top 10 rows, the Surprise row and the New badge.
+/// the Top 10 and French rows, the Surprise row and the New badge.
 library;
 
 import '../models/aggregated_item.dart';
