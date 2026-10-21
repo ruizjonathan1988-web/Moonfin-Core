@@ -1,0 +1,30 @@
+# Temporary: checks BetaSeries' similar titles, shown in the job annotations.
+name: Sonde BetaSeries
+
+on:
+  push:
+    branches: [perso-wip]
+    paths: ['.github/workflows/betaseries-probe.yml']
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Interroger BetaSeries
+        env:
+          KEY: '09fe278bf39e'
+        run: |
+          call() {
+            code=$(curl -sS -m 20 -o body.json -w '%{http_code}' \
+              -H "X-BetaSeries-Key: $KEY" \
+              -H 'X-BetaSeries-Version: 3.0' \
+              -A 'Moonfin-perso' "$2")
+            echo "::notice title=$1::HTTP $code $(jq -c "${3:-.}" body.json 2>/dev/null | head -c 1500 || head -c 600 body.json)"
+          }
+          call show-by-tmdb 'https://api.betaseries.com/shows/display?themoviedb_id=222176' '{id: .show.id, title: .show.title, errors}'
+          call show-by-tvdb 'https://api.betaseries.com/shows/display?thetvdb_id=433161' '{id: .show.id, title: .show.title, errors}'
+          call show-similars 'https://api.betaseries.com/shows/similars?id=36263&details=true' '.'
+          call show-similars-tvdb 'https://api.betaseries.com/shows/similars?thetvdb_id=433161' '.'
+          call movie-by-tmdb 'https://api.betaseries.com/movies/movie?tmdb_id=1100988' '{id: .movie.id, title: .movie.title, errors}'
+          call movie-similars 'https://api.betaseries.com/movies/similars?id=130330&details=true' '.'
+          call movie-similars-tmdb 'https://api.betaseries.com/movies/similars?tmdb_id=1100988' '.'
