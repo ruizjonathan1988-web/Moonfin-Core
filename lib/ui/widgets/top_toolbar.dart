@@ -34,6 +34,7 @@ import 'friends_nav_slot.dart';
 import 'expandable_icon_button.dart';
 import 'marquee_text.dart';
 import 'overlay_sheet.dart';
+import '../layout/screen_form.dart';
 import 'navigation_layout.dart';
 import 'settings/settings_panel.dart';
 import '../screens/downloads/downloads_panel.dart';
@@ -1259,6 +1260,23 @@ class _TopToolbarState extends State<TopToolbar> with RouteAware {
                     label: l10n.serverMessages,
                   ),
                 ),
+              // The Fold8 never reports standing half folded, so the viewer
+              // says so. The bottom half of the screen takes over from here.
+              if (PlatformDetection.useMobileUi &&
+                  Tabletop.canForce(MediaQuery.sizeOf(context))) ...[
+                _gap(),
+                _orderButton(
+                  order: 98,
+                  child: ExpandableIconButton(
+                    key: const ValueKey('toolbar_tabletop'),
+                    forceExpanded: alwaysExpanded,
+                    icon: Icons.laptop_rounded,
+                    label: l10n.foldTabletopShort,
+                    baseColor: nextNavColor(),
+                    onPressed: () => Tabletop.forced.value = true,
+                  ),
+                ),
+              ],
               _orderButton(
                 order: 99,
                 child: ExpandableIconButton(

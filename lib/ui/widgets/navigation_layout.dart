@@ -293,12 +293,30 @@ class _NavigationLayoutState extends State<NavigationLayout>
 
   @override
   Widget build(BuildContext context) {
-    final layout = switch (_position) {
-      NavbarPosition.left => _buildSidebar(),
-      NavbarPosition.top => _buildToolbar(),
-      NavbarPosition.bottom =>
-        NavigationLayout.allowBottomNavbar ? _buildTouchNav() : _buildToolbar(),
-    };
+    // Tabletop posture takes the whole screen whichever navbar is chosen: the
+    // lower half rests on the table and holds the navigation.
+    if (PlatformDetection.useMobileUi && !PlatformDetection.isWeb) {
+      return ValueListenableBuilder<bool>(
+        valueListenable: Tabletop.forced,
+        builder: (context, forced, _) {
+          final fold = Tabletop.foldIn(context);
+          return _groupGlass(
+            fold == null ? _buildLayout() : _buildTabletop(fold, forced: forced),
+          );
+        },
+      );
+    }
+    return _groupGlass(_buildLayout());
+  }
+
+  Widget _buildLayout() => switch (_position) {
+    NavbarPosition.left => _buildSidebar(),
+    NavbarPosition.top => _buildToolbar(),
+    NavbarPosition.bottom =>
+      NavigationLayout.allowBottomNavbar ? _buildTouchNav() : _buildToolbar(),
+  };
+
+  Widget _groupGlass(Widget layout) {
     // Grouping only pays off when the tier draws real backdrop blurs, the
     // sheen tier never does.
     return AppColorScheme.isGlass && GlassSettings.blursBackdrop
@@ -317,24 +335,16 @@ class _NavigationLayoutState extends State<NavigationLayout>
     ),
   );
 
-  /// The bottom navbar, or what takes its place on a foldable: the rail when
-  /// it is opened, the tabletop panel when it stands half folded. Folding or
-  /// opening the phone switches between them, and the keyed content moves
-  /// across without being built again.
+  /// The bottom navbar, or the rail that takes its place on an opened
+  /// foldable. Folding or opening the phone switches between them, and the
+  /// keyed content moves across without being built again.
   Widget _buildTouchNav() {
-    return ValueListenableBuilder<bool>(
-      valueListenable: Tabletop.forced,
-      builder: (context, forced, _) {
-        final fold = Tabletop.foldIn(context);
-        if (fold != null) return _buildTabletop(fold, forced: forced);
-        if (_unfoldedRail &&
-            widget.showNavigationChrome &&
-            ScreenForm.of(context) == ScreenForm.unfolded) {
-          return _buildRail();
-        }
-        return _buildBottomBar();
-      },
-    );
+    if (_unfoldedRail &&
+        widget.showNavigationChrome &&
+        ScreenForm.of(context) == ScreenForm.unfolded) {
+      return _buildRail();
+    }
+    return _buildBottomBar();
   }
 
   Widget _buildRail() {

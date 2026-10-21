@@ -2354,7 +2354,11 @@ class _ContentRowsState extends State<_ContentRows>
 
     final isLandscape = screenWidth > screenHeight;
     if (isLandscape) {
-      return screenHeight;
+      // An opened foldable held sideways is as wide as a tablet: a banner as
+      // tall as the screen would hide every row under it.
+      return ScreenForm.of(context) == ScreenForm.unfolded
+          ? screenHeight * 0.62
+          : screenHeight;
     }
 
     final mediaBarMode = UserPreferences.normalizeMediaBarMode(
