@@ -3033,7 +3033,7 @@ class HomeViewModel extends ChangeNotifier {
       Future<SeerrDiscoverPage> Function() fetch,
     ) => source(() async => (await fetch()).results);
 
-    final List<SeerrDiscoverItem> chart;
+    List<SeerrDiscoverItem> chart;
     if (yearBest) {
       final window = yearChartWindow(DateTime.now());
       final results = await page(
@@ -3097,11 +3097,42 @@ class HomeViewModel extends ChangeNotifier {
         for (final c in [...charts, ...idCards]) chartPicks(c, limit: 20),
       ]);
     }
+    if (!isTv) chart = await _outAtHome(repo, chart);
     // Nothing came back: no row, and the next load asks again.
     if (chart.isNotEmpty) {
       _chartCache[key] = (at: DateTime.now(), chart: chart);
     }
     return chart;
+  }
+
+  /// How far down a film chart the release dates are checked: enough for a
+  /// Top 10 once the films still in cinemas are out.
+  static const _homeCheckDepth = 16;
+
+  /// The films of [chart] that can be watched at home, among the first
+  /// [_homeCheckDepth]: one still only in cinemas can't be had yet. A film
+  /// the library holds stays, and so does one whose dates can't be read.
+  Future<List<SeerrDiscoverItem>> _outAtHome(
+    SeerrRepository repo,
+    List<SeerrDiscoverItem> chart,
+  ) async {
+    final now = DateTime.now();
+    final head = chart.take(_homeCheckDepth).toList();
+    final keep = await Future.wait([
+      for (final film in head)
+        SeerrMediaStatus.isAvailable(film.mediaInfo?.status)
+            ? Future.value(true)
+            : repo
+                  .getMovieReleases(film.id)
+                  .then(
+                    (releases) => isOutAtHome(releases, now),
+                    onError: (Object e) => true,
+                  ),
+    ]);
+    return [
+      for (final (i, film) in head.indexed)
+        if (keep[i]) film,
+    ];
   }
 
   /// A movie and a series to start without choosing, drawn fresh on each

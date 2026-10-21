@@ -192,4 +192,63 @@ void main() {
       expect(picks.map((i) => i.id), ['top', 'ok', 'low']);
     });
   });
+
+  group('films out at home', () {
+    final now = DateTime(2026, 10, 21);
+
+    test('reads every country of the details', () {
+      final releases = parseFilmReleases({
+        'releases': {
+          'results': [
+            {
+              'iso_3166_1': 'FR',
+              'release_dates': [
+                {'type': 3, 'release_date': '2026-07-15T00:00:00.000Z'},
+              ],
+            },
+            {
+              'iso_3166_1': 'US',
+              'release_dates': [
+                {'type': 4, 'release_date': '2026-11-17T00:00:00.000Z'},
+                {'type': 3, 'release_date': 'not a date'},
+              ],
+            },
+          ],
+        },
+      });
+      expect([for (final r in releases) r.type], [3, 4]);
+    });
+
+    test('details without dates give none', () {
+      expect(parseFilmReleases({'title': 'x'}), isEmpty);
+    });
+
+    test('a film out on digital can be watched', () {
+      expect(
+        isOutAtHome([(type: 4, date: DateTime(2026, 10, 1))], now),
+        isTrue,
+      );
+    });
+
+    test('a film only in cinemas cannot yet', () {
+      expect(
+        isOutAtHome([
+          (type: 3, date: DateTime(2026, 9, 1)),
+          (type: 4, date: DateTime(2026, 12, 1)),
+        ], now),
+        isFalse,
+      );
+    });
+
+    test('four months after cinemas it is taken as out', () {
+      expect(
+        isOutAtHome([(type: 3, date: DateTime(2026, 6, 1))], now),
+        isTrue,
+      );
+    });
+
+    test('a film with no dates gets the benefit of the doubt', () {
+      expect(isOutAtHome(const [], now), isTrue);
+    });
+  });
 }

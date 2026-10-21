@@ -75,6 +75,49 @@ List<SeerrDiscoverItem> fuseCharts(
   return (from: day(DateTime(now.year - 1, now.month, now.day)), to: day(now));
 }
 
+/// One way a film came out, as TMDB records it: [type] 1 premiere, 2 and 3
+/// cinemas, 4 digital, 5 disc, 6 television.
+typedef FilmRelease = ({int type, DateTime date});
+
+/// The release dates in a film's details from Seerr, every country together.
+List<FilmRelease> parseFilmReleases(Map<String, dynamic> details) {
+  final releases = details['releases'];
+  final countries = releases is Map ? releases['results'] : null;
+  if (countries is! List) return const [];
+  return [
+    for (final country in countries)
+      if (country is Map && country['release_dates'] is List)
+        for (final release in country['release_dates'] as List)
+          if (release is Map &&
+              release['type'] is int &&
+              DateTime.tryParse('${release['release_date']}') != null)
+            (
+              type: release['type'] as int,
+              date: DateTime.parse('${release['release_date']}'),
+            ),
+  ];
+}
+
+/// How long after cinemas a film can be watched at home in France, when
+/// TMDB has no digital date for it.
+const cinemaToHome = Duration(days: 120);
+
+/// Whether a film with [releases] can be watched at home by [now]: out on
+/// digital, disc or television somewhere, or in cinemas long enough ago.
+/// A film with no dates at all is given the benefit of the doubt.
+bool isOutAtHome(List<FilmRelease> releases, DateTime now) {
+  if (releases.isEmpty) return true;
+  for (final release in releases) {
+    if (release.date.isAfter(now)) continue;
+    if (release.type >= 4) return true;
+    if ((release.type == 2 || release.type == 3) &&
+        now.difference(release.date) >= cinemaToHome) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /// How long a title counts as new on its card.
 const freshlyAddedWindow = Duration(days: 10);
 

@@ -3,6 +3,7 @@ import 'package:server_core/server_core.dart';
 
 import '../../auth/repositories/session_repository.dart';
 import '../services/seerr/seerr_api_models.dart';
+import '../services/home_highlights.dart';
 import '../services/seerr/seerr_discover_sliders.dart';
 import '../services/seerr/seerr_http_client.dart';
 import '../services/seerr/seerr_models.dart';
@@ -634,6 +635,12 @@ class SeerrRepository {
       mediaInfo: movie.mediaInfo,
     );
   }
+
+  /// Every date the film [tmdbId] came out on, with how, as TMDB lists them
+  /// in its details.
+  Future<List<FilmRelease>> getMovieReleases(int tmdbId) => _withClient(
+    (c) async => parseFilmReleases(await c.getMovieDetails(tmdbId)),
+  );
 
   Future<SeerrTvDetails> getTvDetailsByTvdb(int tvdbId) => _withClient(
     (c) async => SeerrTvDetails.fromJson(await c.getTvDetailsByTvdb(tvdbId)),
