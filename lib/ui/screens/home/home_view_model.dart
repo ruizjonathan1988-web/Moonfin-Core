@@ -2836,7 +2836,7 @@ class HomeViewModel extends ChangeNotifier {
             : repo.getMovieRecommendations(seed.tmdbId),
         loadExtras: () => _loadTasteExtras(repo, taste.profile),
         weigh: taste.weigh,
-        hidden: taste.feedback.hiddenKeys,
+        hidden: {...taste.feedback.hiddenKeys, ...taste.profile.seenKeys},
         blockAdult: blockNsfw,
         forceRefresh: forceRefresh,
       );
@@ -3080,7 +3080,7 @@ class HomeViewModel extends ChangeNotifier {
             : repo.getMovieRecommendations(seed.tmdbId),
         loadExtras: () => _loadTasteExtras(repo, taste.profile),
         weigh: taste.weigh,
-        hidden: taste.feedback.hiddenKeys,
+        hidden: {...taste.feedback.hiddenKeys, ...taste.profile.seenKeys},
         blockAdult: blockNsfw,
         forceRefresh: forceRefresh,
       );
@@ -3252,7 +3252,7 @@ class HomeViewModel extends ChangeNotifier {
             : repo.getMovieRecommendations(seed.tmdbId),
         loadExtras: () => _loadTasteExtras(repo, taste.profile),
         weigh: taste.weigh,
-        hidden: taste.feedback.hiddenKeys,
+        hidden: {...taste.feedback.hiddenKeys, ...taste.profile.seenKeys},
         blockAdult: blockNsfw,
         forceRefresh: forceRefresh,
       );

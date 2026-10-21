@@ -2740,7 +2740,7 @@ class RowDataSource {
     })
   >
   loadTonightLibrary(String serverId) async {
-    const fields = '$_fields,ProviderIds';
+    const fields = '$_fields,ProviderIds,ChildCount';
 
     Future<List<AggregatedItem>> draw(
       List<String> types, {

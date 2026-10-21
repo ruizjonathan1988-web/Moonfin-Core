@@ -13,6 +13,14 @@ Future<TasteExtras> loadTasteExtras(
   TasteProfile profile,
 ) async {
   final picked = [
+    // An all-time favourite says three times what a liked title says.
+    for (final pick in profile.pivots)
+      TasteSignal(
+        tmdbId: pick.tmdbId,
+        mediaType: pick.mediaType,
+        title: pick.title,
+        strength: 3,
+      ),
     for (final pick in profile.favorites)
       TasteSignal(
         tmdbId: pick.tmdbId,

@@ -14512,6 +14512,425 @@
   "@tonightRetry": {
     "description": "Tonight"
   },
+  "quizWelcomeTitle": "Shall we get acquainted?",
+  "@quizWelcomeTitle": {
+    "description": "Taste questionnaire"
+  },
+  "quizWelcomeHint": "A few minutes for suggestions that fit you. Any question can be skipped.",
+  "@quizWelcomeHint": {
+    "description": "Taste questionnaire"
+  },
+  "quizQuick": "Quick · 1.5 min",
+  "@quizQuick": {
+    "description": "Taste questionnaire"
+  },
+  "quizQuickSub": "The essentials: who you watch with, your favourites, a few posters and your limits.",
+  "@quizQuickSub": {
+    "description": "Taste questionnaire"
+  },
+  "quizFull": "Full · 3.5 min",
+  "@quizFull": {
+    "description": "Taste questionnaire"
+  },
+  "quizFullSub": "The most precise: format, poster duels and cinemas on top.",
+  "@quizFullSub": {
+    "description": "Taste questionnaire"
+  },
+  "quizContextTitle": "Most often, you watch…",
+  "@quizContextTitle": {
+    "description": "Taste questionnaire"
+  },
+  "quizContextHint": "Tick everything that happens often.",
+  "@quizContextHint": {
+    "description": "Taste questionnaire"
+  },
+  "quizContextWho": "With whom?",
+  "@quizContextWho": {
+    "description": "Taste questionnaire"
+  },
+  "quizContextFamily": "With the kids",
+  "@quizContextFamily": {
+    "description": "Taste questionnaire"
+  },
+  "quizContextKids": "Age of the youngest?",
+  "@quizContextKids": {
+    "description": "Taste questionnaire"
+  },
+  "quizFormatTitle": "Your format",
+  "@quizFormatTitle": {
+    "description": "Taste questionnaire"
+  },
+  "quizFormatHint": "Movies or series, and how much time you give them.",
+  "@quizFormatHint": {
+    "description": "Taste questionnaire"
+  },
+  "quizLengthQuestion": "A good film, for you, runs…",
+  "@quizLengthQuestion": {
+    "description": "Taste questionnaire"
+  },
+  "quizLengthShort": "Under 1h40",
+  "@quizLengthShort": {
+    "description": "Taste questionnaire"
+  },
+  "quizLengthMedium": "1h40 to 2h20",
+  "@quizLengthMedium": {
+    "description": "Taste questionnaire"
+  },
+  "quizLengthLong": "Even 3h, no problem",
+  "@quizLengthLong": {
+    "description": "Taste questionnaire"
+  },
+  "quizSeriesQuestion": "For series, you prefer…",
+  "@quizSeriesQuestion": {
+    "description": "Taste questionnaire"
+  },
+  "quizSeriesMini": "Mini-series",
+  "@quizSeriesMini": {
+    "description": "Taste questionnaire"
+  },
+  "quizSeriesFew": "A few seasons",
+  "@quizSeriesFew": {
+    "description": "Taste questionnaire"
+  },
+  "quizSeriesLong": "Long sagas",
+  "@quizSeriesLong": {
+    "description": "Taste questionnaire"
+  },
+  "quizPivotsTitle": "Your all-time favourite films and series",
+  "@quizPivotsTitle": {
+    "description": "Taste questionnaire"
+  },
+  "quizPivotsHint": "Up to {max}. They will guide your suggestions the most.",
+  "@quizPivotsHint": {
+    "description": "Taste questionnaire",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "quizPivotsCount": "Picked: {count} of {max}",
+  "@quizPivotsCount": {
+    "description": "Taste questionnaire",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "quizSearchHint": "Search for a title",
+  "@quizSearchHint": {
+    "description": "Taste questionnaire"
+  },
+  "quizSearch": "Search",
+  "@quizSearch": {
+    "description": "Taste questionnaire"
+  },
+  "quizGridTitle": "Seen them? What did you think?",
+  "@quizGridTitle": {
+    "description": "Taste questionnaire"
+  },
+  "quizGridHint": "Press once for Liked, twice for So-so, three times for Disliked. Leave the ones you haven't seen.",
+  "@quizGridHint": {
+    "description": "Taste questionnaire"
+  },
+  "quizGridPage": "Page {page} of {total}",
+  "@quizGridPage": {
+    "description": "Taste questionnaire",
+    "placeholders": {
+      "page": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "quizNextPage": "Next page",
+  "@quizNextPage": {
+    "description": "Taste questionnaire"
+  },
+  "quizDuelsTitle": "Tonight, this one or that one?",
+  "@quizDuelsTitle": {
+    "description": "Taste questionnaire"
+  },
+  "quizDuelsHint": "No need to have seen them: pick the one that tempts you most.",
+  "@quizDuelsHint": {
+    "description": "Taste questionnaire"
+  },
+  "quizDuelCount": "Duel {index} of {total}",
+  "@quizDuelCount": {
+    "description": "Taste questionnaire",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "quizOr": "or",
+  "@quizOr": {
+    "description": "Taste questionnaire"
+  },
+  "quizNeither": "Neither",
+  "@quizNeither": {
+    "description": "Taste questionnaire"
+  },
+  "quizSkip": "Skip",
+  "@quizSkip": {
+    "description": "Taste questionnaire"
+  },
+  "quizLimitsTitle": "Your limits",
+  "@quizLimitsTitle": {
+    "description": "Taste questionnaire"
+  },
+  "quizLimitsHint": "What you don't want suggested.",
+  "@quizLimitsHint": {
+    "description": "Taste questionnaire"
+  },
+  "quizViolenceQuestion": "Violence and gore",
+  "@quizViolenceQuestion": {
+    "description": "Taste questionnaire"
+  },
+  "quizViolenceNone": "Not for me",
+  "@quizViolenceNone": {
+    "description": "Taste questionnaire"
+  },
+  "quizViolenceJustified": "If it's justified",
+  "@quizViolenceJustified": {
+    "description": "Taste questionnaire"
+  },
+  "quizViolenceFine": "No problem",
+  "@quizViolenceFine": {
+    "description": "Taste questionnaire"
+  },
+  "quizSubtitlesQuestion": "Subtitles",
+  "@quizSubtitlesQuestion": {
+    "description": "Taste questionnaire"
+  },
+  "quizSubtitlesNever": "Never",
+  "@quizSubtitlesNever": {
+    "description": "Taste questionnaire"
+  },
+  "quizSubtitlesDepends": "It depends",
+  "@quizSubtitlesDepends": {
+    "description": "Taste questionnaire"
+  },
+  "quizSubtitlesGladly": "Gladly",
+  "@quizSubtitlesGladly": {
+    "description": "Taste questionnaire"
+  },
+  "quizCinemasTitle": "Cinemas that draw you?",
+  "@quizCinemasTitle": {
+    "description": "Taste questionnaire"
+  },
+  "quizCinemasHint": "Optional. These original languages will be favoured.",
+  "@quizCinemasHint": {
+    "description": "Taste questionnaire"
+  },
+  "quizCinemaFrance": "France",
+  "@quizCinemaFrance": {
+    "description": "Taste questionnaire"
+  },
+  "quizCinemaEnglish": "US and UK",
+  "@quizCinemaEnglish": {
+    "description": "Taste questionnaire"
+  },
+  "quizCinemaKorea": "South Korea",
+  "@quizCinemaKorea": {
+    "description": "Taste questionnaire"
+  },
+  "quizCinemaJapan": "Japan",
+  "@quizCinemaJapan": {
+    "description": "Taste questionnaire"
+  },
+  "quizCinemaAnime": "Japanese animation",
+  "@quizCinemaAnime": {
+    "description": "Taste questionnaire"
+  },
+  "quizCinemaSpanish": "Spain and Latin America",
+  "@quizCinemaSpanish": {
+    "description": "Taste questionnaire"
+  },
+  "quizCinemaItaly": "Italy",
+  "@quizCinemaItaly": {
+    "description": "Taste questionnaire"
+  },
+  "quizCinemaNordic": "Scandinavia",
+  "@quizCinemaNordic": {
+    "description": "Taste questionnaire"
+  },
+  "quizCinemaIndia": "India",
+  "@quizCinemaIndia": {
+    "description": "Taste questionnaire"
+  },
+  "quizCinemaSurprise": "Surprise me",
+  "@quizCinemaSurprise": {
+    "description": "Taste questionnaire"
+  },
+  "quizRecapTitle": "Here's what I understood",
+  "@quizRecapTitle": {
+    "description": "Taste questionnaire"
+  },
+  "quizRecapHint": "Tap a line to correct it.",
+  "@quizRecapHint": {
+    "description": "Taste questionnaire"
+  },
+  "quizRecapContext": "You mostly watch: {who}",
+  "@quizRecapContext": {
+    "description": "Taste questionnaire",
+    "placeholders": {
+      "who": {
+        "type": "String"
+      }
+    }
+  },
+  "quizRecapLoves": "You mostly love: {genres}",
+  "@quizRecapLoves": {
+    "description": "Taste questionnaire",
+    "placeholders": {
+      "genres": {
+        "type": "String"
+      }
+    }
+  },
+  "quizRecapLess": "Less your thing: {genres}",
+  "@quizRecapLess": {
+    "description": "Taste questionnaire",
+    "placeholders": {
+      "genres": {
+        "type": "String"
+      }
+    }
+  },
+  "quizRecapLeanings": "Rather: {list}",
+  "@quizRecapLeanings": {
+    "description": "Taste questionnaire",
+    "placeholders": {
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "quizRecapNever": "Never: {genres}",
+  "@quizRecapNever": {
+    "description": "Taste questionnaire",
+    "placeholders": {
+      "genres": {
+        "type": "String"
+      }
+    }
+  },
+  "quizRecapNoViolence": "No violence or gore",
+  "@quizRecapNoViolence": {
+    "description": "Taste questionnaire"
+  },
+  "quizRecapSomeViolence": "Violence only when it's justified",
+  "@quizRecapSomeViolence": {
+    "description": "Taste questionnaire"
+  },
+  "quizRecapNoSubtitles": "No subtitled films",
+  "@quizRecapNoSubtitles": {
+    "description": "Taste questionnaire"
+  },
+  "quizRecapSubtitles": "Keen on films in their original language",
+  "@quizRecapSubtitles": {
+    "description": "Taste questionnaire"
+  },
+  "quizRecapCinemas": "Cinemas favoured: {list}",
+  "@quizRecapCinemas": {
+    "description": "Taste questionnaire",
+    "placeholders": {
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "quizRecapKnown": "Better known or more niche?",
+  "@quizRecapKnown": {
+    "description": "Taste questionnaire"
+  },
+  "quizMoreKnown": "Better known",
+  "@quizMoreKnown": {
+    "description": "Taste questionnaire"
+  },
+  "quizBalanced": "Balanced",
+  "@quizBalanced": {
+    "description": "Taste questionnaire"
+  },
+  "quizMoreNiche": "More niche",
+  "@quizMoreNiche": {
+    "description": "Taste questionnaire"
+  },
+  "quizRecapEra": "More recent or older?",
+  "@quizRecapEra": {
+    "description": "Taste questionnaire"
+  },
+  "quizMoreRecent": "More recent",
+  "@quizMoreRecent": {
+    "description": "Taste questionnaire"
+  },
+  "quizMoreClassic": "Older",
+  "@quizMoreClassic": {
+    "description": "Taste questionnaire"
+  },
+  "quizFinishNow": "Finish now",
+  "@quizFinishNow": {
+    "description": "Taste questionnaire"
+  },
+  "quizAxisDark": "dark",
+  "@quizAxisDark": {
+    "description": "Taste questionnaire"
+  },
+  "quizAxisLight": "light",
+  "@quizAxisLight": {
+    "description": "Taste questionnaire"
+  },
+  "quizAxisReal": "realistic",
+  "@quizAxisReal": {
+    "description": "Taste questionnaire"
+  },
+  "quizAxisImaginary": "imaginary",
+  "@quizAxisImaginary": {
+    "description": "Taste questionnaire"
+  },
+  "quizAxisSlow": "slow-burning",
+  "@quizAxisSlow": {
+    "description": "Taste questionnaire"
+  },
+  "quizAxisFast": "fast-paced",
+  "@quizAxisFast": {
+    "description": "Taste questionnaire"
+  },
+  "quizAxisRecent": "recent",
+  "@quizAxisRecent": {
+    "description": "Taste questionnaire"
+  },
+  "quizAxisClassic": "classic",
+  "@quizAxisClassic": {
+    "description": "Taste questionnaire"
+  },
+  "quizAxisPopular": "mainstream",
+  "@quizAxisPopular": {
+    "description": "Taste questionnaire"
+  },
+  "quizAxisNiche": "niche",
+  "@quizAxisNiche": {
+    "description": "Taste questionnaire"
+  },
+  "quizAxisSpectacle": "spectacular",
+  "@quizAxisSpectacle": {
+    "description": "Taste questionnaire"
+  },
+  "quizAxisIntimate": "intimate",
+  "@quizAxisIntimate": {
+    "description": "Taste questionnaire"
+  },
   "tasteTitle": "Your taste",
   "@tasteTitle": {
     "description": "Taste questionnaire title"

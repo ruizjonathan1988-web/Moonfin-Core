@@ -58,6 +58,9 @@ class TonightCandidate {
   /// "S2 · E4" for a series in progress.
   final String? nextEpisodeLabel;
 
+  /// Seasons a series has, when known.
+  final int? seasonCount;
+
   const TonightCandidate({
     required this.key,
     required this.mediaType,
@@ -81,6 +84,7 @@ class TonightCandidate {
     this.backdropUrl,
     this.overview,
     this.nextEpisodeLabel,
+    this.seasonCount,
   });
 
   bool get isMovie => mediaType == 'movie';
@@ -117,6 +121,7 @@ class TonightCandidate {
     backdropUrl: backdropUrl ?? this.backdropUrl,
     overview: overview ?? this.overview,
     nextEpisodeLabel: nextEpisodeLabel,
+    seasonCount: seasonCount,
   );
 
   /// The library copy of [other] wins, with whatever [other] knows better.
@@ -145,6 +150,7 @@ class TonightCandidate {
     backdropUrl: backdropUrl ?? other.backdropUrl,
     overview: (overview?.isNotEmpty ?? false) ? overview : other.overview,
     nextEpisodeLabel: nextEpisodeLabel ?? other.nextEpisodeLabel,
+    seasonCount: seasonCount ?? other.seasonCount,
   );
 }
 
@@ -546,7 +552,13 @@ abstract final class TonightEngine {
     );
     final confidence = input.habits.global.confidence(prior: 10);
     final budget = answers.time.budgetMinutes;
-    var idealMovie = (habit.typicalMovieMinutes ?? 110.0)
+    final declared = switch (input.profile.movieLength) {
+      TasteMovieLength.short => 95.0,
+      TasteMovieLength.medium => 120.0,
+      TasteMovieLength.long => 150.0,
+      TasteMovieLength.any => 110.0,
+    };
+    var idealMovie = (habit.typicalMovieMinutes ?? declared)
         .clamp(85.0, 150.0)
         .toDouble();
     if (budget != null) idealMovie = math.min(idealMovie, budget - 5.0);
@@ -586,6 +598,7 @@ abstract final class TonightEngine {
         mediaType: c.mediaType,
         language: c.language,
         year: c.year,
+        voteCount: c.voteCount,
         profile: input.profile,
         feedback: input.feedback,
         now: input.now,
@@ -610,6 +623,18 @@ abstract final class TonightEngine {
       }
 
       final seed = support[c.key] ?? support[c.tmdbKey];
+      final seasons = c.seasonCount;
+      final seriesFit = c.isMovie || seasons == null
+          ? 0.0
+          : switch (input.profile.seriesFormat) {
+              TasteSeriesFormat.mini =>
+                seasons == 1 ? 0.5 : (seasons >= 4 ? -0.5 : 0.0),
+              TasteSeriesFormat.few =>
+                seasons >= 2 && seasons <= 3 ? 0.5 : (seasons >= 6 ? -0.4 : 0.0),
+              TasteSeriesFormat.long =>
+                seasons >= 4 ? 0.5 : (seasons == 1 ? -0.3 : 0.0),
+              TasteSeriesFormat.any => 0.0,
+            };
       final genreFit = habit.genreFit(c.genres);
       final movieShare = habit.movieShare;
 
@@ -682,7 +707,8 @@ abstract final class TonightEngine {
           TonightFeature.seed: math.log(1 + (seed?.support ?? 0)),
           TonightFeature.habit: genreFit * confidence,
           TonightFeature.format:
-              ((c.isMovie ? movieShare : 1 - movieShare) - 0.5) * confidence,
+              ((c.isMovie ? movieShare : 1 - movieShare) - 0.5) * confidence +
+              seriesFit,
           TonightFeature.mood: neutralMood ? 0 : moodScore,
           TonightFeature.duration: duration,
           TonightFeature.company: company,

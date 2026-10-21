@@ -265,7 +265,7 @@ class TonightService {
 
     if (fromTonight) {
       final reward = finished ? 1.0 : (entry.abandoned ? -1.0 : 0.2);
-      await _learn(launched!.features, reward: reward);
+      await _learn(launched.features, reward: reward);
       // One verdict per launch.
       _session = session!.withLaunched(null);
       await _prefs.setTonightSessionJson(_session!.encode());
@@ -421,6 +421,7 @@ class TonightService {
 
     final watched = <String>{
       ...currentJournal.watchedTmdbKeys,
+      ...profile.seenKeys,
       for (final item in history.recent)
         if (_tmdbKeyOf(item) case final key?
             when item.type == 'Movie' || _isPlayed(item))
@@ -748,6 +749,9 @@ class TonightService {
             ),
       overview: item.overview,
       nextEpisodeLabel: episodeLabel,
+      seasonCount: type == 'tv'
+          ? (item.rawData['ChildCount'] as num?)?.toInt()
+          : null,
     );
   }
 

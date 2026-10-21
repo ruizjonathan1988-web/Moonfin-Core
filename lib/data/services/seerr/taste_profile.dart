@@ -162,7 +162,41 @@ enum TasteMood {
   const TasteMood(this.genres);
 }
 
-/// A title picked as a favourite in the questionnaire.
+/// How long a film may run before it feels long.
+enum TasteMovieLength { short, medium, long, any }
+
+/// The shape of series the viewer settles into.
+enum TasteSeriesFormat { mini, few, long, any }
+
+/// How much violence is welcome.
+enum TasteViolence { none, justified, fine }
+
+/// How the viewer takes subtitles.
+enum TasteSubtitles { never, depends, gladly }
+
+/// The axes of taste the duels measure. Negative leans to the first pole,
+/// positive to the second.
+enum TasteAxis {
+  /// Dark (-) or light (+).
+  darkLight,
+
+  /// Real (-) or imaginary (+).
+  realImaginary,
+
+  /// Slow and contemplative (-) or fast and tense (+).
+  slowFast,
+
+  /// Recent (-) or classic (+).
+  recentClassic,
+
+  /// Mainstream (-) or niche (+).
+  popularNiche,
+
+  /// Spectacle (-) or intimate (+).
+  spectacleIntimate,
+}
+
+/// A title the questionnaire learned something about.
 class TastePick {
   final int tmdbId;
 
@@ -170,12 +204,14 @@ class TastePick {
   final String mediaType;
   final String title;
   final String? posterPath;
+  final Set<TasteGenre> genres;
 
   const TastePick({
     required this.tmdbId,
     required this.mediaType,
     required this.title,
     this.posterPath,
+    this.genres = const {},
   });
 
   String get key => '$mediaType:$tmdbId';
@@ -185,6 +221,7 @@ class TastePick {
     'type': mediaType,
     'title': title,
     'poster': ?posterPath,
+    if (genres.isNotEmpty) 'genres': [for (final g in genres) g.name],
   };
 
   static TastePick? fromJson(Object? json) {
@@ -197,6 +234,12 @@ class TastePick {
       mediaType: type as String,
       title: json['title'] as String? ?? '',
       posterPath: json['poster'] as String?,
+      genres: {
+        if (json['genres'] case final List list)
+          for (final name in list)
+            if (name is String)
+              if (TasteGenre.byName(name) case final genre?) genre,
+      },
     );
   }
 }
@@ -209,8 +252,41 @@ class TasteProfile {
 
   /// ISO 639-1 codes. Empty means any language.
   final Set<String> languages;
+
+  /// Titles seen and liked.
   final List<TastePick> favorites;
   final TasteEra era;
+
+  /// The all-time favourites: the strongest signal there is.
+  final List<TastePick> pivots;
+
+  /// Titles seen and found so-so.
+  final List<TastePick> meh;
+
+  /// Titles seen and disliked.
+  final List<TastePick> disliked;
+
+  /// Who the viewer usually watches with: `alone`, `couple`, `family`,
+  /// `friends`.
+  final Set<String> contexts;
+
+  /// The youngest child's age band when watching as a family: `under7`,
+  /// `from7to12` or `teen`.
+  final String? kidsAge;
+  final TasteMovieLength movieLength;
+  final TasteSeriesFormat seriesFormat;
+
+  /// Where each duel landed, from -2 to 2. Missing means not asked or no
+  /// preference.
+  final Map<TasteAxis, double> axes;
+  final TasteViolence violence;
+  final TasteSubtitles subtitles;
+
+  /// Fond of Japanese animation.
+  final bool anime;
+
+  /// Glad to be shown cinemas outside the usual ones.
+  final bool surpriseMe;
 
   /// When the questionnaire was last completed, or null if never.
   final DateTime? updatedAt;
@@ -222,12 +298,58 @@ class TasteProfile {
     this.avoided = const {},
     this.languages = const {},
     this.favorites = const [],
+    this.pivots = const [],
+    this.meh = const [],
+    this.disliked = const [],
+    this.contexts = const {},
+    this.kidsAge,
+    this.movieLength = TasteMovieLength.any,
+    this.seriesFormat = TasteSeriesFormat.any,
+    this.axes = const {},
+    this.violence = TasteViolence.fine,
+    this.subtitles = TasteSubtitles.depends,
+    this.anime = false,
+    this.surpriseMe = false,
     this.updatedAt,
   });
 
   static const empty = TasteProfile();
 
   bool get answered => updatedAt != null;
+
+  /// Every title the questionnaire heard about: all of them were seen, so
+  /// none is worth suggesting.
+  Set<String> get seenKeys => {
+    for (final p in favorites) p.key,
+    for (final p in pivots) p.key,
+    for (final p in meh) p.key,
+    for (final p in disliked) p.key,
+  };
+
+  /// How much each genre is liked from the titles rated, about -1 to 1. A
+  /// genre seen only once or twice stays close to neutral.
+  Map<TasteGenre, double> get genreAffinity {
+    final sum = <TasteGenre, double>{};
+    final count = <TasteGenre, int>{};
+    void add(List<TastePick> picks, double value) {
+      for (final pick in picks) {
+        for (final genre in pick.genres) {
+          sum[genre] = (sum[genre] ?? 0) + value;
+          count[genre] = (count[genre] ?? 0) + 1;
+        }
+      }
+    }
+
+    add(pivots, 2);
+    add(favorites, 1);
+    add(meh, -0.3);
+    add(disliked, -1);
+    const prior = 3;
+    return {
+      for (final genre in sum.keys)
+        genre: (sum[genre]! / (count[genre]! + prior)).clamp(-1.0, 1.0),
+    };
+  }
 
   TasteProfile copyWith({
     TasteMediaPref? mediaPref,
@@ -236,6 +358,18 @@ class TasteProfile {
     Set<TasteGenre>? avoided,
     Set<String>? languages,
     List<TastePick>? favorites,
+    List<TastePick>? pivots,
+    List<TastePick>? meh,
+    List<TastePick>? disliked,
+    Set<String>? contexts,
+    String? kidsAge,
+    TasteMovieLength? movieLength,
+    TasteSeriesFormat? seriesFormat,
+    Map<TasteAxis, double>? axes,
+    TasteViolence? violence,
+    TasteSubtitles? subtitles,
+    bool? anime,
+    bool? surpriseMe,
     DateTime? updatedAt,
   }) => TasteProfile(
     mediaPref: mediaPref ?? this.mediaPref,
@@ -244,6 +378,18 @@ class TasteProfile {
     avoided: avoided ?? this.avoided,
     languages: languages ?? this.languages,
     favorites: favorites ?? this.favorites,
+    pivots: pivots ?? this.pivots,
+    meh: meh ?? this.meh,
+    disliked: disliked ?? this.disliked,
+    contexts: contexts ?? this.contexts,
+    kidsAge: kidsAge ?? this.kidsAge,
+    movieLength: movieLength ?? this.movieLength,
+    seriesFormat: seriesFormat ?? this.seriesFormat,
+    axes: axes ?? this.axes,
+    violence: violence ?? this.violence,
+    subtitles: subtitles ?? this.subtitles,
+    anime: anime ?? this.anime,
+    surpriseMe: surpriseMe ?? this.surpriseMe,
     updatedAt: updatedAt ?? this.updatedAt,
   );
 
@@ -254,6 +400,19 @@ class TasteProfile {
     'avoided': [for (final g in avoided) g.name],
     'languages': languages.toList(),
     'favorites': [for (final f in favorites) f.toJson()],
+    if (pivots.isNotEmpty) 'pivots': [for (final f in pivots) f.toJson()],
+    if (meh.isNotEmpty) 'meh': [for (final f in meh) f.toJson()],
+    if (disliked.isNotEmpty) 'disliked': [for (final f in disliked) f.toJson()],
+    if (contexts.isNotEmpty) 'contexts': contexts.toList(),
+    'kids': ?kidsAge,
+    'length': movieLength.name,
+    'series': seriesFormat.name,
+    if (axes.isNotEmpty)
+      'axes': {for (final e in axes.entries) e.key.name: e.value},
+    'violence': violence.name,
+    'subtitles': subtitles.name,
+    if (anime) 'anime': true,
+    if (surpriseMe) 'surprise': true,
     'updatedAt': ?updatedAt?.toUtc().toIso8601String(),
   };
 
@@ -271,11 +430,20 @@ class TasteProfile {
             if (name is String)
               if (TasteGenre.byName(name) case final genre?) genre,
       };
+      List<TastePick> picks(Object? list) => [
+        if (list is List)
+          for (final entry in list)
+            if (TastePick.fromJson(entry) case final pick?) pick,
+      ];
+      T byName<T extends Enum>(List<T> values, Object? name, T fallback) =>
+          values.asNameMap()[name] ?? fallback;
       return TasteProfile(
-        mediaPref:
-            TasteMediaPref.values.asNameMap()[json['media']] ??
-            TasteMediaPref.both,
-        era: TasteEra.values.asNameMap()[json['era']] ?? TasteEra.any,
+        mediaPref: byName(
+          TasteMediaPref.values,
+          json['media'],
+          TasteMediaPref.both,
+        ),
+        era: byName(TasteEra.values, json['era'], TasteEra.any),
         liked: genres(json['liked']),
         avoided: genres(json['avoided']),
         languages: {
@@ -283,11 +451,44 @@ class TasteProfile {
             for (final code in list)
               if (code is String && code.isNotEmpty) code,
         },
-        favorites: [
-          if (json['favorites'] case final List list)
-            for (final entry in list)
-              if (TastePick.fromJson(entry) case final pick?) pick,
-        ],
+        favorites: picks(json['favorites']),
+        pivots: picks(json['pivots']),
+        meh: picks(json['meh']),
+        disliked: picks(json['disliked']),
+        contexts: {
+          if (json['contexts'] case final List list)
+            for (final c in list)
+              if (c is String) c,
+        },
+        kidsAge: json['kids'] as String?,
+        movieLength: byName(
+          TasteMovieLength.values,
+          json['length'],
+          TasteMovieLength.any,
+        ),
+        seriesFormat: byName(
+          TasteSeriesFormat.values,
+          json['series'],
+          TasteSeriesFormat.any,
+        ),
+        axes: {
+          if (json['axes'] case final Map map)
+            for (final e in map.entries)
+              if (TasteAxis.values.asNameMap()['${e.key}'] case final axis?)
+                if (e.value is num) axis: (e.value as num).toDouble(),
+        },
+        violence: byName(
+          TasteViolence.values,
+          json['violence'],
+          TasteViolence.fine,
+        ),
+        subtitles: byName(
+          TasteSubtitles.values,
+          json['subtitles'],
+          TasteSubtitles.depends,
+        ),
+        anime: json['anime'] == true,
+        surpriseMe: json['surprise'] == true,
         updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? ''),
       );
     } catch (_) {
@@ -376,10 +577,95 @@ double tasteFactor(
   mediaType: mediaType,
   language: item.originalLanguage,
   year: _releaseYear(item),
+  voteCount: item.voteCount,
   profile: profile,
   feedback: feedback,
   now: now,
 );
+
+const _darkGenres = {
+  TasteGenre.horror,
+  TasteGenre.thriller,
+  TasteGenre.crime,
+  TasteGenre.war,
+};
+const _lightGenres = {
+  TasteGenre.comedy,
+  TasteGenre.family,
+  TasteGenre.animation,
+  TasteGenre.kids,
+};
+const _realGenres = {
+  TasteGenre.documentary,
+  TasteGenre.history,
+  TasteGenre.drama,
+  TasteGenre.crime,
+  TasteGenre.war,
+};
+const _imaginaryGenres = {
+  TasteGenre.fantasy,
+  TasteGenre.scifi,
+  TasteGenre.animation,
+};
+const _fastGenres = {
+  TasteGenre.action,
+  TasteGenre.thriller,
+  TasteGenre.horror,
+};
+const _spectacleGenres = {
+  TasteGenre.adventure,
+  TasteGenre.action,
+  TasteGenre.scifi,
+  TasteGenre.fantasy,
+};
+const _intimateGenres = {TasteGenre.drama, TasteGenre.romance};
+
+/// Where a title sits on [axis], from -1 (first pole) to 1 (second pole),
+/// or 0 when its genres, year and votes don't say.
+double tasteAxisPosition(
+  TasteAxis axis, {
+  required Set<TasteGenre> genres,
+  int? year,
+  int? voteCount,
+  DateTime? now,
+}) {
+  bool any(Set<TasteGenre> set) => genres.any(set.contains);
+  switch (axis) {
+    case TasteAxis.darkLight:
+      final dark = any(_darkGenres);
+      final light = any(_lightGenres);
+      if (dark == light) return 0;
+      return dark ? -1 : 1;
+    case TasteAxis.realImaginary:
+      final real = any(_realGenres);
+      final imaginary = any(_imaginaryGenres);
+      if (real == imaginary) return 0;
+      return real ? -1 : 1;
+    case TasteAxis.slowFast:
+      if (any(_fastGenres)) return 1;
+      if (genres.contains(TasteGenre.drama) ||
+          genres.contains(TasteGenre.documentary)) {
+        return -1;
+      }
+      return 0;
+    case TasteAxis.recentClassic:
+      if (year == null) return 0;
+      final age = (now ?? DateTime.now()).year - year;
+      if (age <= 5) return -1;
+      if (age >= 25) return 1;
+      return 0;
+    case TasteAxis.popularNiche:
+      if (voteCount == null) return 0;
+      if (voteCount >= 10000) return -1;
+      if (voteCount < 1500) return 1;
+      return 0;
+    case TasteAxis.spectacleIntimate:
+      final spectacle = any(_spectacleGenres);
+      final intimate = any(_intimateGenres);
+      if (spectacle == intimate) return 0;
+      return spectacle ? -1 : 1;
+  }
+}
 
 /// [tasteFactor] for anything that knows its genres, wherever it came from:
 /// a Seerr suggestion or a title already in the library.
@@ -390,9 +676,20 @@ double tasteFactorFor({
   required TasteFeedback feedback,
   String? language,
   int? year,
+  int? voteCount,
   DateTime? now,
 }) {
   if (genres.any(profile.avoided.contains)) return 0;
+  if (profile.violence == TasteViolence.none &&
+      genres.contains(TasteGenre.horror)) {
+    return 0;
+  }
+  final foreign =
+      language != null &&
+      language.isNotEmpty &&
+      language != 'fr' &&
+      language != 'en';
+  if (profile.subtitles == TasteSubtitles.never && foreign) return 0;
 
   var factor = 1.0;
 
@@ -409,8 +706,47 @@ double tasteFactorFor({
     factor *= matches == 0 ? 0.8 : 1 + 0.3 * math.min(matches, 2);
   }
 
+  // What the rated titles say about each genre.
+  final affinity = profile.genreAffinity;
+  if (affinity.isNotEmpty && genres.isNotEmpty) {
+    var total = 0.0;
+    var known = 0;
+    for (final genre in genres) {
+      final value = affinity[genre];
+      if (value == null) continue;
+      total += value;
+      known++;
+    }
+    if (known > 0) {
+      factor *= math.exp(0.4 * total / known).clamp(0.6, 1.5);
+    }
+  }
+
   if (profile.languages.isNotEmpty && language != null && language.isNotEmpty) {
-    factor *= profile.languages.contains(language) ? 1.15 : 0.7;
+    if (profile.languages.contains(language)) {
+      factor *= 1.15;
+    } else if (!profile.surpriseMe) {
+      factor *= 0.7;
+    }
+  }
+  if (profile.subtitles == TasteSubtitles.gladly && foreign) factor *= 1.08;
+  if (profile.anime &&
+      language == 'ja' &&
+      genres.contains(TasteGenre.animation)) {
+    factor *= 1.25;
+  }
+
+  switch (profile.violence) {
+    case TasteViolence.none:
+      if (genres.any(
+        {TasteGenre.war, TasteGenre.crime, TasteGenre.thriller}.contains,
+      )) {
+        factor *= 0.75;
+      }
+    case TasteViolence.justified:
+      if (genres.contains(TasteGenre.horror)) factor *= 0.75;
+    case TasteViolence.fine:
+      break;
   }
 
   if (profile.era != TasteEra.any && year != null) {
@@ -424,6 +760,20 @@ double tasteFactorFor({
       if (old) factor *= 1.25;
       if (recent) factor *= 0.85;
     }
+  }
+
+  // Each duel nudges up to 16% either way.
+  for (final entry in profile.axes.entries) {
+    if (entry.value == 0) continue;
+    final position = tasteAxisPosition(
+      entry.key,
+      genres: genres,
+      year: year,
+      voteCount: voteCount,
+      now: now,
+    );
+    if (position == 0) continue;
+    factor *= 1 + 0.08 * entry.value.clamp(-2.0, 2.0) * position;
   }
 
   var penalty = 1.0;
