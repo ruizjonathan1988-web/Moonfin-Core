@@ -520,6 +520,14 @@ enum HomeSectionType {
   /// The same chart for series.
   top10Series('top10_series'),
 
+  /// French cinema: the recent hits, the best rated and the award winners,
+  /// on the server or one request away.
+  frenchMovies('french_movies'),
+
+  /// French series: what France watches this week, the popular and the
+  /// acclaimed.
+  frenchSeries('french_series'),
+
   /// One movie and one series picked at random, played on a single press.
   surprise('surprise'),
 

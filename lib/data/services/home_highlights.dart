@@ -78,14 +78,32 @@ List<SeerrDiscoverItem> fuseCharts(
   return [for (final id in ids) first[id]!];
 }
 
+/// A date the way TMDB filters on it.
+String tmdbDay(DateTime d) =>
+    '${d.year.toString().padLeft(4, '0')}-'
+    '${d.month.toString().padLeft(2, '0')}-'
+    '${d.day.toString().padLeft(2, '0')}';
+
 /// The release dates a "best of the year" chart looks at, as TMDB writes
 /// them: the twelve months up to [now], so the chart is full in January too.
-({String from, String to}) yearChartWindow(DateTime now) {
-  String day(DateTime d) =>
-      '${d.year.toString().padLeft(4, '0')}-'
-      '${d.month.toString().padLeft(2, '0')}-'
-      '${d.day.toString().padLeft(2, '0')}';
-  return (from: day(DateTime(now.year - 1, now.month, now.day)), to: day(now));
+({String from, String to}) yearChartWindow(DateTime now) => (
+  from: tmdbDay(DateTime(now.year - 1, now.month, now.day)),
+  to: tmdbDay(now),
+);
+
+/// One row from lists of a different nature, which take turns rather than
+/// compete on points: the first of each, then the second of each, and so
+/// on, each title once.
+List<SeerrDiscoverItem> takeTurns(List<List<SeerrDiscoverItem>> lists) {
+  final row = <SeerrDiscoverItem>[];
+  final seen = <int>{};
+  final longest = lists.fold<int>(0, (m, l) => l.length > m ? l.length : m);
+  for (var i = 0; i < longest; i++) {
+    for (final list in lists) {
+      if (i < list.length && seen.add(list[i].id)) row.add(list[i]);
+    }
+  }
+  return row;
 }
 
 /// One way a film came out, as TMDB records it: [type] 1 premiere, 2 and 3

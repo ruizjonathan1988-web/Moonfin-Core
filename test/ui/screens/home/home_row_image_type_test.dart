@@ -86,6 +86,8 @@ void main() {
       _row('seerr_for_you'): HomeSectionType.seerrForYou,
       _row('top10_movies'): HomeSectionType.top10Movies,
       _row('top10_series'): HomeSectionType.top10Series,
+      _row('french_movies'): HomeSectionType.frenchMovies,
+      _row('french_series'): HomeSectionType.frenchSeries,
       _row('surprise'): HomeSectionType.surprise,
       _row('seerr_my_requests'): HomeSectionType.seerrMyRequests,
       _row('seerr_because_movie_603'): HomeSectionType.seerrBecause,

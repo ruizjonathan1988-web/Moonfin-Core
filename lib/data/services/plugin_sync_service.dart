@@ -1713,6 +1713,8 @@ class PluginSyncService extends ChangeNotifier {
       type == prefs.HomeSectionType.familyNight ||
       type == prefs.HomeSectionType.top10Movies ||
       type == prefs.HomeSectionType.top10Series ||
+      type == prefs.HomeSectionType.frenchMovies ||
+      type == prefs.HomeSectionType.frenchSeries ||
       type == prefs.HomeSectionType.surprise;
 
   /// Seerr home rows keep their own copy of the enabled state that the settings

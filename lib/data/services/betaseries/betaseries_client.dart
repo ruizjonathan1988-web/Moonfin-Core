@@ -28,17 +28,29 @@ class BetaSeriesClient {
   /// The countries BetaSeries ranks on its own, the others get the world.
   static const _rankedCountries = {'fr', 'de', 'es'};
 
-  /// A series keeps its TMDB id, so it is asked once.
-  final Map<int, int> _tmdbIds = {};
+  /// A series keeps its TMDB id and language, so it is asked once.
+  final Map<int, BetaSeriesShow> _shows = {};
 
   /// The members' similar titles change little, so they are asked once per
   /// title and run of the app, keyed by `movie:` or `tv:` and the TMDB id.
   final Map<String, List<int>> _similars = {};
 
   /// The TMDB ids of the series watched most over the last seven days on the
-  /// streaming services of [country], best first. BetaSeries ranks by its own
-  /// ids, so each one is looked up; a series that fails is left out.
-  Future<List<int>> showChart({required String country, int limit = 10}) async {
+  /// streaming services of [country], best first.
+  Future<List<int>> showChart({required String country, int limit = 10}) async =>
+      [for (final show in await _ranking(country, limit)) show.tmdbId];
+
+  /// The TMDB ids of the French-language series watched most in France over
+  /// the last seven days, best first, among the [limit] most watched of all.
+  Future<List<int>> frenchShowChart({int limit = 25}) async => [
+    for (final show in await _ranking('fr', limit))
+      if (show.language == 'fr') show.tmdbId,
+  ];
+
+  /// The series watched most over the last seven days on the streaming
+  /// services of [country], best first. BetaSeries ranks by its own ids, so
+  /// each one is looked up; a series that fails is left out.
+  Future<List<BetaSeriesShow>> _ranking(String country, int limit) async {
     final code = country.toLowerCase();
     final response = await _dio.get<Object?>(
       '/stats/shows_ranking',
@@ -48,11 +60,11 @@ class BetaSeriesClient {
         'limit': limit,
       },
     );
-    final tmdbIds = await Future.wait([
+    final shows = await Future.wait([
       for (final showId in parseBetaSeriesRanking(response.data))
-        _tmdbIdOf(showId),
+        _showOf(showId),
     ]);
-    return [for (final id in tmdbIds) ?id];
+    return [for (final show in shows) ?show];
   }
 
   /// The TMDB ids of the films BetaSeries' members follow most, best first.
@@ -108,17 +120,17 @@ class BetaSeriesClient {
     );
   }
 
-  Future<int?> _tmdbIdOf(int showId) async {
-    final known = _tmdbIds[showId];
+  Future<BetaSeriesShow?> _showOf(int showId) async {
+    final known = _shows[showId];
     if (known != null) return known;
     try {
       final response = await _dio.get<Object?>(
         '/shows/display',
         queryParameters: {'id': showId},
       );
-      final tmdbId = parseBetaSeriesShowTmdbId(response.data);
-      if (tmdbId != null) _tmdbIds[showId] = tmdbId;
-      return tmdbId;
+      final show = parseBetaSeriesShow(response.data);
+      if (show != null) _shows[showId] = show;
+      return show;
     } catch (e) {
       debugPrint('[BetaSeries] No TMDB id for show $showId: $e');
       return null;
@@ -148,11 +160,17 @@ List<int> parseBetaSeriesMovies(Object? json) {
   ];
 }
 
-/// The TMDB id of a series in BetaSeries' description of it, if it has one.
-int? parseBetaSeriesShowTmdbId(Object? json) {
+/// A series as the charts need it: its TMDB id and original language.
+typedef BetaSeriesShow = ({int tmdbId, String? language});
+
+/// A series from BetaSeries' description of it, null when it has no TMDB id.
+BetaSeriesShow? parseBetaSeriesShow(Object? json) {
   final show = json is Map ? json['show'] : null;
-  final id = show is Map ? show['themoviedb_id'] : null;
-  return id is int && id > 0 ? id : null;
+  if (show is! Map) return null;
+  final id = show['themoviedb_id'];
+  if (id is! int || id <= 0) return null;
+  final language = show['language'];
+  return (tmdbId: id, language: language is String ? language : null);
 }
 
 /// BetaSeries' own id for a film in its description of it.

@@ -51,23 +51,32 @@ void main() {
     });
   });
 
-  group('parseBetaSeriesShowTmdbId', () {
-    test('reads the TMDB id of a series', () {
-      expect(
-        parseBetaSeriesShowTmdbId({
-          'show': {'id': 36263, 'thetvdb_id': 433161, 'themoviedb_id': 222176},
-        }),
-        222176,
-      );
+  group('parseBetaSeriesShow', () {
+    test('reads the TMDB id and language of a series', () {
+      final show = parseBetaSeriesShow({
+        'show': {
+          'id': 36263,
+          'thetvdb_id': 433161,
+          'themoviedb_id': 222176,
+          'language': 'fr',
+          'country': 'France',
+        },
+      });
+      expect(show?.tmdbId, 222176);
+      expect(show?.language, 'fr');
     });
 
-    test('a series without one has none', () {
-      expect(parseBetaSeriesShowTmdbId({'show': {'id': 1}}), isNull);
+    test('a series without a TMDB id is none', () {
+      expect(parseBetaSeriesShow({'show': {'id': 1}}), isNull);
+      expect(parseBetaSeriesShow({'show': {'themoviedb_id': 0}}), isNull);
+      expect(parseBetaSeriesShow(null), isNull);
+    });
+
+    test('a missing language stays unknown', () {
       expect(
-        parseBetaSeriesShowTmdbId({'show': {'themoviedb_id': 0}}),
+        parseBetaSeriesShow({'show': {'themoviedb_id': 5}})?.language,
         isNull,
       );
-      expect(parseBetaSeriesShowTmdbId(null), isNull);
     });
   });
 

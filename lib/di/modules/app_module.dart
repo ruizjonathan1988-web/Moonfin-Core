@@ -23,6 +23,7 @@ import '../../data/repositories/seerr_repository.dart';
 import '../../data/services/betaseries/betaseries_client.dart';
 import '../../data/services/trakt/trakt_account.dart';
 import '../../data/services/trakt/trakt_client.dart';
+import '../../data/services/wikidata/film_awards_client.dart';
 import '../../data/repositories/tmdb_repository.dart';
 import '../../data/repositories/user_views_repository.dart';
 import '../../data/repositories/search_repository.dart';
@@ -242,12 +243,14 @@ void registerAppModule() {
     ),
   );
   // Nothing of the user lives in these: the account reads its tokens for
-  // whoever is signed in, so they last as long as the app.
+  // whoever is signed in, so they last as long as the app. The same goes
+  // for the charts' sources.
   _getIt.registerLazySingleton(TraktClient.new);
   _getIt.registerLazySingleton(
     () => TraktAccount(_getIt<TraktClient>(), _getIt<TraktPreferences>()),
   );
   _getIt.registerLazySingleton(BetaSeriesClient.new);
+  _getIt.registerLazySingleton(FilmAwardsClient.new);
   _getIt.registerLazySingleton<SyncService>(
     () => SyncService(_getIt<OfflineRepository>(), _getIt<PendingRatingStore>()),
   );

@@ -13999,6 +13999,14 @@
   "@top10SeriesRow": {
     "description": "Home row: the ten trending or best rated series, ranked"
   },
+  "frenchMoviesRow": "French Cinema",
+  "@frenchMoviesRow": {
+    "description": "Home row: recent hits, best rated and award-winning French films"
+  },
+  "frenchSeriesRow": "French Series",
+  "@frenchSeriesRow": {
+    "description": "Home row: French series watched in France this week, popular and acclaimed"
+  },
   "top10YearBest": "Top 10: best of the year",
   "@top10YearBest": {
     "description": "Seerr setting: rank the Top 10 rows by rating over the last twelve months"

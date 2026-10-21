@@ -211,6 +211,16 @@ class HomeSectionConfig {
       enabled: true,
       order: 3,
     ),
+    HomeSectionConfig(
+      type: HomeSectionType.frenchMovies,
+      enabled: true,
+      order: 3,
+    ),
+    HomeSectionConfig(
+      type: HomeSectionType.frenchSeries,
+      enabled: true,
+      order: 3,
+    ),
     HomeSectionConfig(type: HomeSectionType.surprise, enabled: true, order: 4),
     // Seerr again: the viewer's own requests, and rows built on their taste.
     HomeSectionConfig(
@@ -503,6 +513,8 @@ class HomeSectionConfig {
   /// and take its on or off.
   static const _followsSection = {
     HomeSectionType.top10Series: HomeSectionType.top10Movies,
+    HomeSectionType.frenchMovies: HomeSectionType.top10Series,
+    HomeSectionType.frenchSeries: HomeSectionType.frenchMovies,
   };
 
   /// [config] placed right after [leader], everything below moved down one.

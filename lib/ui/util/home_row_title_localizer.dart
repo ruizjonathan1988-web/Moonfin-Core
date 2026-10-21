@@ -87,6 +87,10 @@ String localizeHomeRowTitle({
       return l10n.top10MoviesRow;
     case 'top10_series':
       return l10n.top10SeriesRow;
+    case 'french_movies':
+      return l10n.frenchMoviesRow;
+    case 'french_series':
+      return l10n.frenchSeriesRow;
     case 'seerr_my_requests':
       return l10n.myRequestsRow;
     case 'seerr_sagas':

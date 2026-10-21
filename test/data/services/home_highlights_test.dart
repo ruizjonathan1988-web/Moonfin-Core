@@ -271,4 +271,27 @@ void main() {
       expect(isWellRated(rated(3.0, 12)), isTrue);
     });
   });
+
+  test('tmdbDay pads month and day', () {
+    expect(tmdbDay(DateTime(2026, 3, 7)), '2026-03-07');
+  });
+
+  group('takeTurns', () {
+    SeerrDiscoverItem t(int id) => SeerrDiscoverItem(id: id);
+    List<int> ids(List<SeerrDiscoverItem> row) => [for (final i in row) i.id];
+
+    test('the lists take turns, each title once', () {
+      final row = takeTurns([
+        [t(1), t(2), t(3)],
+        [t(10), t(1)],
+        [t(20)],
+      ]);
+      expect(ids(row), [1, 10, 20, 2, 3]);
+    });
+
+    test('empty lists are skipped', () {
+      expect(ids(takeTurns([[], [t(5)]])), [5]);
+      expect(takeTurns(const []), isEmpty);
+    });
+  });
 }

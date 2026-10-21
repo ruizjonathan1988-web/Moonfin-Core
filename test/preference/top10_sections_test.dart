@@ -33,7 +33,7 @@ void main() {
     final films = types.indexOf(HomeSectionType.top10Movies);
     expect(films, 1);
     expect(types[films + 1], HomeSectionType.top10Series);
-    expect(types[films + 2], HomeSectionType.nextUp);
+    expect(types.indexOf(HomeSectionType.nextUp), greaterThan(films + 1));
   });
 
   test('a Top 10 switched off keeps the series one off too', () {
@@ -59,5 +59,30 @@ void main() {
       sections.firstWhere((c) => c.type == HomeSectionType.top10Series).order,
       0,
     );
+  });
+
+  test('the French rows come right after the Top 10 series', () {
+    final sections = load([
+      {'type': 'top10_movies', 'enabled': true, 'order': 0},
+      {'type': 'top10_series', 'enabled': true, 'order': 1},
+      {'type': 'nextup', 'enabled': true, 'order': 2},
+    ]);
+    final types = ordered(sections);
+    final series = types.indexOf(HomeSectionType.top10Series);
+    expect(types[series + 1], HomeSectionType.frenchMovies);
+    expect(types[series + 2], HomeSectionType.frenchSeries);
+    expect(types[series + 3], HomeSectionType.nextUp);
+  });
+
+  test('the French rows stay off when the Top 10 series is off', () {
+    final sections = load([
+      {'type': 'top10_series', 'enabled': false, 'order': 0},
+    ]);
+    for (final type in [
+      HomeSectionType.frenchMovies,
+      HomeSectionType.frenchSeries,
+    ]) {
+      expect(sections.firstWhere((c) => c.type == type).enabled, isFalse);
+    }
   });
 }
