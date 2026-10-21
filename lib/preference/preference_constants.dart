@@ -513,8 +513,12 @@ enum HomeSectionType {
   /// request in one click.
   seerrForYou('seerr_for_you'),
 
-  /// The ten trending titles this server can already play, ranked.
-  top10('top10'),
+  /// The Top 10 films, ranked: trending this week, or the best rated of the
+  /// year. On the server or one request away.
+  top10Movies('top10_movies'),
+
+  /// The same chart for series.
+  top10Series('top10_series'),
 
   /// One movie and one series picked at random, played on a single press.
   surprise('surprise'),
@@ -593,6 +597,8 @@ enum HomeSectionType {
 
   static HomeSectionType fromSerialized(String name) {
     if (name == 'watchlist') return HomeSectionType.playlists;
+    // The single Top 10 became one for films and one for series.
+    if (name == 'top10') return HomeSectionType.top10Movies;
     return HomeSectionType.values.firstWhere(
       (e) => e.serializedName == name,
       orElse: () => HomeSectionType.none,

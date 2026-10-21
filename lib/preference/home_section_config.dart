@@ -1,4 +1,7 @@
 import 'dart:convert';
+
+import 'package:collection/collection.dart';
+
 import 'preference_constants.dart';
 
 /// Categorizes a [HomeSectionConfig].
@@ -197,8 +200,17 @@ class HomeSectionConfig {
       enabled: true,
       order: 2,
     ),
-    // Also needs Seerr, for what is trending.
-    HomeSectionConfig(type: HomeSectionType.top10, enabled: true, order: 3),
+    // Also need Seerr, for the charts.
+    HomeSectionConfig(
+      type: HomeSectionType.top10Movies,
+      enabled: true,
+      order: 3,
+    ),
+    HomeSectionConfig(
+      type: HomeSectionType.top10Series,
+      enabled: true,
+      order: 3,
+    ),
     HomeSectionConfig(type: HomeSectionType.surprise, enabled: true, order: 4),
     // Seerr again: the viewer's own requests, and rows built on their taste.
     HomeSectionConfig(
@@ -470,15 +482,39 @@ class HomeSectionConfig {
         .where((c) => c.isBuiltin)
         .map((c) => c.type)
         .toSet();
-    final merged = List<HomeSectionConfig>.of(parsed);
-    var order = parsed.fold<int>(-1, (m, c) => c.order > m ? c.order : m) + 1;
+    var merged = List<HomeSectionConfig>.of(parsed);
     for (final def in defaults()) {
-      if (def.isBuiltin && !presentTypes.contains(def.type)) {
-        merged.add(def.copyWith(order: order++));
+      if (!def.isBuiltin || presentTypes.contains(def.type)) continue;
+      final leader = _followsSection[def.type];
+      final leaderConfig = leader == null
+          ? null
+          : merged.firstWhereOrNull((c) => c.isBuiltin && c.type == leader);
+      if (leaderConfig == null) {
+        final last = merged.fold<int>(-1, (m, c) => c.order > m ? c.order : m);
+        merged.add(def.copyWith(order: last + 1));
+      } else {
+        merged = _insertAfter(merged, leaderConfig, def);
       }
     }
     return merged;
   }
+
+  /// New sections that belong right under one the viewer already placed,
+  /// and take its on or off.
+  static const _followsSection = {
+    HomeSectionType.top10Series: HomeSectionType.top10Movies,
+  };
+
+  /// [config] placed right after [leader], everything below moved down one.
+  static List<HomeSectionConfig> _insertAfter(
+    List<HomeSectionConfig> configs,
+    HomeSectionConfig leader,
+    HomeSectionConfig config,
+  ) => [
+    for (final c in configs)
+      c.order > leader.order ? c.copyWith(order: c.order + 1) : c,
+    config.copyWith(order: leader.order + 1, enabled: leader.enabled),
+  ];
 
   static String toJsonString(List<HomeSectionConfig> configs) =>
       jsonEncode(configs.map((c) => c.toJson()).toList());

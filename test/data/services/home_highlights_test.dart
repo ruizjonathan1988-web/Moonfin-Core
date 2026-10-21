@@ -4,12 +4,8 @@ import 'package:moonfin/data/models/aggregated_item.dart';
 import 'package:moonfin/data/services/home_highlights.dart';
 import 'package:moonfin/data/services/seerr/seerr_api_models.dart';
 
-SeerrDiscoverItem _trending(int id, {int? status, String? jellyfinId}) =>
-    SeerrDiscoverItem(
-      id: id,
-      mediaType: 'movie',
-      mediaInfo: SeerrMediaInfo(status: status, jellyfinMediaId: jellyfinId),
-    );
+SeerrDiscoverItem _charted(int id, {String? poster = '/p.jpg'}) =>
+    SeerrDiscoverItem(id: id, mediaType: 'movie', posterPath: poster);
 
 AggregatedItem _item({
   String type = 'Movie',
@@ -35,27 +31,30 @@ AggregatedItem _item({
 );
 
 void main() {
-  group('playableTrendingIds', () {
-    test('keeps only what the library holds, in trending order', () {
-      final ids = playableTrendingIds([
-        _trending(1, status: SeerrMediaStatus.available, jellyfinId: 'a'),
-        _trending(2, status: SeerrMediaStatus.pending, jellyfinId: 'b'),
-        _trending(3),
-        _trending(4, status: SeerrMediaStatus.partiallyAvailable, jellyfinId: 'd'),
-        _trending(5, status: SeerrMediaStatus.available),
-        _trending(6, status: SeerrMediaStatus.available, jellyfinId: 'a'),
+  group('chartPicks', () {
+    test('keeps chart order, each title once, only with a poster', () {
+      final picks = chartPicks([
+        _charted(1),
+        _charted(2, poster: null),
+        _charted(3),
+        _charted(1),
+        _charted(4, poster: ''),
+        _charted(5),
       ]);
-      expect(ids, ['a', 'd']);
+      expect([for (final p in picks) p.id], [1, 3, 5]);
     });
 
-    test('stops at the limit', () {
-      final ids = playableTrendingIds([
-        for (var i = 0; i < 30; i++)
-          _trending(i, status: SeerrMediaStatus.available, jellyfinId: 'j$i'),
-      ]);
-      expect(ids, hasLength(10));
-      expect(ids.first, 'j0');
+    test('stops at ten', () {
+      final picks = chartPicks([for (var i = 0; i < 30; i++) _charted(i)]);
+      expect(picks, hasLength(10));
+      expect(picks.first.id, 0);
     });
+  });
+
+  test('the year chart looks at the last twelve months', () {
+    final window = yearChartWindow(DateTime(2026, 2, 5));
+    expect(window.from, '2025-02-05');
+    expect(window.to, '2026-02-05');
   });
 
   group('isFreshlyAdded', () {

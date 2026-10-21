@@ -5817,7 +5817,7 @@ class _ContentRowsState extends State<_ContentRows>
           label: l10n.gemBadge,
           icon: Icons.diamond_outlined,
         )
-      else if (row.id == HomeViewModel.top10RowId)
+      else if (HomeViewModel.isTop10Row(row))
         RankNumberOverlay(rank: index + 1)
       else if (row.id == HomeViewModel.surpriseRowId)
         CardHighlightPill(

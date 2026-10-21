@@ -96,7 +96,12 @@ class HomeViewModel extends ChangeNotifier {
     _tidyRequested = requested;
     return _tidyRows = tidyHomeRows(
       visible,
-      keptRowIds: const {myRequestsRowId, sagaRowId, top10RowId},
+      keptRowIds: const {
+        myRequestsRowId,
+        sagaRowId,
+        top10MoviesRowId,
+        top10SeriesRowId,
+      },
       requestedKeys: ForYouService.instance.requestedKeys,
       requestableFlag: forYouFlag,
     );
@@ -279,7 +284,8 @@ class HomeViewModel extends ChangeNotifier {
       HomeSectionType.seerrGems ||
       HomeSectionType.familyNight ||
       HomeSectionType.seerrBecause ||
-      HomeSectionType.top10 ||
+      HomeSectionType.top10Movies ||
+      HomeSectionType.top10Series ||
       HomeSectionType.surprise ||
       HomeSectionType.seasonal =>
         false,
@@ -533,7 +539,8 @@ class HomeViewModel extends ChangeNotifier {
                         c.type != HomeSectionType.seerrSagas &&
                         c.type != HomeSectionType.seerrGems &&
                         c.type != HomeSectionType.seerrBecause &&
-                        c.type != HomeSectionType.top10) ||
+                        c.type != HomeSectionType.top10Movies &&
+                        c.type != HomeSectionType.top10Series) ||
                     showSeerrRows) &&
                 (!_isImdbSectionType(c.type) || (showImdbRows && _isImdbSectionEnabled(c.type))) &&
                 (!_isTmdbSectionType(c.type) || (showTmdbRows && _isTmdbSectionEnabled(c.type))) &&
@@ -967,8 +974,10 @@ class HomeViewModel extends ChangeNotifier {
         return row.id == familyRowId;
       case HomeSectionType.seerrBecause:
         return row.id.startsWith(becauseRowIdPrefix);
-      case HomeSectionType.top10:
-        return row.id == top10RowId;
+      case HomeSectionType.top10Movies:
+        return row.id == top10MoviesRowId;
+      case HomeSectionType.top10Series:
+        return row.id == top10SeriesRowId;
       case HomeSectionType.surprise:
         return row.id == surpriseRowId;
       case HomeSectionType.seerrShortcuts:
@@ -1331,8 +1340,10 @@ class HomeViewModel extends ChangeNotifier {
         return const {'familyNight'};
       case HomeSectionType.seerrBecause:
         return const {'seerrBecause'};
-      case HomeSectionType.top10:
-        return const {'top10'};
+      case HomeSectionType.top10Movies:
+        return const {'top10Movies'};
+      case HomeSectionType.top10Series:
+        return const {'top10Series'};
       case HomeSectionType.surprise:
         return const {'surprise'};
       case HomeSectionType.seerrShortcuts:
@@ -1695,8 +1706,10 @@ class HomeViewModel extends ChangeNotifier {
         return _loadFamilyRow(l10n);
       case HomeSectionType.seerrBecause:
         return _loadBecauseRows(l10n, forceRefresh: forceRefresh);
-      case HomeSectionType.top10:
-        return _loadTop10Row(l10n);
+      case HomeSectionType.top10Movies:
+        return _loadTop10Row(l10n, 'movie');
+      case HomeSectionType.top10Series:
+        return _loadTop10Row(l10n, 'tv');
       case HomeSectionType.surprise:
         return _loadSurpriseRow(l10n);
       case HomeSectionType.seerrShortcuts:
@@ -2182,10 +2195,17 @@ class HomeViewModel extends ChangeNotifier {
           rowType: HomeRowType.pluginDynamic,
           isLoading: true,
         );
-      case HomeSectionType.top10:
+      case HomeSectionType.top10Movies:
         return HomeRow(
-          id: top10RowId,
-          title: l10n.top10Row,
+          id: top10MoviesRowId,
+          title: l10n.top10MoviesRow,
+          rowType: HomeRowType.pluginDynamic,
+          isLoading: true,
+        );
+      case HomeSectionType.top10Series:
+        return HomeRow(
+          id: top10SeriesRowId,
+          title: l10n.top10SeriesRow,
           rowType: HomeRowType.pluginDynamic,
           isLoading: true,
         );
@@ -2910,45 +2930,87 @@ class HomeViewModel extends ChangeNotifier {
     }
   }
 
-  static const top10RowId = 'top10';
+  static const top10MoviesRowId = 'top10_movies';
+  static const top10SeriesRowId = 'top10_series';
   static const surpriseRowId = 'surprise';
 
   /// Marks a Surprise card, so a tap starts playback instead of the page.
   static const surpriseFlag = 'MoonfinSurprise';
 
-  /// What is trending right now and already on this server, ranked. Seerr
-  /// knows both: TMDB's trending list, and which titles the library holds.
-  Future<List<HomeRow>> _loadTop10Row(AppLocalizations l10n) async {
+  /// Whether [row] is a Top 10, drawn with its rank on each card.
+  static bool isTop10Row(HomeRow row) =>
+      row.id == top10MoviesRowId || row.id == top10SeriesRowId;
+
+  /// Votes a title needs before its rating can top the year's chart, so a
+  /// film rated 9 by a dozen people stays out of it.
+  static const _yearChartMinVotes = {'movie': 300, 'tv': 150};
+
+  /// The Top 10 films or series ([mediaType] `movie` or `tv`): trending this
+  /// week, or the best rated of the last twelve months when the viewer chose
+  /// that. Whatever the server holds or not, a title still to request opens
+  /// the request sheet like the other suggestions.
+  Future<List<HomeRow>> _loadTop10Row(
+    AppLocalizations l10n,
+    String mediaType,
+  ) async {
+    final isTv = mediaType == 'tv';
     try {
       final repo = await GetIt.instance.getAsync<SeerrRepository>();
       await repo.ensureInitialized();
       if (!repo.isAvailable) return [];
+      final prefs = GetIt.instance<SeerrPreferences>();
+      final yearBest = prefs.top10YearBest;
+      final window = yearChartWindow(DateTime.now());
 
-      final trending = <SeerrDiscoverItem>[];
-      // A small library holds few of the trending titles, so look a few
-      // pages deep before giving up on ten.
-      for (var page = 0; page < 4; page++) {
-        final result = await repo.getTrending(limit: 20, offset: page * 20);
-        trending.addAll(result.results);
-        if (playableTrendingIds(trending).length >= 10) break;
+      // Two pages leave room for what the adult filter takes out.
+      final chart = <SeerrDiscoverItem>[];
+      for (var page = 1; page <= 2; page++) {
+        final SeerrDiscoverPage result;
+        if (!yearBest) {
+          result = isTv
+              ? await repo.getTrendingTv(limit: 20, offset: (page - 1) * 20)
+              : await repo.getTrendingMovies(
+                  limit: 20,
+                  offset: (page - 1) * 20,
+                );
+        } else if (isTv) {
+          result = await repo.discoverTv(
+            page: page,
+            sortBy: 'vote_average.desc',
+            voteCountGte: _yearChartMinVotes['tv'],
+            firstAirDateGte: window.from,
+            firstAirDateLte: window.to,
+          );
+        } else {
+          result = await repo.discoverMovies(
+            page: page,
+            sortBy: 'vote_average.desc',
+            voteCountGte: _yearChartMinVotes['movie'],
+            primaryReleaseDateGte: window.from,
+            primaryReleaseDateLte: window.to,
+          );
+        }
+        chart.addAll(result.results);
         if (result.results.isEmpty || result.page >= result.totalPages) break;
       }
 
-      final ids = playableTrendingIds(trending);
-      final items = await _dataSource.loadItemsByIds(_serverId, ids);
+      final items = [
+        for (final pick in chartPicks(chart, limit: chart.length))
+          ?_suggestionCard(pick, mediaType, blockNsfw: prefs.blockNsfw),
+      ].take(10).toList();
       // A Top 3 isn't much of a chart.
       if (items.length < 3) return [];
       return [
         HomeRow(
-          id: top10RowId,
-          title: l10n.top10Row,
+          id: isTv ? top10SeriesRowId : top10MoviesRowId,
+          title: isTv ? l10n.top10SeriesRow : l10n.top10MoviesRow,
           rowType: HomeRowType.pluginDynamic,
           items: items,
           totalCount: items.length,
         ),
       ];
     } catch (e) {
-      debugPrint('[Top10] Failed to load the Top 10 row: $e');
+      debugPrint('[Top10] Failed to load the Top 10 $mediaType row: $e');
       return [];
     }
   }
@@ -3124,35 +3186,13 @@ class HomeViewModel extends ChangeNotifier {
       for (final row in rows) {
         final items = <AggregatedItem>[];
         for (final entry in row.items) {
-          // Kept like the request rows, so what the library holds stays.
-          final base = _seerrAggregatedItems(
-            [entry.item],
-            SeerrRowType.recentRequests,
-            blockNsfw,
+          final card = _suggestionCard(
+            entry.item,
+            entry.mediaType,
+            reason: row.seed.title,
+            blockNsfw: blockNsfw,
           );
-          if (base.isEmpty) continue;
-          final status = entry.item.mediaInfo?.status;
-          final inLibrary = status == SeerrMediaStatus.available ||
-              status == SeerrMediaStatus.partiallyAvailable;
-          final requestable = status == null ||
-              status == SeerrMediaStatus.unknown ||
-              status == SeerrMediaStatus.deleted;
-          items.add(
-            AggregatedItem(
-              id: base.first.id,
-              serverId: base.first.serverId,
-              rawData: {
-                ...base.first.rawData,
-                'Type': entry.mediaType == 'tv' ? 'Series' : 'Movie',
-                'SeerrMediaType': entry.mediaType,
-                tasteGenreIdsKey: entry.item.genreIds,
-                // Something to ask for opens the request sheet; what the
-                // library holds or already awaits opens its page.
-                if (requestable && !inLibrary) forYouFlag: true,
-                if (requestable && !inLibrary) forYouReasonKey: row.seed.title,
-              },
-            ),
-          );
+          if (card != null) items.add(card);
         }
         if (items.length < 5) continue;
         result.add(
@@ -3178,12 +3218,12 @@ class HomeViewModel extends ChangeNotifier {
   static const familyRowId = 'family_night';
 
   /// A Seerr suggestion as a card. Something to ask for opens the request
-  /// sheet with [reason]; what the library holds or already awaits opens
-  /// its page.
+  /// sheet, under [reason] when there is one; what the library holds or
+  /// already awaits opens its page.
   AggregatedItem? _suggestionCard(
     SeerrDiscoverItem item,
     String mediaType, {
-    required String reason,
+    String? reason,
     required bool blockNsfw,
   }) {
     // Kept like the request rows, so what the library holds stays.
@@ -3207,7 +3247,7 @@ class HomeViewModel extends ChangeNotifier {
         'SeerrMediaType': mediaType,
         tasteGenreIdsKey: item.genreIds,
         if (requestable) forYouFlag: true,
-        if (requestable) forYouReasonKey: reason,
+        if (requestable && reason != null) forYouReasonKey: reason,
       },
     );
   }

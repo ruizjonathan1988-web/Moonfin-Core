@@ -258,6 +258,12 @@ class _SeerrConfigScreenState extends State<SeerrConfigScreen> {
     setState(() {});
   }
 
+  Future<void> _setTop10YearBest(bool value) async {
+    await _seerrPrefs.setTop10YearBest(value);
+    if (!mounted) return;
+    setState(() {});
+  }
+
   /// Kept in [UserPreferences] alone. That is the store the profile sync
   /// carries, and a second copy in [SeerrPreferences] would never hear about
   /// a change made on another device.
@@ -572,6 +578,36 @@ class _SeerrConfigScreenState extends State<SeerrConfigScreen> {
               ),
               value: _seerrPrefs.blockNsfw,
               onChanged: _setBlockNsfw,
+            ),
+          ),
+        if (showSeerrSettings)
+          TvFocusHighlight(
+            builder: (context, focused) => SwitchListTile.adaptive(
+              secondary: Icon(
+                Icons.emoji_events_outlined,
+                color: focused ? AppColors.black.withValues(alpha: 0.54) : null,
+              ),
+              title: Text(
+                l10n.top10YearBest,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: focused
+                      ? AppColors.black.withValues(alpha: 0.87)
+                      : AppColorScheme.onSurface,
+                ),
+              ),
+              subtitle: Text(
+                l10n.top10YearBestSubtitle,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: focused
+                      ? AppColors.black.withValues(alpha: 0.54)
+                      : AppColorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+              ),
+              value: _seerrPrefs.top10YearBest,
+              onChanged: _setTop10YearBest,
             ),
           ),
         if (showSeerrSettings) ...[

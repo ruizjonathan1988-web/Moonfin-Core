@@ -152,6 +152,12 @@ class SeerrPreferences {
       _store.setStringList(_userKey('announced_ready_requests'), keys);
 
   bool get blockNsfw => _store.getBool(_userKey('block_nsfw')) ?? true;
+
+  /// Whether the Top 10 rows rank the best rated releases of the last twelve
+  /// months rather than this week's trends.
+  bool get top10YearBest => _store.getBool(_userKey('top10_year_best')) ?? false;
+  Future<void> setTop10YearBest(bool value) =>
+      _store.setBool(_userKey('top10_year_best'), value);
   Future<void> setBlockNsfw(bool value) => _store.setBool(_userKey('block_nsfw'), value);
 
   bool get notifyOnNewRequests => _store.getBool(_userKey('notify_new_requests')) ?? true;

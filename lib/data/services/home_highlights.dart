@@ -1,30 +1,34 @@
 /// Small decisions behind the streaming-style touches on the home screen:
-/// the Top 10 row, the Surprise row and the New badge.
+/// the Top 10 rows, the Surprise row and the New badge.
 library;
 
 import '../models/aggregated_item.dart';
 import 'seerr/seerr_api_models.dart';
 
-/// Jellyfin ids of the trending titles this server can already play, in
-/// trending order, at most [limit] of them.
-List<String> playableTrendingIds(
-  Iterable<SeerrDiscoverItem> trending, {
+/// The titles of a Top 10, in chart order: each title once, and only what
+/// has a poster to show, at most [limit] of them.
+List<SeerrDiscoverItem> chartPicks(
+  Iterable<SeerrDiscoverItem> chart, {
   int limit = 10,
 }) {
-  final ids = <String>[];
-  final seen = <String>{};
-  for (final item in trending) {
-    final status = item.mediaInfo?.status;
-    if (status != SeerrMediaStatus.available &&
-        status != SeerrMediaStatus.partiallyAvailable) {
-      continue;
-    }
-    final id = item.mediaInfo?.jellyfinMediaId;
-    if (id == null || id.isEmpty || !seen.add(id)) continue;
-    ids.add(id);
-    if (ids.length >= limit) break;
+  final picks = <SeerrDiscoverItem>[];
+  final seen = <int>{};
+  for (final item in chart) {
+    if ((item.posterPath ?? '').isEmpty || !seen.add(item.id)) continue;
+    picks.add(item);
+    if (picks.length >= limit) break;
   }
-  return ids;
+  return picks;
+}
+
+/// The release dates a "best of the year" chart looks at, as TMDB writes
+/// them: the twelve months up to [now], so the chart is full in January too.
+({String from, String to}) yearChartWindow(DateTime now) {
+  String day(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-'
+      '${d.month.toString().padLeft(2, '0')}-'
+      '${d.day.toString().padLeft(2, '0')}';
+  return (from: day(DateTime(now.year - 1, now.month, now.day)), to: day(now));
 }
 
 /// How long a title counts as new on its card.

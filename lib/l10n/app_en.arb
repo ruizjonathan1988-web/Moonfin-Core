@@ -13991,9 +13991,21 @@
       }
     }
   },
-  "top10Row": "Top 10 Right Now",
-  "@top10Row": {
-    "description": "Home row: the ten trending titles already on the server, ranked"
+  "top10MoviesRow": "Top 10 Movies",
+  "@top10MoviesRow": {
+    "description": "Home row: the ten trending or best rated movies, ranked"
+  },
+  "top10SeriesRow": "Top 10 Series",
+  "@top10SeriesRow": {
+    "description": "Home row: the ten trending or best rated series, ranked"
+  },
+  "top10YearBest": "Top 10: best of the year",
+  "@top10YearBest": {
+    "description": "Seerr setting: rank the Top 10 rows by rating over the last twelve months"
+  },
+  "top10YearBestSubtitle": "Best rated releases of the last 12 months, instead of this week's trends",
+  "@top10YearBestSubtitle": {
+    "description": "Subtitle of the Top 10 ranking setting"
   },
   "surpriseRow": "Surprise Me",
   "@surpriseRow": {
