@@ -142,6 +142,10 @@ class _NavigationCategoryScreenState extends State<_NavigationCategoryScreen> {
               ),
             ],
           ),
+          if (PlatformDetection.useMobileUi) ...[
+            _SectionHeader(l10n.foldSection),
+            const _FoldSettings(),
+          ],
           _SectionHeader(l10n.navButtons),
           ListenableBuilder(
             listenable: prefs,
@@ -282,6 +286,91 @@ class _NavigationCategoryScreenState extends State<_NavigationCategoryScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The foldable's settings: the rail when opened, tabletop posture by hand,
+/// and what the app reads of the screen, so the thresholds can be checked
+/// against a real phone.
+class _FoldSettings extends StatelessWidget {
+  const _FoldSettings();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final prefs = GetIt.instance<UserPreferences>();
+    // The whole window, not the settings panel it is drawn in.
+    final view = View.of(context);
+    final size = view.physicalSize / view.devicePixelRatio;
+    // Folding, opening or turning the phone rebuilds this.
+    MediaQuery.sizeOf(context);
+    final features = MediaQuery.displayFeaturesOf(context);
+    final form = ScreenForm.classify(
+      size,
+      mobileUi: PlatformDetection.useMobileUi,
+    );
+    final canPose = Tabletop.canForce(size);
+
+    String number(double value) {
+      final text = value.toStringAsFixed(2);
+      return Localizations.localeOf(context).languageCode == 'en'
+          ? text
+          : text.replaceAll('.', ',');
+    }
+
+    final shortest = size.shortestSide;
+    final info = [
+      switch (form) {
+        ScreenForm.phone => l10n.foldFormPhone,
+        ScreenForm.cover => l10n.foldFormCover,
+        ScreenForm.unfolded => l10n.foldFormUnfolded,
+        ScreenForm.large => l10n.foldFormLarge,
+      },
+      '${size.width.round()} × ${size.height.round()} dp',
+      l10n.foldRatio(number(shortest <= 0 ? 0 : size.longestSide / shortest)),
+      switch (Tabletop.hingeOf(features)) {
+        HingePosture.none => l10n.foldHingeNone,
+        HingePosture.flat => l10n.foldHingeFlat,
+        HingePosture.halfOpened => l10n.foldHingeHalf,
+      },
+    ].join(' · ');
+
+    return adaptiveListSection(
+      children: [
+        ListenableBuilder(
+          listenable: prefs,
+          builder: (context, _) => NavigationLayout.usesBottomNavbar
+              ? SwitchPreferenceTile(
+                  preference: UserPreferences.unfoldedNavRail,
+                  title: l10n.foldRail,
+                  subtitle: l10n.foldRailSubtitle,
+                  icon: Icons.view_sidebar_rounded,
+                )
+              : const SizedBox.shrink(),
+        ),
+        ValueListenableBuilder<bool>(
+          valueListenable: Tabletop.forced,
+          builder: (context, forced, _) => DpadSwitchListTile(
+            useSettingsIconShell: true,
+            secondary: const Icon(Icons.laptop_rounded),
+            title: Text(l10n.foldTabletopOn),
+            subtitle: Text(
+              canPose ? l10n.foldTabletopSubtitle : l10n.foldTabletopUnavailable,
+            ),
+            value: forced,
+            enabled: canPose || forced,
+            onChanged: canPose || forced
+                ? (value) => Tabletop.forced.value = value
+                : null,
+          ),
+        ),
+        _TvSettingsListTile(
+          leading: const Icon(Icons.aspect_ratio_rounded),
+          title: Text(l10n.foldScreenInfo),
+          subtitle: Text(info),
+        ),
+      ],
     );
   }
 }

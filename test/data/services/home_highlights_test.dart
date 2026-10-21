@@ -1,11 +1,8 @@
-import 'dart:ui';
 
-import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:moonfin/data/models/aggregated_item.dart';
 import 'package:moonfin/data/services/home_highlights.dart';
 import 'package:moonfin/data/services/seerr/seerr_api_models.dart';
-import 'package:moonfin/ui/screens/playback/tabletop_layout.dart';
 
 SeerrDiscoverItem _trending(int id, {int? status, String? jellyfinId}) =>
     SeerrDiscoverItem(
@@ -156,65 +153,6 @@ void main() {
         ),
       ]);
       expect(picks.map((i) => i.id), ['top', 'ok', 'low']);
-    });
-  });
-
-  group('tabletopFold', () {
-    MediaQueryData media(List<DisplayFeature> features) => MediaQueryData(
-      size: const Size(880, 760),
-      displayFeatures: features,
-    );
-
-    test('finds a half-open fold across the screen', () {
-      final fold = tabletopFold(
-        media(const [
-          DisplayFeature(
-            bounds: Rect.fromLTWH(0, 380, 880, 0),
-            type: DisplayFeatureType.fold,
-            state: DisplayFeatureState.postureHalfOpened,
-          ),
-        ]),
-      );
-      expect(fold?.top, 380);
-    });
-
-    test('ignores a flat phone, a book posture and a cutout', () {
-      expect(
-        tabletopFold(
-          media(const [
-            DisplayFeature(
-              bounds: Rect.fromLTWH(0, 380, 880, 0),
-              type: DisplayFeatureType.fold,
-              state: DisplayFeatureState.postureFlat,
-            ),
-          ]),
-        ),
-        isNull,
-      );
-      expect(
-        tabletopFold(
-          media(const [
-            DisplayFeature(
-              bounds: Rect.fromLTWH(440, 0, 0, 760),
-              type: DisplayFeatureType.fold,
-              state: DisplayFeatureState.postureHalfOpened,
-            ),
-          ]),
-        ),
-        isNull,
-      );
-      expect(
-        tabletopFold(
-          media(const [
-            DisplayFeature(
-              bounds: Rect.fromLTWH(400, 0, 80, 30),
-              type: DisplayFeatureType.cutout,
-              state: DisplayFeatureState.unknown,
-            ),
-          ]),
-        ),
-        isNull,
-      );
     });
   });
 }

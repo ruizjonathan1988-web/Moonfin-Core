@@ -11,6 +11,7 @@ import '../../../data/services/tonight/tonight_engine.dart';
 import '../../../data/services/tonight/tonight_models.dart';
 import '../../../data/services/tonight/tonight_service.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../layout/screen_form.dart';
 import '../../navigation/destinations.dart';
 import '../../widgets/bounded_network_image.dart';
 import '../taste/taste_questionnaire_screen.dart';
@@ -42,6 +43,29 @@ class TonightScreen extends StatefulWidget {
 }
 
 enum _Phase { questions, results }
+
+/// How Tonight lays itself out on the screen it is on.
+enum _Layout {
+  /// A cover screen: short, so everything is tighter.
+  compact,
+
+  /// A regular phone: one column.
+  phone,
+
+  /// An opened foldable or a tablet: the suggestion and the other ideas
+  /// side by side.
+  split,
+
+  /// TV and desktop: a wide banner with the details over the picture.
+  wide;
+
+  static _Layout of(BuildContext context) => switch (ScreenForm.of(context)) {
+    ScreenForm.cover => compact,
+    ScreenForm.phone => phone,
+    ScreenForm.unfolded => split,
+    ScreenForm.large => wide,
+  };
+}
 
 enum _RequestState { requesting, requested, ready, failed }
 
@@ -339,88 +363,141 @@ class _TonightScreenState extends State<TonightScreen> {
       for (final p in _queue)
         if (p != pick) p,
     ].take(5).toList();
+    final layout = _Layout.of(context);
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final wide = constraints.maxWidth >= 840;
-        final hero = _Hero(
-          pick: pick,
-          answers: _answers,
-          wide: wide,
-          requestState: _requests[pick.candidate.key],
-          ready: _readyItems.containsKey(pick.candidate.key),
-          primaryFocus: _primaryFocus,
-          onPrimary: () => _primary(pick),
-          onAnother: _another,
-          onDetails: () => _details(pick),
-        );
-        return FocusTraversalGroup(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(
-              horizontal: wide ? 32 : 16,
-              vertical: 12,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _Header(
-                  answers: _answers,
-                  onChange: () => setState(() => _phase = _Phase.questions),
-                ),
-                if (view?.stalled case final stalled?)
-                  _Banner(
-                    icon: Icons.hourglass_bottom_rounded,
-                    text: l10n.tonightStalled(stalled.title),
-                  ),
-                if (view?.result.relaxedMood ?? false)
-                  _Banner(
-                    icon: Icons.info_outline_rounded,
-                    text: l10n.tonightRelaxed,
-                  ),
-                const SizedBox(height: 12),
-                hero,
-                if (others.isNotEmpty) ...[
-                  const SizedBox(height: 22),
-                  Text(
-                    l10n.tonightOthers,
-                    style: TextStyle(
-                      color: onBg,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    height: wide ? 250 : 210,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      clipBehavior: Clip.none,
-                      itemCount: others.length,
-                      separatorBuilder: (_, _) => const SizedBox(width: 12),
-                      itemBuilder: (context, index) => _PosterCard(
-                        pick: others[index],
-                        width: wide ? 140 : 116,
-                        onTap: () => _show(others[index]),
+    final hero = _Hero(
+      pick: pick,
+      answers: _answers,
+      layout: layout,
+      requestState: _requests[pick.candidate.key],
+      ready: _readyItems.containsKey(pick.candidate.key),
+      primaryFocus: _primaryFocus,
+      onPrimary: () => _primary(pick),
+      onAnother: _another,
+      onDetails: () => _details(pick),
+    );
+    final header = <Widget>[
+      _Header(
+        answers: _answers,
+        onChange: () => setState(() => _phase = _Phase.questions),
+      ),
+      if (view?.stalled case final stalled?)
+        _Banner(
+          icon: Icons.hourglass_bottom_rounded,
+          text: l10n.tonightStalled(stalled.title),
+        ),
+      if (view?.result.relaxedMood ?? false)
+        _Banner(icon: Icons.info_outline_rounded, text: l10n.tonightRelaxed),
+    ];
+    final othersTitle = Text(
+      l10n.tonightOthers,
+      style: TextStyle(color: onBg, fontSize: 18, fontWeight: FontWeight.w700),
+    );
+    final precision = view?.precision == null
+        ? null
+        : Text(
+            l10n.tonightPrecision((view!.precision! * 100).round()),
+            style: TextStyle(color: onBg.withValues(alpha: 0.55), fontSize: 12.5),
+          );
+
+    if (layout == _Layout.split) {
+      return FocusTraversalGroup(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ...header,
+              const SizedBox(height: 14),
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(flex: 3, child: hero),
+                    if (others.isNotEmpty) ...[
+                      const SizedBox(width: 20),
+                      Expanded(
+                        flex: 2,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            othersTitle,
+                            const SizedBox(height: 10),
+                            Expanded(
+                              child: GridView.builder(
+                                gridDelegate:
+                                    const SliverGridDelegateWithMaxCrossAxisExtent(
+                                      maxCrossAxisExtent: 150,
+                                      childAspectRatio: 2 / 3.5,
+                                      crossAxisSpacing: 12,
+                                      mainAxisSpacing: 12,
+                                    ),
+                                itemCount: others.length,
+                                itemBuilder: (context, index) => _PosterCard(
+                                  pick: others[index],
+                                  onTap: () => _show(others[index]),
+                                ),
+                              ),
+                            ),
+                            ?precision,
+                          ],
+                        ),
                       ),
-                    ),
-                  ),
-                ],
-                if (view?.precision case final precision?) ...[
-                  const SizedBox(height: 18),
-                  Text(
-                    l10n.tonightPrecision((precision * 100).round()),
-                    style: TextStyle(
-                      color: onBg.withValues(alpha: 0.55),
-                      fontSize: 12.5,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 16),
-              ],
-            ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      );
+    }
+
+    final wide = layout == _Layout.wide;
+    final posterWidth = switch (layout) {
+      _Layout.wide => 140.0,
+      _Layout.compact => 100.0,
+      _ => 116.0,
+    };
+    return FocusTraversalGroup(
+      child: SingleChildScrollView(
+        padding: EdgeInsets.symmetric(
+          horizontal: wide ? 32 : (layout == _Layout.compact ? 12 : 16),
+          vertical: layout == _Layout.compact ? 8 : 12,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ...header,
+            SizedBox(height: layout == _Layout.compact ? 8 : 12),
+            hero,
+            if (others.isNotEmpty) ...[
+              SizedBox(height: layout == _Layout.compact ? 14 : 22),
+              othersTitle,
+              const SizedBox(height: 10),
+              SizedBox(
+                // The poster, its title and the room a focused card grows into.
+                height: posterWidth * 1.5 + 36,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  clipBehavior: Clip.none,
+                  itemCount: others.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 12),
+                  itemBuilder: (context, index) => SizedBox(
+                    width: posterWidth,
+                    child: _PosterCard(
+                      pick: others[index],
+                      onTap: () => _show(others[index]),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+            if (precision != null) ...[const SizedBox(height: 18), precision],
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -443,10 +520,11 @@ class _Questions extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final onBg = AppColorScheme.onBackground;
-    final wide = MediaQuery.sizeOf(context).width >= 840;
+    final layout = _Layout.of(context);
+    final compact = layout == _Layout.compact;
 
     Widget section(String title, List<Widget> chips) => Padding(
-      padding: const EdgeInsets.only(bottom: 18),
+      padding: EdgeInsets.only(bottom: compact ? 12 : 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -465,123 +543,146 @@ class _Questions extends StatelessWidget {
       ),
     );
 
-    return FocusTraversalGroup(
-      child: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: wide ? 48 : 20, vertical: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    // On a large screen the answers stay in a column a thumb can cover
+    // instead of running across the whole width.
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
-            Row(
-              children: [
-                Icon(Icons.nights_stay_rounded, color: AppColorScheme.accent),
-                const SizedBox(width: 10),
-                Text(
-                  l10n.tonightTitle,
-                  style: TextStyle(
-                    color: AppColorScheme.accent,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  onPressed: () => Navigator.of(context).maybePop(),
-                  icon: Icon(Icons.close_rounded, color: onBg),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
+            Icon(Icons.nights_stay_rounded, color: AppColorScheme.accent),
+            const SizedBox(width: 10),
             Text(
-              l10n.tonightQuestionsTitle,
+              l10n.tonightTitle,
               style: TextStyle(
-                color: onBg,
-                fontSize: wide ? 30 : 24,
-                fontWeight: FontWeight.w800,
-                height: 1.15,
+                color: AppColorScheme.accent,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              l10n.tonightQuestionsHint,
-              style: TextStyle(color: onBg.withValues(alpha: 0.7), fontSize: 15),
-            ),
-            const SizedBox(height: 22),
-            section(l10n.tonightWhoQuestion, [
-              for (final company in TonightCompany.values)
-                _Choice(
-                  label: switch (company) {
-                    TonightCompany.alone => l10n.tonightWhoAlone,
-                    TonightCompany.couple => l10n.tonightWhoCouple,
-                    TonightCompany.family => l10n.tonightWhoFamily,
-                    TonightCompany.friends => l10n.tonightWhoFriends,
-                  },
-                  icon: switch (company) {
-                    TonightCompany.alone => Icons.person_rounded,
-                    TonightCompany.couple => Icons.favorite_rounded,
-                    TonightCompany.family => Icons.family_restroom_rounded,
-                    TonightCompany.friends => Icons.groups_rounded,
-                  },
-                  selected: answers.company == company,
-                  onTap: () => onChanged(answers.copyWith(company: company)),
-                ),
-            ]),
-            if (answers.company == TonightCompany.family)
-              section(l10n.tonightKidsQuestion, [
-                for (final age in KidsAge.values)
-                  _Choice(
-                    label: switch (age) {
-                      KidsAge.under7 => l10n.tonightKidsUnder7,
-                      KidsAge.from7to12 => l10n.tonightKids7to12,
-                      KidsAge.teen => l10n.tonightKidsTeen,
-                    },
-                    selected: answers.kidsAge == age,
-                    onTap: () => onChanged(answers.copyWith(kidsAge: age)),
-                  ),
-              ]),
-            section(l10n.tonightTimeQuestion, [
-              for (final time in TonightTime.values)
-                _Choice(
-                  label: switch (time) {
-                    TonightTime.short => l10n.tonightTimeShort,
-                    TonightTime.evening => l10n.tonightTimeEvening,
-                    TonightTime.any => l10n.tonightTimeAny,
-                  },
-                  icon: switch (time) {
-                    TonightTime.short => Icons.timer_outlined,
-                    TonightTime.evening => Icons.weekend_rounded,
-                    TonightTime.any => Icons.all_inclusive_rounded,
-                  },
-                  selected: answers.time == time,
-                  onTap: () => onChanged(answers.copyWith(time: time)),
-                ),
-            ]),
-            section(l10n.tonightMoodQuestion, [
-              for (final mood in TonightMood.values)
-                _Choice(
-                  label: tonightMoodLabel(l10n, mood),
-                  icon: switch (mood) {
-                    TonightMood.laugh => Icons.sentiment_very_satisfied_rounded,
-                    TonightMood.chills => Icons.nightlight_round,
-                    TonightMood.escape => Icons.rocket_launch_rounded,
-                    TonightMood.think => Icons.psychology_rounded,
-                    TonightMood.comfort => Icons.local_cafe_rounded,
-                    TonightMood.surprise => Icons.casino_rounded,
-                  },
-                  selected: answers.mood == mood,
-                  onTap: () => onChanged(answers.copyWith(mood: mood)),
-                ),
-            ]),
-            const SizedBox(height: 6),
-            _ActionButton(
-              label: l10n.tonightGo,
-              icon: Icons.arrow_forward_rounded,
-              primary: true,
-              autofocus: true,
-              large: true,
-              onTap: onGo,
+            const Spacer(),
+            IconButton(
+              onPressed: () => Navigator.of(context).maybePop(),
+              icon: Icon(Icons.close_rounded, color: onBg),
             ),
           ],
         ),
+        const SizedBox(height: 6),
+        Text(
+          l10n.tonightQuestionsTitle,
+          style: TextStyle(
+            color: onBg,
+            fontSize: switch (layout) {
+              _Layout.wide => 30,
+              _Layout.split => 28,
+              _Layout.compact => 21,
+              _Layout.phone => 24,
+            },
+            fontWeight: FontWeight.w800,
+            height: 1.15,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          l10n.tonightQuestionsHint,
+          style: TextStyle(color: onBg.withValues(alpha: 0.7), fontSize: 15),
+        ),
+        SizedBox(height: compact ? 14 : 22),
+        section(l10n.tonightWhoQuestion, [
+          for (final company in TonightCompany.values)
+            _Choice(
+              label: switch (company) {
+                TonightCompany.alone => l10n.tonightWhoAlone,
+                TonightCompany.couple => l10n.tonightWhoCouple,
+                TonightCompany.family => l10n.tonightWhoFamily,
+                TonightCompany.friends => l10n.tonightWhoFriends,
+              },
+              icon: switch (company) {
+                TonightCompany.alone => Icons.person_rounded,
+                TonightCompany.couple => Icons.favorite_rounded,
+                TonightCompany.family => Icons.family_restroom_rounded,
+                TonightCompany.friends => Icons.groups_rounded,
+              },
+              selected: answers.company == company,
+              onTap: () => onChanged(answers.copyWith(company: company)),
+            ),
+        ]),
+        if (answers.company == TonightCompany.family)
+          section(l10n.tonightKidsQuestion, [
+            for (final age in KidsAge.values)
+              _Choice(
+                label: switch (age) {
+                  KidsAge.under7 => l10n.tonightKidsUnder7,
+                  KidsAge.from7to12 => l10n.tonightKids7to12,
+                  KidsAge.teen => l10n.tonightKidsTeen,
+                },
+                selected: answers.kidsAge == age,
+                onTap: () => onChanged(answers.copyWith(kidsAge: age)),
+              ),
+          ]),
+        section(l10n.tonightTimeQuestion, [
+          for (final time in TonightTime.values)
+            _Choice(
+              label: switch (time) {
+                TonightTime.short => l10n.tonightTimeShort,
+                TonightTime.evening => l10n.tonightTimeEvening,
+                TonightTime.any => l10n.tonightTimeAny,
+              },
+              icon: switch (time) {
+                TonightTime.short => Icons.timer_outlined,
+                TonightTime.evening => Icons.weekend_rounded,
+                TonightTime.any => Icons.all_inclusive_rounded,
+              },
+              selected: answers.time == time,
+              onTap: () => onChanged(answers.copyWith(time: time)),
+            ),
+        ]),
+        section(l10n.tonightMoodQuestion, [
+          for (final mood in TonightMood.values)
+            _Choice(
+              label: tonightMoodLabel(l10n, mood),
+              icon: switch (mood) {
+                TonightMood.laugh => Icons.sentiment_very_satisfied_rounded,
+                TonightMood.chills => Icons.nightlight_round,
+                TonightMood.escape => Icons.rocket_launch_rounded,
+                TonightMood.think => Icons.psychology_rounded,
+                TonightMood.comfort => Icons.local_cafe_rounded,
+                TonightMood.surprise => Icons.casino_rounded,
+              },
+              selected: answers.mood == mood,
+              onTap: () => onChanged(answers.copyWith(mood: mood)),
+            ),
+        ]),
+        const SizedBox(height: 6),
+        _ActionButton(
+          label: l10n.tonightGo,
+          icon: Icons.arrow_forward_rounded,
+          primary: true,
+          autofocus: true,
+          large: true,
+          onTap: onGo,
+        ),
+      ],
+    );
+    return FocusTraversalGroup(
+      child: SingleChildScrollView(
+        padding: EdgeInsets.symmetric(
+          horizontal: switch (layout) {
+            _Layout.wide => 48,
+            _Layout.split => 32,
+            _Layout.compact => 16,
+            _Layout.phone => 20,
+          },
+          vertical: compact ? 12 : 20,
+        ),
+        child: layout == _Layout.split
+            ? Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 720),
+                  child: content,
+                ),
+              )
+            : content,
       ),
     );
   }
@@ -689,7 +790,7 @@ class _Banner extends StatelessWidget {
 class _Hero extends StatelessWidget {
   final TonightPick pick;
   final TonightAnswers answers;
-  final bool wide;
+  final _Layout layout;
   final _RequestState? requestState;
   final bool ready;
   final FocusNode primaryFocus;
@@ -700,7 +801,7 @@ class _Hero extends StatelessWidget {
   const _Hero({
     required this.pick,
     required this.answers,
-    required this.wide,
+    required this.layout,
     required this.requestState,
     required this.ready,
     required this.primaryFocus,
@@ -715,6 +816,8 @@ class _Hero extends StatelessWidget {
     final onBg = AppColorScheme.onBackground;
     final c = pick.candidate;
     final image = c.backdropUrl ?? c.posterUrl;
+    final wide = layout == _Layout.wide;
+    final compact = layout == _Layout.compact;
 
     final details = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -747,7 +850,12 @@ class _Hero extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
             color: Colors.white,
-            fontSize: wide ? 36 : 26,
+            fontSize: switch (layout) {
+              _Layout.wide => 36,
+              _Layout.split => 32,
+              _Layout.compact => 22,
+              _Layout.phone => 26,
+            },
             fontWeight: FontWeight.w900,
             height: 1.1,
             shadows: const [Shadow(blurRadius: 12, color: Colors.black54)],
@@ -783,7 +891,7 @@ class _Hero extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             c.overview!,
-            maxLines: wide ? 4 : 5,
+            maxLines: compact ? 3 : (wide ? 4 : 5),
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               color: Colors.white,
@@ -885,6 +993,35 @@ class _Hero extends StatelessWidget {
       );
     }
 
+    if (layout == _Layout.split) {
+      // Fills its column. The details sit at the foot of the picture and
+      // scroll if the window is too short for them.
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            picture,
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0x00000000), Color(0xB3000000), Color(0xF5000000)],
+                  stops: [0.15, 0.5, 0.85],
+                ),
+              ),
+            ),
+            SingleChildScrollView(
+              reverse: true,
+              padding: const EdgeInsets.all(24),
+              child: details,
+            ),
+          ],
+        ),
+      );
+    }
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: Stack(
@@ -903,7 +1040,9 @@ class _Hero extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(18, 120, 18, 18),
+            padding: compact
+                ? const EdgeInsets.fromLTRB(14, 72, 14, 14)
+                : const EdgeInsets.fromLTRB(18, 120, 18, 18),
             child: details,
           ),
         ],
@@ -1223,16 +1362,12 @@ class _ChoiceState extends State<_Choice> {
   }
 }
 
+/// A poster as wide as the room it is given, its title under it.
 class _PosterCard extends StatefulWidget {
   final TonightPick pick;
-  final double width;
   final VoidCallback onTap;
 
-  const _PosterCard({
-    required this.pick,
-    required this.width,
-    required this.onTap,
-  });
+  const _PosterCard({required this.pick, required this.onTap});
 
   @override
   State<_PosterCard> createState() => _PosterCardState();
@@ -1259,22 +1394,21 @@ class _PosterCardState extends State<_PosterCard> {
         style: TextStyle(color: onBg.withValues(alpha: 0.8), fontSize: 12),
       ),
     );
-    return SizedBox(
-      width: widget.width,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AnimatedScale(
-            scale: _focused ? 1.06 : 1,
-            duration: const Duration(milliseconds: 120),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(10),
-              onFocusChange: (f) => setState(() => _focused = f),
-              onTap: widget.onTap,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AnimatedScale(
+          scale: _focused ? 1.06 : 1,
+          duration: const Duration(milliseconds: 120),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onFocusChange: (f) => setState(() => _focused = f),
+            onTap: widget.onTap,
+            child: AspectRatio(
+              aspectRatio: 2 / 3,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 120),
-                width: widget.width,
-                height: widget.width * 1.5,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
@@ -1318,19 +1452,19 @@ class _PosterCardState extends State<_PosterCard> {
               ),
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            widget.pick.isJoker ? l10n.tonightJoker : c.title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: onBg.withValues(alpha: 0.85),
-              fontSize: 12.5,
-              fontWeight: FontWeight.w600,
-            ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          widget.pick.isJoker ? l10n.tonightJoker : c.title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: onBg.withValues(alpha: 0.85),
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

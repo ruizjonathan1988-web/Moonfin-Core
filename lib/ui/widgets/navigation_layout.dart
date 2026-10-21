@@ -6,7 +6,12 @@ import '../../preference/preference_constants.dart';
 import '../../preference/user_preferences.dart';
 import '../../util/platform_detection.dart';
 import '../../util/overlay_color_palette.dart';
+import '../layout/screen_form.dart';
+import 'bottom_nav/bottom_mini_player.dart';
+import 'bottom_nav/bottom_nav_metrics.dart';
+import 'bottom_nav/bottom_nav_theme.dart';
 import 'bottom_nav/bottom_navbar.dart';
+import 'bottom_nav/fold_nav.dart';
 import 'download_progress_bar.dart';
 import 'left_sidebar.dart';
 import 'top_toolbar.dart';
@@ -119,6 +124,7 @@ class _NavigationLayoutState extends State<NavigationLayout>
   final ValueNotifier<double> _toolbarScrollOffset = ValueNotifier<double>(0.0);
   late NavbarPosition _position;
   late BottomNavbarStyle _bottomStyle;
+  late bool _unfoldedRail;
   bool _keyboardVisible = false;
 
   // Split shrinks while the user scrolls down and comes back on the way up.
@@ -140,6 +146,7 @@ class _NavigationLayoutState extends State<NavigationLayout>
       _prefs.set(UserPreferences.navbarPosition, _position);
     }
     _bottomStyle = _prefs.get(UserPreferences.bottomNavbarStyle);
+    _unfoldedRail = _prefs.get(UserPreferences.unfoldedNavRail);
     _prefs.addListener(_onPrefsChanged);
     WidgetsBinding.instance.addObserver(this);
     NavigationLayout.positionNotifier.addListener(_onPositionNotified);
@@ -245,12 +252,17 @@ class _NavigationLayoutState extends State<NavigationLayout>
     }
   }
 
-  // The bar's height, and with it the content inset, depends on the style.
+  // The bar's height, and with it the content inset, depends on the style,
+  // and the rail setting decides whether an opened foldable gets the bar.
   void _onPrefsChanged() {
     final style = _prefs.get(UserPreferences.bottomNavbarStyle);
-    if (style == _bottomStyle || !mounted) return;
+    final rail = _prefs.get(UserPreferences.unfoldedNavRail);
+    if ((style == _bottomStyle && rail == _unfoldedRail) || !mounted) return;
     _expandBottomBar();
-    setState(() => _bottomStyle = style);
+    setState(() {
+      _bottomStyle = style;
+      _unfoldedRail = rail;
+    });
   }
 
   @override
@@ -285,7 +297,7 @@ class _NavigationLayoutState extends State<NavigationLayout>
       NavbarPosition.left => _buildSidebar(),
       NavbarPosition.top => _buildToolbar(),
       NavbarPosition.bottom =>
-        NavigationLayout.allowBottomNavbar ? _buildBottomBar() : _buildToolbar(),
+        NavigationLayout.allowBottomNavbar ? _buildTouchNav() : _buildToolbar(),
     };
     // Grouping only pays off when the tier draws real backdrop blurs, the
     // sheen tier never does.
@@ -304,6 +316,129 @@ class _NavigationLayoutState extends State<NavigationLayout>
       child: widget.child,
     ),
   );
+
+  /// The bottom navbar, or what takes its place on a foldable: the rail when
+  /// it is opened, the tabletop panel when it stands half folded. Folding or
+  /// opening the phone switches between them, and the keyed content moves
+  /// across without being built again.
+  Widget _buildTouchNav() {
+    return ValueListenableBuilder<bool>(
+      valueListenable: Tabletop.forced,
+      builder: (context, forced, _) {
+        final fold = Tabletop.foldIn(context);
+        if (fold != null) return _buildTabletop(fold, forced: forced);
+        if (_unfoldedRail &&
+            widget.showNavigationChrome &&
+            ScreenForm.of(context) == ScreenForm.unfolded) {
+          return _buildRail();
+        }
+        return _buildBottomBar();
+      },
+    );
+  }
+
+  Widget _buildRail() {
+    final media = MediaQuery.of(context);
+    final railWidth = NavRail.widthFor(context);
+    final miniPlayer = bottomMiniPlayerHasTrack();
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        NavRail(activeRoute: widget.activeRoute),
+        Expanded(
+          // Screens size themselves from MediaQuery, so they are told the
+          // width the rail leaves them.
+          child: MediaQuery(
+            data: media.copyWith(
+              size: Size(media.size.width - railWidth, media.size.height),
+              padding: media.padding.copyWith(left: 0),
+              viewPadding: media.viewPadding.copyWith(left: 0),
+            ),
+            child: Column(
+              children: [
+                Expanded(
+                  child: Stack(
+                    children: [
+                      Positioned.fill(child: _content),
+                      if (widget.showBackButton)
+                        Positioned(
+                          top: 16,
+                          left: 16,
+                          child: SafeArea(child: _buildFloatingBackButton()),
+                        ),
+                    ],
+                  ),
+                ),
+                if (miniPlayer)
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      BottomNavMetrics.floatingInset,
+                      BottomNavMetrics.capsulePlayerGap,
+                      BottomNavMetrics.floatingInset,
+                      BottomNavMetrics.floatingBottomGap(media.padding.bottom),
+                    ),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxWidth: BottomNavMetrics.dockMaxWidth,
+                      ),
+                      child: BottomMiniPlayer(
+                        variant: BottomMiniPlayerVariant.capsule,
+                        theme: BottomNavTheme.resolve(context),
+                      ),
+                    ),
+                  ),
+                const DownloadProgressBar(),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// The screen on the upper half, the navigation on the half that rests on
+  /// the table.
+  Widget _buildTabletop(Rect fold, {required bool forced}) {
+    final media = MediaQuery.of(context);
+    return Stack(
+      children: [
+        Positioned(
+          left: 0,
+          right: 0,
+          top: 0,
+          height: fold.top,
+          child: MediaQuery(
+            data: media.copyWith(
+              size: Size(media.size.width, fold.top),
+              padding: media.padding.copyWith(bottom: 0),
+              viewPadding: media.viewPadding.copyWith(bottom: 0),
+            ),
+            child: Stack(
+              children: [
+                Positioned.fill(child: _content),
+                if (widget.showBackButton)
+                  Positioned(
+                    top: 16,
+                    left: 16,
+                    child: SafeArea(child: _buildFloatingBackButton()),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          top: fold.bottom,
+          bottom: 0,
+          child: TabletopNavPanel(
+            activeRoute: widget.activeRoute,
+            onExit: forced ? () => Tabletop.forced.value = false : null,
+          ),
+        ),
+      ],
+    );
+  }
 
   Widget _buildBottomBar() {
     final content = _content;

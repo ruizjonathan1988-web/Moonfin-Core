@@ -80,6 +80,7 @@ import '../../widgets/media_card.dart';
 import '../../widgets/selector_builder.dart';
 import '../../widgets/bottom_nav/bottom_navbar.dart';
 import '../../widgets/navigation_layout.dart';
+import '../../layout/screen_form.dart';
 import '../../widgets/responsive_layout.dart';
 import '../../widgets/seasonal/seasonal_effects.dart';
 import '../../widgets/settings/settings_panel.dart';
@@ -2363,6 +2364,12 @@ class _ContentRowsState extends State<_ContentRows>
       return screenHeight * 0.46;
     }
 
+    // A cover screen runs out of height first: a shorter banner leaves the
+    // first row in view.
+    if (ScreenForm.of(context) == ScreenForm.cover) {
+      return screenHeight * 0.46;
+    }
+
     return screenHeight * 0.55;
   }
 
@@ -4617,8 +4624,9 @@ class _ContentRowsState extends State<_ContentRows>
             return const SizedBox.shrink();
           },
         ),
-        // On a phone the navigation has no room for Tonight, so it floats.
-        if (PlatformDetection.useMobileUi)
+        // The bottom navbar is the one navigation with no room for Tonight,
+        // so it floats above it. The rail and the tabletop panel carry it.
+        if (BottomNavInsetScope.maybeOf(context) != null)
           Positioned(
             right: 16,
             bottom: _bottomNavbarInset() + 16,

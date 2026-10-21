@@ -1818,6 +1818,14 @@ class UserPreferences extends ChangeNotifier {
     defaultValue: false,
   );
 
+  /// On an opened foldable or a tablet, the bottom navbar moves to a rail
+  /// down the left edge. Kept on the device: a phone and a tablet signed in
+  /// to the same account want different answers.
+  static final unfoldedNavRail = Preference(
+    key: 'pref_unfolded_nav_rail',
+    defaultValue: true,
+  );
+
   static final showSeerrButton = Preference(
     key: 'pref_show_seerr_button',
     defaultValue: true,

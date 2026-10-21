@@ -12,6 +12,7 @@ import '../../../data/services/seerr/taste_quiz_loader.dart';
 import '../../../data/services/tonight/evening_journal.dart';
 import '../../../data/services/tonight/tonight_service.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../layout/screen_form.dart';
 import '../../../preference/seerr_preferences.dart';
 import '../../widgets/seerr/seerr_image_urls.dart';
 import 'taste_questionnaire_screen.dart';
@@ -168,70 +169,79 @@ class _TasteCheckInScreenState extends State<TasteCheckInScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final onBg = AppColorScheme.onBackground;
+    final compact = ScreenForm.of(context) == ScreenForm.cover;
     return Scaffold(
       backgroundColor: AppColorScheme.background,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+          padding: compact
+              ? const EdgeInsets.fromLTRB(16, 10, 16, 10)
+              : const EdgeInsets.fromLTRB(24, 16, 24, 14),
+          // One card at a time reads best at a phone's width, even opened.
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 760),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.event_repeat_rounded, color: AppColorScheme.accent),
-                  const SizedBox(width: 10),
+                  Row(
+                    children: [
+                      Icon(Icons.event_repeat_rounded, color: AppColorScheme.accent),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          l10n.checkInTitle,
+                          style: TextStyle(
+                            color: onBg,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      if (!_loading && _cards.isNotEmpty)
+                        Text(
+                          l10n.tasteStepOf(
+                            (_index + 1).clamp(1, _cards.length),
+                            _cards.length,
+                          ),
+                          style: TextStyle(
+                            color: onBg.withValues(alpha: 0.6),
+                            fontSize: 13,
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
                   Expanded(
-                    child: Text(
-                      l10n.checkInTitle,
-                      style: TextStyle(
-                        color: onBg,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    child: _loading
+                        ? const Center(child: CircularProgressIndicator())
+                        : _index >= _cards.length
+                        ? _empty(l10n)
+                        : FocusTraversalGroup(
+                            key: ValueKey(_index),
+                            child: _buildCard(l10n, _cards[_index]),
+                          ),
                   ),
-                  if (!_loading && _cards.isNotEmpty)
-                    Text(
-                      l10n.tasteStepOf(
-                        (_index + 1).clamp(1, _cards.length),
-                        _cards.length,
+                  Row(
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: Text(l10n.tasteLater),
                       ),
-                      style: TextStyle(
-                        color: onBg.withValues(alpha: 0.6),
-                        fontSize: 13,
+                      const Spacer(),
+                      TextButton(
+                        onPressed: _openFull,
+                        child: Text(l10n.checkInFull),
                       ),
-                    ),
+                      if (!_loading && _index < _cards.length) ...[
+                        const SizedBox(width: 8),
+                        TextButton(onPressed: _skip, child: Text(l10n.quizSkip)),
+                      ],
+                    ],
+                  ),
                 ],
               ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: _loading
-                    ? const Center(child: CircularProgressIndicator())
-                    : _index >= _cards.length
-                    ? _empty(l10n)
-                    : FocusTraversalGroup(
-                        key: ValueKey(_index),
-                        child: _buildCard(l10n, _cards[_index]),
-                      ),
-              ),
-              Row(
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(false),
-                    child: Text(l10n.tasteLater),
-                  ),
-                  const Spacer(),
-                  TextButton(
-                    onPressed: _openFull,
-                    child: Text(l10n.checkInFull),
-                  ),
-                  if (!_loading && _index < _cards.length) ...[
-                    const SizedBox(width: 8),
-                    TextButton(onPressed: _skip, child: Text(l10n.quizSkip)),
-                  ],
-                ],
-              ),
-            ],
+            ),
           ),
         ),
       ),

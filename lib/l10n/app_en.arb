@@ -14199,6 +14199,79 @@
   "@tonightButton": {
     "description": "Tonight"
   },
+  "foldSection": "Foldable screen",
+  "@foldSection": {
+    "description": "Foldable"
+  },
+  "foldRail": "Side navigation when unfolded",
+  "@foldRail": {
+    "description": "Foldable"
+  },
+  "foldRailSubtitle": "Unfolded or on a tablet, the bottom bar moves to the left edge.",
+  "@foldRailSubtitle": {
+    "description": "Foldable"
+  },
+  "foldTabletopShort": "Tabletop",
+  "@foldTabletopShort": {
+    "description": "Foldable"
+  },
+  "foldTabletopOn": "Tabletop mode (half folded)",
+  "@foldTabletopOn": {
+    "description": "Foldable"
+  },
+  "foldTabletopExit": "Full screen",
+  "@foldTabletopExit": {
+    "description": "Foldable"
+  },
+  "foldTabletopSubtitle": "Phone opened and standing half folded, screen sideways: picture on top, controls below.",
+  "@foldTabletopSubtitle": {
+    "description": "Foldable"
+  },
+  "foldTabletopUnavailable": "Available when the phone is unfolded and held sideways.",
+  "@foldTabletopUnavailable": {
+    "description": "Foldable"
+  },
+  "foldScreenInfo": "Screen info",
+  "@foldScreenInfo": {
+    "description": "Foldable"
+  },
+  "foldFormPhone": "Phone",
+  "@foldFormPhone": {
+    "description": "Foldable"
+  },
+  "foldFormCover": "Cover screen",
+  "@foldFormCover": {
+    "description": "Foldable"
+  },
+  "foldFormUnfolded": "Unfolded screen",
+  "@foldFormUnfolded": {
+    "description": "Foldable"
+  },
+  "foldFormLarge": "Large screen",
+  "@foldFormLarge": {
+    "description": "Foldable"
+  },
+  "foldRatio": "ratio {ratio}",
+  "@foldRatio": {
+    "description": "Foldable",
+    "placeholders": {
+      "ratio": {
+        "type": "String"
+      }
+    }
+  },
+  "foldHingeNone": "no hinge reported",
+  "@foldHingeNone": {
+    "description": "Foldable"
+  },
+  "foldHingeFlat": "hinge flat",
+  "@foldHingeFlat": {
+    "description": "Foldable"
+  },
+  "foldHingeHalf": "hinge half open",
+  "@foldHingeHalf": {
+    "description": "Foldable"
+  },
   "tonightQuestionsTitle": "What are we watching tonight?",
   "@tonightQuestionsTitle": {
     "description": "Tonight"

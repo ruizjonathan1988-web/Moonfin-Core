@@ -99,6 +99,7 @@ import 'episode_browser_panel.dart';
 import 'osd_buttons.dart';
 import 'trickplay_housing_inset.dart';
 import 'tabletop_layout.dart';
+import '../../layout/screen_form.dart';
 
 class _SubtitleLoadingSpinner extends StatefulWidget {
   const _SubtitleLoadingSpinner();
@@ -4081,6 +4082,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                     initialPlaying: _state.isPlaying,
                     onTogglePlay: _togglePlayPause,
                     onSeekRelative: (ms) => _seekRelative(ms, showControls: false),
+                    onExit: Tabletop.forced.value
+                        ? () => Tabletop.forced.value = false
+                        : null,
                   ),
                   child: HdrOverlayCapture(
                   enabled:
@@ -4753,6 +4757,24 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
               ),
             const SizedBox(width: AppSpacing.spaceSm),
             Expanded(child: _buildTitleInfo()),
+            // The Fold8 never reports standing half folded, so the viewer
+            // says so. Once on, the control deck below the fold ends it.
+            if (PlatformDetection.useMobileUi)
+              ValueListenableBuilder<bool>(
+                valueListenable: Tabletop.forced,
+                builder: (context, forced, _) =>
+                    forced || !Tabletop.canForce(MediaQuery.sizeOf(context))
+                    ? const SizedBox.shrink()
+                    : IconButton(
+                        onPressed: () => Tabletop.forced.value = true,
+                        tooltip: l10n.foldTabletopOn,
+                        icon: AdaptiveIcon(
+                          Icons.laptop_rounded,
+                          color: Colors.white,
+                          size: 26 * _osdButtonScale,
+                        ),
+                      ),
+              ),
             if (_canMinimize)
               IconButton(
                 onPressed: _minimizePlayer,

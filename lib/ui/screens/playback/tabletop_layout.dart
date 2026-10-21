@@ -1,28 +1,8 @@
-import 'dart:ui' show DisplayFeatureState, DisplayFeatureType;
-
 import 'package:flutter/material.dart';
 import 'package:moonfin_design/moonfin_design.dart';
 
 import '../../../l10n/app_localizations.dart';
-
-/// The fold line when a foldable stands half-open like a small laptop with
-/// the fold running across the screen, or null in any other posture.
-///
-/// Flutter reports the hinge of a Galaxy Z Fold and similar through
-/// [MediaQueryData.displayFeatures], with its posture.
-Rect? tabletopFold(MediaQueryData media) {
-  for (final feature in media.displayFeatures) {
-    if (feature.type != DisplayFeatureType.fold &&
-        feature.type != DisplayFeatureType.hinge) {
-      continue;
-    }
-    if (feature.state != DisplayFeatureState.postureHalfOpened) continue;
-    final bounds = feature.bounds;
-    final spansWidth = bounds.width >= media.size.width * 0.9;
-    if (spansWidth && bounds.width > bounds.height) return bounds;
-  }
-  return null;
-}
+import '../../layout/screen_form.dart';
 
 /// Lays the player out for a half-folded phone: the picture on the upper
 /// half, a control deck on the lower half resting on the table, the way
@@ -44,8 +24,15 @@ class TabletopLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: Tabletop.forced,
+      builder: (context, _, _) => _layout(context),
+    );
+  }
+
+  Widget _layout(BuildContext context) {
     final media = MediaQuery.of(context);
-    final fold = enabled ? tabletopFold(media) : null;
+    final fold = enabled ? Tabletop.foldIn(context) : null;
     final topHeight = fold?.top ?? media.size.height;
     final bottomInset = media.size.height - topHeight;
 
@@ -95,6 +82,10 @@ class TabletopControlPanel extends StatelessWidget {
   final VoidCallback onTogglePlay;
   final void Function(int milliseconds) onSeekRelative;
 
+  /// Ends a tabletop posture turned on by hand. Null when the hinge reports
+  /// the posture itself.
+  final VoidCallback? onExit;
+
   const TabletopControlPanel({
     super.key,
     required this.title,
@@ -105,6 +96,7 @@ class TabletopControlPanel extends StatelessWidget {
     required this.initialPlaying,
     required this.onTogglePlay,
     required this.onSeekRelative,
+    this.onExit,
   });
 
   static String _clock(Duration d) {
@@ -127,17 +119,31 @@ class TabletopControlPanel extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (title.isNotEmpty)
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
-                ),
+                  if (onExit != null)
+                    TextButton.icon(
+                      onPressed: onExit,
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.white70,
+                      ),
+                      icon: const Icon(Icons.fullscreen_rounded),
+                      label: Text(l10n.foldTabletopExit),
+                    ),
+                ],
+              ),
               const SizedBox(height: 10),
               StreamBuilder<Duration>(
                 stream: positionStream,

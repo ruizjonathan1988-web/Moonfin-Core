@@ -78,6 +78,47 @@ class BottomNavPadded extends StatelessWidget {
       builder(context, bottomNavContentPadding(context, fallback));
 }
 
+/// What pressing [item] does, wherever the bar is drawn: the bottom navbar,
+/// the rail of an opened foldable or the tabletop panel. [style] and
+/// [barHeight] place the sheets Libraries and You open.
+void openBottomNavItem(
+  BuildContext context, {
+  required BottomNavBarItem item,
+  required BottomNavController controller,
+  required BottomNavTheme theme,
+  required BottomNavbarStyle style,
+  required double barHeight,
+  required String? activeRoute,
+}) {
+  final route = activeRoute ?? '';
+  HapticFeedback.selectionClick();
+  switch (item.kind) {
+    case BottomNavItemKind.home:
+      openBottomNavHome(context, alreadyHome: route == Destinations.home);
+    case BottomNavItemKind.tab:
+      final tab = item.tab!;
+      if (tab == BottomNavTab.libraries) {
+        showBottomNavLibrariesSheet(
+          context: context,
+          controller: controller,
+          theme: theme,
+          style: style,
+          barHeight: barHeight,
+        );
+      } else if (!bottomNavTabMatchesRoute(tab, route)) {
+        openBottomNavTab(context, tab);
+      }
+    case BottomNavItemKind.you:
+      showBottomNavbarHub(
+        context: context,
+        controller: controller,
+        theme: theme,
+        style: style,
+        barHeight: barHeight,
+      );
+  }
+}
+
 class BottomNavbar extends StatefulWidget {
   final String? activeRoute;
 
@@ -172,34 +213,15 @@ class _BottomNavbarState extends State<BottomNavbar> {
   BottomNavbarStyle get _style => _controller.style;
 
   void _onTap(BottomNavBarItem item, BottomNavTheme theme) {
-    final route = widget.activeRoute ?? '';
-    final barHeight = BottomNavbar.heightFor(context, style: _style);
-    HapticFeedback.selectionClick();
-    switch (item.kind) {
-      case BottomNavItemKind.home:
-        openBottomNavHome(context, alreadyHome: route == Destinations.home);
-      case BottomNavItemKind.tab:
-        final tab = item.tab!;
-        if (tab == BottomNavTab.libraries) {
-          showBottomNavLibrariesSheet(
-            context: context,
-            controller: _controller,
-            theme: theme,
-            style: _style,
-            barHeight: barHeight,
-          );
-        } else if (!bottomNavTabMatchesRoute(tab, route)) {
-          openBottomNavTab(context, tab);
-        }
-      case BottomNavItemKind.you:
-        showBottomNavbarHub(
-          context: context,
-          controller: _controller,
-          theme: theme,
-          style: _style,
-          barHeight: barHeight,
-        );
-    }
+    openBottomNavItem(
+      context,
+      item: item,
+      controller: _controller,
+      theme: theme,
+      style: _style,
+      barHeight: BottomNavbar.heightFor(context, style: _style),
+      activeRoute: widget.activeRoute,
+    );
   }
 
   @override

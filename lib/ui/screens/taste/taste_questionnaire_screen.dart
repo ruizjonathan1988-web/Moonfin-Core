@@ -14,6 +14,7 @@ import '../../../data/services/seerr/taste_quiz.dart';
 import '../../../data/services/seerr/taste_quiz_loader.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../preference/seerr_preferences.dart';
+import '../../layout/screen_form.dart';
 import '../../widgets/seerr/seerr_image_urls.dart';
 
 /// Opens the taste questionnaire. Returns true once the viewer saved
@@ -535,6 +536,73 @@ class _TasteQuestionnaireScreenState extends State<TasteQuestionnaireScreen> {
       _Screen.recap => (l10n.quizRecapTitle, l10n.quizRecapHint),
     };
 
+    final form = ScreenForm.of(context);
+    final compact = form == ScreenForm.cover;
+    final size = MediaQuery.sizeOf(context);
+    // An opened foldable held sideways keeps the question on the left and
+    // gives the posters the rest of the width.
+    final sideBySide = form == ScreenForm.unfolded && size.width > size.height;
+
+    final header = <Widget>[
+      Row(
+        children: [
+          Icon(Icons.tune_rounded, color: AppColorScheme.accent),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              l10n.tasteTitle,
+              style: TextStyle(
+                color: onBg,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          if (step > 0)
+            Text(
+              l10n.tasteStepOf(step, total),
+              style: TextStyle(color: onBg.withValues(alpha: 0.6), fontSize: 13),
+            ),
+        ],
+      ),
+      SizedBox(height: compact ? 8 : 10),
+      ClipRRect(
+        borderRadius: BorderRadius.circular(3),
+        child: LinearProgressIndicator(
+          value: total == 0 ? 0 : step / total,
+          minHeight: 4,
+          color: AppColorScheme.accent,
+          backgroundColor: onBg.withValues(alpha: 0.12),
+        ),
+      ),
+      SizedBox(height: compact ? 12 : 18),
+      Text(
+        title,
+        style: TextStyle(
+          color: onBg,
+          fontSize: compact ? 21 : 25,
+          fontWeight: FontWeight.w800,
+          height: 1.15,
+        ),
+      ),
+      const SizedBox(height: 6),
+      Text(
+        hint,
+        // A cover screen is short: the hint gives way to the posters.
+        maxLines: compact ? 2 : null,
+        overflow: compact ? TextOverflow.ellipsis : null,
+        style: TextStyle(
+          color: onBg.withValues(alpha: 0.7),
+          fontSize: compact ? 13.5 : 14.5,
+          height: 1.35,
+        ),
+      ),
+    ];
+    final screen = FocusTraversalGroup(
+      key: ValueKey('${_screen.name}-$_page-$_duel'),
+      child: _buildScreen(l10n),
+    );
+
     return PopScope(
       canPop: _index == 0,
       onPopInvokedWithResult: (didPop, _) {
@@ -544,74 +612,38 @@ class _TasteQuestionnaireScreenState extends State<TasteQuestionnaireScreen> {
         backgroundColor: AppColorScheme.background,
         body: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 16, 24, 14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.tune_rounded, color: AppColorScheme.accent),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        l10n.tasteTitle,
-                        style: TextStyle(
-                          color: onBg,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+            padding: compact
+                ? const EdgeInsets.fromLTRB(16, 10, 16, 10)
+                : const EdgeInsets.fromLTRB(24, 16, 24, 14),
+            child: sideBySide
+                ? Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SizedBox(
+                        width: size.width * 0.34,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ...header,
+                            const Spacer(),
+                            _buildFooter(l10n, stacked: true),
+                          ],
                         ),
                       ),
-                    ),
-                    if (step > 0)
-                      Text(
-                        l10n.tasteStepOf(step, total),
-                        style: TextStyle(
-                          color: onBg.withValues(alpha: 0.6),
-                          fontSize: 13,
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(3),
-                  child: LinearProgressIndicator(
-                    value: total == 0 ? 0 : step / total,
-                    minHeight: 4,
-                    color: AppColorScheme.accent,
-                    backgroundColor: onBg.withValues(alpha: 0.12),
+                      const SizedBox(width: 28),
+                      Expanded(child: screen),
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ...header,
+                      SizedBox(height: compact ? 10 : 16),
+                      Expanded(child: screen),
+                      const SizedBox(height: 10),
+                      _buildFooter(l10n),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 18),
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: onBg,
-                    fontSize: 25,
-                    fontWeight: FontWeight.w800,
-                    height: 1.15,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  hint,
-                  style: TextStyle(
-                    color: onBg.withValues(alpha: 0.7),
-                    fontSize: 14.5,
-                    height: 1.35,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: FocusTraversalGroup(
-                    key: ValueKey('${_screen.name}-$_page-$_duel'),
-                    child: _buildScreen(l10n),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                _buildFooter(l10n),
-              ],
-            ),
           ),
         ),
       ),
@@ -1186,7 +1218,9 @@ class _TasteQuestionnaireScreenState extends State<TasteQuestionnaireScreen> {
     ),
   );
 
-  Widget _buildFooter(AppLocalizations l10n) {
+  /// [stacked] puts the main button on a line of its own, for the narrow
+  /// column it gets beside the posters.
+  Widget _buildFooter(AppLocalizations l10n, {bool stacked = false}) {
     if (_screen == _Screen.welcome) {
       return Row(
         children: [
@@ -1200,36 +1234,46 @@ class _TasteQuestionnaireScreenState extends State<TasteQuestionnaireScreen> {
     final last = _index == _sequence.length - 1;
     final gridHasMore = _screen == _Screen.grid && _page < _gridPageCount - 1;
     final canFinishEarly = !last && _index >= _sequence.indexOf(_Screen.grid);
+    final back = TextButton(
+      onPressed: _saving ? null : _back,
+      child: Text(l10n.tasteBack),
+    );
+    final finishNow = TextButton(
+      onPressed: _saving ? null : _finish,
+      child: Text(l10n.quizFinishNow),
+    );
+    final next = FilledButton.icon(
+      style: FilledButton.styleFrom(
+        backgroundColor: AppColorScheme.accent,
+        foregroundColor: AppColorScheme.onAccent,
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+      ),
+      onPressed: _saving || _pageLoading ? null : _next,
+      icon: Icon(last ? Icons.check_rounded : Icons.arrow_forward_rounded),
+      label: Text(
+        last
+            ? l10n.tasteFinish
+            : gridHasMore
+            ? l10n.quizNextPage
+            : (_screen == _Screen.duels ? l10n.quizSkip : l10n.tasteNext),
+      ),
+    );
+    if (stacked) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          next,
+          const SizedBox(height: 8),
+          Row(children: [back, const Spacer(), if (canFinishEarly) finishNow]),
+        ],
+      );
+    }
     return Row(
       children: [
-        TextButton(
-          onPressed: _saving ? null : _back,
-          child: Text(l10n.tasteBack),
-        ),
+        back,
         const Spacer(),
-        if (canFinishEarly) ...[
-          TextButton(
-            onPressed: _saving ? null : _finish,
-            child: Text(l10n.quizFinishNow),
-          ),
-          const SizedBox(width: 8),
-        ],
-        FilledButton.icon(
-          style: FilledButton.styleFrom(
-            backgroundColor: AppColorScheme.accent,
-            foregroundColor: AppColorScheme.onAccent,
-            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
-          ),
-          onPressed: _saving || _pageLoading ? null : _next,
-          icon: Icon(last ? Icons.check_rounded : Icons.arrow_forward_rounded),
-          label: Text(
-            last
-                ? l10n.tasteFinish
-                : gridHasMore
-                ? l10n.quizNextPage
-                : (_screen == _Screen.duels ? l10n.quizSkip : l10n.tasteNext),
-          ),
-        ),
+        if (canFinishEarly) ...[finishNow, const SizedBox(width: 8)],
+        next,
       ],
     );
   }
