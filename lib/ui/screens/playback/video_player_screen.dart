@@ -692,6 +692,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   void initState() {
     super.initState();
     FocusManager.instance.addListener(_restoreOverlayFocus);
+    Tabletop.forced.addListener(_onTabletopChanged);
     // A right-click hides the controls, so the browser's own menu stays shut.
     if (kIsWeb) unawaited(BrowserContextMenu.disableContextMenu());
     if (PlatformDetection.isTV || PlatformDetection.isMobile) {
@@ -947,6 +948,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   @override
   void dispose() {
+    Tabletop.forced.removeListener(_onTabletopChanged);
     if (kIsWeb) unawaited(BrowserContextMenu.enableContextMenu());
     _cancelPopAfterBackKeyUp?.call();
     _trickplayLoadGeneration++;
@@ -3981,9 +3983,20 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     }
   }
 
+  // The controls move between the picture and the deck below the fold.
+  void _onTabletopChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final hideOsdForPreroll = _isCurrentPreroll;
+    // Standing half folded, the picture keeps the upper half to itself and
+    // every control moves to the half that rests on the table.
+    final tabletop =
+        PlatformDetection.useMobileUi &&
+        !hideOsdForPreroll &&
+        Tabletop.foldIn(context) != null;
     // Volume and brightness ride on the vertical swipe, which is easy to brush
     // by accident when a phone changes hands, so it turns off on its own
     // rather than by locking the whole OSD.
@@ -4075,13 +4088,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                   enabled: PlatformDetection.useMobileUi && !hideOsdForPreroll,
                   panelBuilder: (_) => TabletopControlPanel(
                     title: _currentItemTitle(),
-                    positionStream: _state.positionStream,
-                    initialPosition: _state.position,
-                    duration: () => _state.duration,
-                    playingStream: _state.playingStream,
-                    initialPlaying: _state.isPlaying,
-                    onTogglePlay: _togglePlayPause,
-                    onSeekRelative: (ms) => _seekRelative(ms, showControls: false),
+                    seekbar: _buildSeekbar(),
+                    transport: _buildCenterTransportControls(),
+                    buttons: _buildSecondaryControlsRow(),
                     onExit: Tabletop.forced.value
                         ? () => Tabletop.forced.value = false
                         : null,
@@ -4127,13 +4136,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                         // these widgets are still what gets hit-tested - only
                         // their pixels are re-sent by HdrOverlayCapture.
                         _buildTopOverlay(context),
-                        if (!PlatformDetection.useLeanbackUi)
+                        if (!PlatformDetection.useLeanbackUi && !tabletop)
                           Positioned.fill(
                             child: Center(
                               child: _buildCenterTransportControls(),
                             ),
                           ),
-                        _buildBottomOverlay(context),
+                        if (!tabletop) _buildBottomOverlay(context),
                       ],
                       // The controls carry the indicator while they're up.
                       // Once they hide it stays in the corner, since the wait

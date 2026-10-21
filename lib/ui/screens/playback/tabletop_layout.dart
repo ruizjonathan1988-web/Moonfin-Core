@@ -70,17 +70,14 @@ class TabletopLayout extends StatelessWidget {
   }
 }
 
-/// The lower half in tabletop posture: title, progress and big buttons
-/// that are easy to hit on a phone resting on a table.
+/// The lower half in tabletop posture, the half that rests on the table:
+/// the title, then the player's own seek bar, transport and buttons, so
+/// nothing is left over the picture and nothing is drawn twice.
 class TabletopControlPanel extends StatelessWidget {
   final String title;
-  final Stream<Duration> positionStream;
-  final Duration initialPosition;
-  final Duration Function() duration;
-  final Stream<bool> playingStream;
-  final bool initialPlaying;
-  final VoidCallback onTogglePlay;
-  final void Function(int milliseconds) onSeekRelative;
+  final Widget seekbar;
+  final Widget transport;
+  final Widget buttons;
 
   /// Ends a tabletop posture turned on by hand. Null when the hinge reports
   /// the posture itself.
@@ -89,35 +86,27 @@ class TabletopControlPanel extends StatelessWidget {
   const TabletopControlPanel({
     super.key,
     required this.title,
-    required this.positionStream,
-    required this.initialPosition,
-    required this.duration,
-    required this.playingStream,
-    required this.initialPlaying,
-    required this.onTogglePlay,
-    required this.onSeekRelative,
+    required this.seekbar,
+    required this.transport,
+    required this.buttons,
     this.onExit,
   });
-
-  static String _clock(Duration d) {
-    final h = d.inHours;
-    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return h > 0 ? '$h:$m:$s' : '$m:$s';
-  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final accent = AppColorScheme.accent;
+    final onExit = this.onExit;
     return ColoredBox(
       color: const Color(0xFF0B0B0D),
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.spaceLg,
+            vertical: AppSpacing.spaceMd,
+          ),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               Row(
                 children: [
@@ -128,7 +117,7 @@ class TabletopControlPanel extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 16,
+                        fontSize: 17,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -144,94 +133,9 @@ class TabletopControlPanel extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 10),
-              StreamBuilder<Duration>(
-                stream: positionStream,
-                initialData: initialPosition,
-                builder: (context, snap) {
-                  final position = snap.data ?? Duration.zero;
-                  final total = duration();
-                  final progress = total.inMilliseconds <= 0
-                      ? 0.0
-                      : (position.inMilliseconds / total.inMilliseconds)
-                            .clamp(0.0, 1.0);
-                  return Column(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(3),
-                        child: LinearProgressIndicator(
-                          value: progress,
-                          minHeight: 5,
-                          color: accent,
-                          backgroundColor: Colors.white24,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Text(
-                            _clock(position),
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                            ),
-                          ),
-                          const Spacer(),
-                          Text(
-                            '-${_clock(total - position < Duration.zero ? Duration.zero : total - position)}',
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  );
-                },
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    tooltip: l10n.tabletopRewind,
-                    iconSize: 40,
-                    color: Colors.white,
-                    onPressed: () => onSeekRelative(-10000),
-                    icon: const Icon(Icons.replay_10_rounded),
-                  ),
-                  const SizedBox(width: 28),
-                  StreamBuilder<bool>(
-                    stream: playingStream,
-                    initialData: initialPlaying,
-                    builder: (context, snap) {
-                      final playing = snap.data ?? false;
-                      return IconButton.filled(
-                        iconSize: 48,
-                        style: IconButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.black,
-                        ),
-                        onPressed: onTogglePlay,
-                        icon: Icon(
-                          playing
-                              ? Icons.pause_rounded
-                              : Icons.play_arrow_rounded,
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 28),
-                  IconButton(
-                    tooltip: l10n.tabletopForward,
-                    iconSize: 40,
-                    color: Colors.white,
-                    onPressed: () => onSeekRelative(10000),
-                    icon: const Icon(Icons.forward_10_rounded),
-                  ),
-                ],
-              ),
+              seekbar,
+              transport,
+              buttons,
             ],
           ),
         ),
