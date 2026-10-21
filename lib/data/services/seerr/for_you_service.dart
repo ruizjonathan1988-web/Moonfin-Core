@@ -174,6 +174,39 @@ class ForYouService {
     );
   }
 
+  /// The seeds and what TMDB recommends next to each, as the rows see them,
+  /// for anything that ranks on its own terms (Tonight).
+  Future<
+    ({
+      List<TasteSeed> seeds,
+      Map<String, List<SeerrDiscoverItem>> recommendations,
+      Set<String> requested,
+    })
+  >
+  loadRaw({
+    required String serverId,
+    required Future<({List<AggregatedItem> recent, List<AggregatedItem> favorites})>
+    Function()
+    loadHistory,
+    required Future<SeerrDiscoverPage> Function(TasteSeed seed)
+    fetchRecommendations,
+    Future<TasteExtras> Function()? loadExtras,
+    bool forceRefresh = false,
+  }) async {
+    final snapshot = await _snapshot(
+      serverId: serverId,
+      loadHistory: loadHistory,
+      fetchRecommendations: fetchRecommendations,
+      loadExtras: loadExtras,
+      forceRefresh: forceRefresh,
+    );
+    return (
+      seeds: snapshot.seeds,
+      recommendations: snapshot.recommendations,
+      requested: {..._requested},
+    );
+  }
+
   /// How many For You picks the Because rows leave alone: about what a
   /// screen shows before scrolling the row.
   static const forYouLeadCount = 10;

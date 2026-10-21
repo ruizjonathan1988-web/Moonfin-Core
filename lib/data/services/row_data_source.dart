@@ -2727,6 +2727,162 @@ class RowDataSource {
     return (recent: recent, favorites: favorites);
   }
 
+  /// What the library offers for Tonight: movies and series nobody
+  /// finished, a draw at random and the best rated, the next episode of
+  /// every series in progress with its series, and the favourites, for an
+  /// evening of comfort.
+  Future<
+    ({
+      List<AggregatedItem> movies,
+      List<AggregatedItem> series,
+      List<({AggregatedItem episode, AggregatedItem series})> nextUp,
+      List<AggregatedItem> favorites,
+    })
+  >
+  loadTonightLibrary(String serverId) async {
+    const fields = '$_fields,ProviderIds';
+
+    Future<List<AggregatedItem>> draw(
+      List<String> types, {
+      required String sortBy,
+      String sortOrder = 'Descending',
+      List<String>? filters,
+      bool? isFavorite,
+      required int limit,
+    }) async {
+      try {
+        return await _searchVisibleLibraryItems(
+          serverId,
+          types,
+          (parentId) => _getItemsWithFallback(
+            parentId: parentId,
+            includeItemTypes: types,
+            filters: filters,
+            isFavorite: isFavorite,
+            sortBy: sortBy,
+            sortOrder: sortOrder,
+            recursive: true,
+            limit: limit,
+            fields: fields,
+          ),
+        );
+      } catch (e) {
+        debugPrint('[RowDataSource] Tonight draw of $types failed: $e');
+        return const [];
+      }
+    }
+
+    Future<List<({AggregatedItem episode, AggregatedItem series})>>
+    nextUp() async {
+      try {
+        final row = await loadNextUp(serverId);
+        final episodes = row.items
+            .where((e) => e.type == 'Episode' && e.seriesId != null)
+            .take(25)
+            .toList();
+        if (episodes.isEmpty) return const [];
+        final ids = {for (final e in episodes) e.seriesId!}.toList();
+        final res = await _client.itemsApi.getItems(ids: ids, fields: fields);
+        final byId = {
+          for (final s in _parseItems(res, serverId)) s.id: s,
+        };
+        return [
+          for (final episode in episodes)
+            if (byId[episode.seriesId] case final series?)
+              (episode: episode, series: series),
+        ];
+      } catch (e) {
+        debugPrint('[RowDataSource] Tonight next up failed: $e');
+        return const [];
+      }
+    }
+
+    final results = await Future.wait<Object>([
+      draw(
+        const ['Movie'],
+        sortBy: 'Random',
+        filters: const ['IsUnplayed'],
+        limit: 150,
+      ),
+      draw(
+        const ['Movie'],
+        sortBy: 'CommunityRating',
+        filters: const ['IsUnplayed'],
+        limit: 60,
+      ),
+      draw(
+        const ['Series'],
+        sortBy: 'Random',
+        filters: const ['IsUnplayed'],
+        limit: 80,
+      ),
+      nextUp(),
+      draw(
+        const ['Movie', 'Series'],
+        sortBy: 'DatePlayed',
+        isFavorite: true,
+        limit: 40,
+      ),
+    ]);
+
+    final movies = <String, AggregatedItem>{};
+    for (final item in [
+      ...results[0] as List<AggregatedItem>,
+      ...results[1] as List<AggregatedItem>,
+    ]) {
+      movies.putIfAbsent(item.id, () => item);
+    }
+    return (
+      movies: movies.values.toList(),
+      series: results[2] as List<AggregatedItem>,
+      nextUp:
+          results[3] as List<({AggregatedItem episode, AggregatedItem series})>,
+      favorites: results[4] as List<AggregatedItem>,
+    );
+  }
+
+  /// The library's movie or series with this TMDB id, if it holds one.
+  Future<AggregatedItem?> findByTmdb(
+    String serverId, {
+    required String mediaType,
+    required int tmdbId,
+  }) async {
+    final type = mediaType == 'tv' ? 'Series' : 'Movie';
+    try {
+      final res = await _client.itemsApi.getItems(
+        anyProviderIdEquals: 'tmdb.$tmdbId',
+        includeItemTypes: [type],
+        recursive: true,
+        limit: 5,
+        fields: '$_fields,ProviderIds',
+      );
+      for (final item in _parseItems(res, serverId)) {
+        if (item.type == type && item.tmdbId == '$tmdbId') return item;
+      }
+    } catch (e) {
+      debugPrint('[RowDataSource] TMDB lookup failed: $e');
+    }
+    return null;
+  }
+
+  /// One item with its provider ids, to journal what was watched.
+  Future<AggregatedItem?> loadItemWithProviders(
+    String serverId,
+    String itemId,
+  ) async {
+    try {
+      final res = await _client.itemsApi.getItems(
+        ids: [itemId],
+        fields: '$_fields,ProviderIds',
+      );
+      final items = _parseItems(res, serverId);
+      return items.isEmpty ? null : items.first;
+    } catch (e) {
+      debugPrint('[RowDataSource] Item lookup failed: $e');
+      return null;
+    }
+  }
+
   Future<HomeRow> loadSinceYouWatchedRow(String serverId, int rowIndex) async {
     final prefs = GetIt.instance<UserPreferences>();
     final sourceType = prefs.get(UserPreferences.sinceYouWatchedSourceType);

@@ -43,6 +43,7 @@ import 'seerr_icons.dart';
 import 'server_messages_dialog.dart';
 import 'server_messages_nav_slot.dart';
 import 'shuffle_overlay.dart';
+import '../screens/tonight/tonight_screen.dart';
 import 'user_menu_dialog.dart';
 
 import 'offline_aware_image.dart';
@@ -1067,6 +1068,18 @@ class _TopToolbarState extends State<TopToolbar> with RouteAware {
                     if (_isActive(Destinations.search)) return;
                     context.navigateTopLevel(Destinations.search);
                   },
+                ),
+              ),
+              _gap(),
+              _orderButton(
+                order: (order++).toDouble(),
+                child: ExpandableIconButton(
+                  key: const ValueKey('toolbar_tonight'),
+                  forceExpanded: alwaysExpanded,
+                  icon: Icons.nights_stay_rounded,
+                  label: l10n.tonightButton,
+                  baseColor: nextNavColor(),
+                  onPressed: () => showTonight(context),
                 ),
               ),
               if (showShuffle) ...[

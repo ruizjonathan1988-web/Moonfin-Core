@@ -43,6 +43,7 @@ import 'server_messages_dialog.dart';
 import 'server_messages_nav_slot.dart';
 import 'unread_badge.dart';
 import 'shuffle_overlay.dart';
+import '../screens/tonight/tonight_screen.dart';
 import 'user_menu_dialog.dart';
 
 import 'package:playback_core/playback_core.dart';
@@ -1008,6 +1009,17 @@ class _LeftSidebarState extends State<LeftSidebar> with RouteAware {
                     }
                     _markNavigationAwayFromSidebar();
                     context.navigateTopLevel(Destinations.search);
+                  },
+                ),
+                _SidebarItem(
+                  key: const ValueKey('sidebar-tonight'),
+                  icon: Icons.nights_stay_rounded,
+                  label: l10n.tonightButton,
+                  baseColor: nextMainSidebarColor(),
+                  showLabel: _showLabels,
+                  onPressed: () {
+                    _onNavigate();
+                    showTonight(context);
                   },
                 ),
                 if (showShuffle)

@@ -29,6 +29,7 @@ import '../../widgets/seerr/seerr_for_you_sheet.dart';
 import '../../widgets/card_highlights.dart';
 import '../../widgets/floating_notification.dart';
 import '../taste/taste_questionnaire_screen.dart';
+import '../tonight/tonight_screen.dart';
 import '../../../data/services/seerr/my_requests.dart';
 import '../../../data/services/home_highlights.dart';
 import '../../../data/services/background_service.dart';
@@ -4615,6 +4616,20 @@ class _ContentRowsState extends State<_ContentRows>
             return const SizedBox.shrink();
           },
         ),
+        // On a phone the navigation has no room for Tonight, so it floats.
+        if (PlatformDetection.useMobileUi)
+          Positioned(
+            right: 16,
+            bottom: _bottomNavbarInset() + 16,
+            child: FloatingActionButton.extended(
+              heroTag: 'tonight_fab',
+              backgroundColor: AppColorScheme.accent,
+              foregroundColor: AppColorScheme.onAccent,
+              onPressed: () => showTonight(context),
+              icon: const Icon(Icons.nights_stay_rounded),
+              label: Text(AppLocalizations.of(context).tonightButton),
+            ),
+          ),
       ],
     ),
   );

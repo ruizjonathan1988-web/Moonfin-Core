@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:playback_core/playback_core.dart';
@@ -20,6 +22,7 @@ import '../../data/services/media_server_client_factory.dart';
 import '../../data/services/offline_playback_tracker.dart';
 import '../../data/services/remove_watched_planner.dart';
 import '../../data/services/remove_watched_service.dart';
+import '../../data/services/tonight/tonight_service.dart';
 import '../../playback/local_aware_player_service.dart';
 import '../../playback/local_first_media_stream_resolver.dart';
 
@@ -820,6 +823,10 @@ void setActiveStreamResolver(MediaServerClient client) {
         !_getIt.isRegistered<ConnectivityService>() ||
         _getIt<ConnectivityService>().canReachServer,
     onStopped: _onItemStopped,
+    onSessionStart: (item, ticks) =>
+        TonightService.instance.onPlaybackStarted(item, positionTicks: ticks),
+    onSessionStop: (item, position) =>
+        unawaited(TonightService.instance.onPlaybackStopped(item, position)),
   );
 
   _getIt.registerSingleton<MediaStreamResolver>(resolver);

@@ -96,6 +96,48 @@ class SeerrPreferences {
   Future<void> setTastePromptedAt(int value) =>
       _store.setInt(_userKey('taste_prompted_at'), value);
 
+  /// Every sitting watched, as `EveningJournal.encode` wrote it.
+  String? get tonightJournalJson =>
+      _store.getString(_userKey('tonight_journal'));
+  Future<void> setTonightJournalJson(String value) =>
+      _store.setString(_userKey('tonight_journal'), value);
+
+  /// Whether the journal was filled from the server's play history yet.
+  bool get tonightBackfilled =>
+      _store.getBool(_userKey('tonight_backfilled')) ?? false;
+  Future<void> setTonightBackfilled(bool value) =>
+      _store.setBool(_userKey('tonight_backfilled'), value);
+
+  /// The last answers given in the Tonight sheet.
+  String? get tonightAnswersJson =>
+      _store.getString(_userKey('tonight_answers'));
+  Future<void> setTonightAnswersJson(String value) =>
+      _store.setString(_userKey('tonight_answers'), value);
+
+  /// What Tonight learned about how much each signal counts.
+  String? get tonightWeightsJson =>
+      _store.getString(_userKey('tonight_weights'));
+  Future<void> setTonightWeightsJson(String value) =>
+      _store.setString(_userKey('tonight_weights'), value);
+
+  /// The last evening's picks, kept to learn from what came of them.
+  String? get tonightSessionJson =>
+      _store.getString(_userKey('tonight_session'));
+  Future<void> setTonightSessionJson(String value) =>
+      _store.setString(_userKey('tonight_session'), value);
+
+  /// Titles turned down with "Another idea", and when.
+  String? get tonightRejectionsJson =>
+      _store.getString(_userKey('tonight_rejections'));
+  Future<void> setTonightRejectionsJson(String value) =>
+      _store.setString(_userKey('tonight_rejections'), value);
+
+  /// Requests made from Tonight, to follow them until they land.
+  String? get tonightPendingJson =>
+      _store.getString(_userKey('tonight_pending'));
+  Future<void> setTonightPendingJson(String value) =>
+      _store.setString(_userKey('tonight_pending'), value);
+
   /// Requests already announced as ready, so each is announced once. Null
   /// until the first load, which only takes note of what is ready.
   List<String>? get announcedReadyRequests =>

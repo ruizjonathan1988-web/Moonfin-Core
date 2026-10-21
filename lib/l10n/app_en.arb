@@ -14191,6 +14191,327 @@
   "@tastePicksRetry": {
     "description": "Taste questionnaire"
   },
+  "tonightTitle": "Tonight",
+  "@tonightTitle": {
+    "description": "Tonight"
+  },
+  "tonightButton": "Tonight?",
+  "@tonightButton": {
+    "description": "Tonight"
+  },
+  "tonightQuestionsTitle": "What are we watching tonight?",
+  "@tonightQuestionsTitle": {
+    "description": "Tonight"
+  },
+  "tonightQuestionsHint": "Three answers, and I'll handle the rest.",
+  "@tonightQuestionsHint": {
+    "description": "Tonight"
+  },
+  "tonightWhoQuestion": "Who's watching?",
+  "@tonightWhoQuestion": {
+    "description": "Tonight"
+  },
+  "tonightWhoAlone": "Just me",
+  "@tonightWhoAlone": {
+    "description": "Tonight"
+  },
+  "tonightWhoCouple": "The two of us",
+  "@tonightWhoCouple": {
+    "description": "Tonight"
+  },
+  "tonightWhoFamily": "Family",
+  "@tonightWhoFamily": {
+    "description": "Tonight"
+  },
+  "tonightWhoFriends": "Friends",
+  "@tonightWhoFriends": {
+    "description": "Tonight"
+  },
+  "tonightKidsQuestion": "The youngest is…",
+  "@tonightKidsQuestion": {
+    "description": "Tonight"
+  },
+  "tonightKidsUnder7": "Under 7",
+  "@tonightKidsUnder7": {
+    "description": "Tonight"
+  },
+  "tonightKids7to12": "7 to 12",
+  "@tonightKids7to12": {
+    "description": "Tonight"
+  },
+  "tonightKidsTeen": "13 or older",
+  "@tonightKidsTeen": {
+    "description": "Tonight"
+  },
+  "tonightTimeQuestion": "How much time?",
+  "@tonightTimeQuestion": {
+    "description": "Tonight"
+  },
+  "tonightTimeShort": "Under 1h30",
+  "@tonightTimeShort": {
+    "description": "Tonight"
+  },
+  "tonightTimeEvening": "The whole evening",
+  "@tonightTimeEvening": {
+    "description": "Tonight"
+  },
+  "tonightTimeAny": "Doesn't matter",
+  "@tonightTimeAny": {
+    "description": "Tonight"
+  },
+  "tonightMoodQuestion": "In the mood for…",
+  "@tonightMoodQuestion": {
+    "description": "Tonight"
+  },
+  "tonightMoodLaugh": "A laugh",
+  "@tonightMoodLaugh": {
+    "description": "Tonight"
+  },
+  "tonightMoodChills": "Chills",
+  "@tonightMoodChills": {
+    "description": "Tonight"
+  },
+  "tonightMoodEscape": "Escape",
+  "@tonightMoodEscape": {
+    "description": "Tonight"
+  },
+  "tonightMoodThink": "Something deep",
+  "@tonightMoodThink": {
+    "description": "Tonight"
+  },
+  "tonightMoodComfort": "Comfort",
+  "@tonightMoodComfort": {
+    "description": "Tonight"
+  },
+  "tonightMoodSurprise": "Surprise me",
+  "@tonightMoodSurprise": {
+    "description": "Tonight"
+  },
+  "tonightGo": "Let's go",
+  "@tonightGo": {
+    "description": "Tonight"
+  },
+  "tonightLoading": "Finding what suits you…",
+  "@tonightLoading": {
+    "description": "Tonight"
+  },
+  "tonightNothing": "Nothing fits these answers right now. Try another mood.",
+  "@tonightNothing": {
+    "description": "Tonight"
+  },
+  "tonightPlay": "Play",
+  "@tonightPlay": {
+    "description": "Tonight"
+  },
+  "tonightResume": "Resume {episode}",
+  "@tonightResume": {
+    "description": "Tonight",
+    "placeholders": {
+      "episode": {
+        "type": "String"
+      }
+    }
+  },
+  "tonightRequest": "Request",
+  "@tonightRequest": {
+    "description": "Tonight"
+  },
+  "tonightRequesting": "Requesting…",
+  "@tonightRequesting": {
+    "description": "Tonight"
+  },
+  "tonightRequested": "Requested. I'll let you know when it's ready.",
+  "@tonightRequested": {
+    "description": "Tonight"
+  },
+  "tonightReady": "It's ready!",
+  "@tonightReady": {
+    "description": "Tonight"
+  },
+  "tonightRequestFailed": "The request didn't go through.",
+  "@tonightRequestFailed": {
+    "description": "Tonight"
+  },
+  "tonightAnother": "Another idea",
+  "@tonightAnother": {
+    "description": "Tonight"
+  },
+  "tonightDetails": "Details",
+  "@tonightDetails": {
+    "description": "Tonight"
+  },
+  "tonightChangeAnswers": "Change my answers",
+  "@tonightChangeAnswers": {
+    "description": "Tonight"
+  },
+  "tonightOthers": "Or maybe…",
+  "@tonightOthers": {
+    "description": "Tonight"
+  },
+  "tonightJoker": "Wildcard",
+  "@tonightJoker": {
+    "description": "Tonight"
+  },
+  "tonightInLibrary": "On your server",
+  "@tonightInLibrary": {
+    "description": "Tonight"
+  },
+  "tonightRequestable": "Ready in minutes",
+  "@tonightRequestable": {
+    "description": "Tonight"
+  },
+  "tonightAlreadyRequested": "Already requested",
+  "@tonightAlreadyRequested": {
+    "description": "Tonight"
+  },
+  "tonightEpisodes": "{minutes}-min episodes",
+  "@tonightEpisodes": {
+    "description": "Tonight",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "tonightRuntimeHM": "{hours}h {minutes}m",
+  "@tonightRuntimeHM": {
+    "description": "Tonight",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "tonightRuntimeM": "{minutes} min",
+  "@tonightRuntimeM": {
+    "description": "Tonight",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "tonightReasonResume": "Pick up where you left off",
+  "@tonightReasonResume": {
+    "description": "Tonight"
+  },
+  "tonightReasonBecause": "Because you liked {title}",
+  "@tonightReasonBecause": {
+    "description": "Tonight",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "tonightReasonHabit": "What you like to watch {slot}",
+  "@tonightReasonHabit": {
+    "description": "Tonight",
+    "placeholders": {
+      "slot": {
+        "type": "String"
+      }
+    }
+  },
+  "tonightSlotWeekdayDay": "during the day",
+  "@tonightSlotWeekdayDay": {
+    "description": "Tonight"
+  },
+  "tonightSlotWeekdayEvening": "on weekday evenings",
+  "@tonightSlotWeekdayEvening": {
+    "description": "Tonight"
+  },
+  "tonightSlotWeekdayLate": "late on weeknights",
+  "@tonightSlotWeekdayLate": {
+    "description": "Tonight"
+  },
+  "tonightSlotFriday": "on Friday nights",
+  "@tonightSlotFriday": {
+    "description": "Tonight"
+  },
+  "tonightSlotSaturday": "on Saturday nights",
+  "@tonightSlotSaturday": {
+    "description": "Tonight"
+  },
+  "tonightSlotSunday": "on Sunday evenings",
+  "@tonightSlotSunday": {
+    "description": "Tonight"
+  },
+  "tonightSlotWeekendDay": "on weekend afternoons",
+  "@tonightSlotWeekendDay": {
+    "description": "Tonight"
+  },
+  "tonightReasonMood": "Right in tonight's mood",
+  "@tonightReasonMood": {
+    "description": "Tonight"
+  },
+  "tonightReasonFamily": "Perfect for the family",
+  "@tonightReasonFamily": {
+    "description": "Tonight"
+  },
+  "tonightReasonCouple": "Made for a night for two",
+  "@tonightReasonCouple": {
+    "description": "Tonight"
+  },
+  "tonightReasonFriends": "Great with friends",
+  "@tonightReasonFriends": {
+    "description": "Tonight"
+  },
+  "tonightReasonQuality": "Highly rated: {rating}/10",
+  "@tonightReasonQuality": {
+    "description": "Tonight",
+    "placeholders": {
+      "rating": {
+        "type": "String"
+      }
+    }
+  },
+  "tonightReasonFresh": "Just arrived",
+  "@tonightReasonFresh": {
+    "description": "Tonight"
+  },
+  "tonightReasonTaste": "For {genre} fans",
+  "@tonightReasonTaste": {
+    "description": "Tonight",
+    "placeholders": {
+      "genre": {
+        "type": "String"
+      }
+    }
+  },
+  "tonightReasonJoker": "Off your usual path, but highly rated",
+  "@tonightReasonJoker": {
+    "description": "Tonight"
+  },
+  "tonightPrecision": "Accuracy on your recent evenings: {percent}%",
+  "@tonightPrecision": {
+    "description": "Tonight",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "tonightStalled": "{title} hasn't arrived yet. Here's something in the meantime.",
+  "@tonightStalled": {
+    "description": "Tonight",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "tonightRelaxed": "Few titles matched the mood exactly, so I widened it a little.",
+  "@tonightRelaxed": {
+    "description": "Tonight"
+  },
+  "tonightRetry": "Try again",
+  "@tonightRetry": {
+    "description": "Tonight"
+  },
   "tasteTitle": "Your taste",
   "@tasteTitle": {
     "description": "Taste questionnaire title"
