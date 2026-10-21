@@ -1,0 +1,34 @@
+# Temporary: checks what BetaSeries shares about a member with the app key
+# alone, shown in the job annotations.
+name: Sonde BetaSeries
+
+on:
+  push:
+    branches: [perso-wip]
+    paths: ['.github/workflows/betaseries-probe.yml']
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Interroger BetaSeries
+        env:
+          KEY: '09fe278bf39e'
+        run: |
+          call() {
+            code=$(curl -sS -m 20 -o body.json -w '%{http_code}' \
+              -H "X-BetaSeries-Key: $KEY" \
+              -H 'X-BetaSeries-Version: 3.0' \
+              -A 'Moonfin-perso' "${@:3}" "$2")
+            echo "::notice title=$1::HTTP $code $(head -c 1800 body.json | tr -s ' \n' ' ')"
+          }
+          call search 'https://api.betaseries.com/members/search?login=Badgone8802'
+          ID=$(jq -r '(.users // .members // [])[0].id // empty' body.json)
+          echo "::notice title=id::$ID"
+          call infos "https://api.betaseries.com/members/infos?id=$ID&summary=true"
+          call shows "https://api.betaseries.com/shows/member?id=$ID&limit=3"
+          call movies "https://api.betaseries.com/movies/member?id=$ID&limit=3"
+          call movies-seen "https://api.betaseries.com/movies/member?id=$ID&state=1&limit=2"
+          call movies-towatch "https://api.betaseries.com/movies/member?id=$ID&state=0&limit=2"
+          call movies-nope "https://api.betaseries.com/movies/member?id=$ID&state=2&limit=2"
+          call device 'https://api.betaseries.com/oauth/device' -X POST -d "client_id=$KEY"
