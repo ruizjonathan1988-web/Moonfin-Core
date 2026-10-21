@@ -3233,11 +3233,7 @@ class HomeViewModel extends ChangeNotifier {
       blockNsfw,
     );
     if (base.isEmpty) return null;
-    final status = item.mediaInfo?.status;
-    final requestable =
-        status == null ||
-        status == SeerrMediaStatus.unknown ||
-        status == SeerrMediaStatus.deleted;
+    final requestable = _isRequestable(item.mediaInfo?.status);
     return AggregatedItem(
       id: base.first.id,
       serverId: base.first.serverId,
@@ -3673,11 +3669,23 @@ class HomeViewModel extends ChangeNotifier {
               ),
               'SeerrMediaType': item.mediaType,
               'SeerrStatus': item.mediaInfo?.status,
+              // Something still to ask for opens the request sheet. Only
+              // with a known media type, which the request is made for.
+              if (_isRequestable(item.mediaInfo?.status) &&
+                  (item.mediaType == 'movie' || item.mediaType == 'tv'))
+                forYouFlag: true,
             },
           ),
         )
         .toList();
   }
+
+  /// Whether Seerr would take a request for a title in [status]: unknown to
+  /// it, or removed since.
+  static bool _isRequestable(int? status) =>
+      status == null ||
+      status == SeerrMediaStatus.unknown ||
+      status == SeerrMediaStatus.deleted;
 
   HomeRow _seerrRow(
     String rowId,
