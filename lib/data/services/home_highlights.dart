@@ -21,6 +21,19 @@ List<SeerrDiscoverItem> chartPicks(
   return picks;
 }
 
+/// Below this TMDB rating, a title enough people rated is popular rather
+/// than good, and stays out of the Top 10.
+const chartMinRating = 5.5;
+
+/// Votes it takes before [chartMinRating] applies: a title just out has too
+/// few for its rating to mean much.
+const chartRatingMinVotes = 100;
+
+/// Whether [item] deserves a place in a Top 10 on its rating.
+bool isWellRated(SeerrDiscoverItem item) =>
+    (item.voteCount ?? 0) < chartRatingMinVotes ||
+    (item.voteAverage ?? 0) >= chartMinRating;
+
 /// The streaming services whose charts make the Top 10, by TMDB provider id:
 /// Netflix, Prime Video, Disney+, Apple TV+, Canal+, Max and Paramount+.
 const chartStreamingServices = [8, 119, 337, 350, 381, 1899, 531];

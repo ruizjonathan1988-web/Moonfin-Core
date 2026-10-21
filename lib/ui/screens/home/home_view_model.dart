@@ -3001,9 +3001,10 @@ class HomeViewModel extends ChangeNotifier {
   /// By default, what is popular right now: the charts of every streaming
   /// service in the viewer's country, the week's trends on TMDB and what
   /// the members of Trakt and BetaSeries watch most, fused so a title on
-  /// several of them ranks higher and shows once. A source that fails is left
-  /// out. With [yearBest], the best rated releases of the last twelve months
-  /// instead.
+  /// several of them ranks higher and shows once, minus what is popular but
+  /// poorly rated. A source that fails is left out. With [yearBest], the best
+  /// rated releases of the last twelve months instead. Either way, a film
+  /// still only in cinemas makes way.
   Future<List<SeerrDiscoverItem>> _top10Chart(
     SeerrRepository repo,
     String mediaType, {
@@ -3093,9 +3094,12 @@ class HomeViewModel extends ChangeNotifier {
             fetch: (tmdbId) => repo.getDiscoverItem(mediaType, tmdbId),
           ),
       ]);
-      chart = fuseCharts([
-        for (final c in [...charts, ...idCards]) chartPicks(c, limit: 20),
-      ]);
+      chart = [
+        for (final item in fuseCharts([
+          for (final c in [...charts, ...idCards]) chartPicks(c, limit: 20),
+        ]))
+          if (isWellRated(item)) item,
+      ];
     }
     if (!isTv) chart = await _outAtHome(repo, chart);
     // Nothing came back: no row, and the next load asks again.

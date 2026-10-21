@@ -251,4 +251,24 @@ void main() {
       expect(isOutAtHome(const [], now), isTrue);
     });
   });
+
+  group('isWellRated', () {
+    SeerrDiscoverItem rated(double average, int votes) => SeerrDiscoverItem(
+      id: 1,
+      voteAverage: average,
+      voteCount: votes,
+    );
+
+    test('a title many rated poorly stays out', () {
+      expect(isWellRated(rated(4.4, 1200)), isFalse);
+    });
+
+    test('a well rated title stays in', () {
+      expect(isWellRated(rated(7.1, 1200)), isTrue);
+    });
+
+    test('a title just out keeps its chance', () {
+      expect(isWellRated(rated(3.0, 12)), isTrue);
+    });
+  });
 }
