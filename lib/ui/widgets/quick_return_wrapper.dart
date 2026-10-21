@@ -282,7 +282,11 @@ class _QuickReturnButtonState extends State<_QuickReturnButton> {
                 height: 48,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: isActive ? accent : Colors.transparent,
+                  // Opaque at rest: it floats over posters and titles, which
+                  // would show through a bare outline.
+                  color: isActive
+                      ? accent
+                      : AppColorScheme.background.withValues(alpha: 0.85),
                   border: Border.all(color: accent, width: 2.0),
                   boxShadow: [
                     BoxShadow(
