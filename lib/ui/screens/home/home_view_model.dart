@@ -110,7 +110,7 @@ class HomeViewModel extends ChangeNotifier {
         top10SeriesRowId,
         frenchMoviesRowId,
         frenchSeriesRowId,
-        frenchAwardsRowId,
+        frenchClassicsRowId,
       },
       requestedKeys: ForYouService.instance.requestedKeys,
       requestableFlag: forYouFlag,
@@ -298,7 +298,7 @@ class HomeViewModel extends ChangeNotifier {
       HomeSectionType.top10Series ||
       HomeSectionType.frenchMovies ||
       HomeSectionType.frenchSeries ||
-      HomeSectionType.frenchAwards ||
+      HomeSectionType.frenchClassics ||
       HomeSectionType.surprise ||
       HomeSectionType.seasonal =>
         false,
@@ -556,7 +556,7 @@ class HomeViewModel extends ChangeNotifier {
                         c.type != HomeSectionType.top10Series &&
                         c.type != HomeSectionType.frenchMovies &&
                         c.type != HomeSectionType.frenchSeries &&
-                        c.type != HomeSectionType.frenchAwards) ||
+                        c.type != HomeSectionType.frenchClassics) ||
                     showSeerrRows) &&
                 (!_isImdbSectionType(c.type) || (showImdbRows && _isImdbSectionEnabled(c.type))) &&
                 (!_isTmdbSectionType(c.type) || (showTmdbRows && _isTmdbSectionEnabled(c.type))) &&
@@ -998,8 +998,8 @@ class HomeViewModel extends ChangeNotifier {
         return row.id == frenchMoviesRowId;
       case HomeSectionType.frenchSeries:
         return row.id == frenchSeriesRowId;
-      case HomeSectionType.frenchAwards:
-        return row.id == frenchAwardsRowId;
+      case HomeSectionType.frenchClassics:
+        return row.id == frenchClassicsRowId;
       case HomeSectionType.surprise:
         return row.id == surpriseRowId;
       case HomeSectionType.seerrShortcuts:
@@ -1370,8 +1370,8 @@ class HomeViewModel extends ChangeNotifier {
         return const {'frenchMovies'};
       case HomeSectionType.frenchSeries:
         return const {'frenchSeries'};
-      case HomeSectionType.frenchAwards:
-        return const {'frenchAwards'};
+      case HomeSectionType.frenchClassics:
+        return const {'frenchClassics'};
       case HomeSectionType.surprise:
         return const {'surprise'};
       case HomeSectionType.seerrShortcuts:
@@ -1740,7 +1740,7 @@ class HomeViewModel extends ChangeNotifier {
         return _loadTop10Row(l10n, 'tv', forceRefresh: forceRefresh);
       case HomeSectionType.frenchMovies:
       case HomeSectionType.frenchSeries:
-      case HomeSectionType.frenchAwards:
+      case HomeSectionType.frenchClassics:
         return _loadFrenchRow(l10n, section, forceRefresh: forceRefresh);
       case HomeSectionType.surprise:
         return _loadSurpriseRow(l10n);
@@ -2255,10 +2255,10 @@ class HomeViewModel extends ChangeNotifier {
           rowType: HomeRowType.pluginDynamic,
           isLoading: true,
         );
-      case HomeSectionType.frenchAwards:
+      case HomeSectionType.frenchClassics:
         return HomeRow(
-          id: frenchAwardsRowId,
-          title: l10n.frenchAwardsRow,
+          id: frenchClassicsRowId,
+          title: l10n.frenchClassicsRow,
           rowType: HomeRowType.pluginDynamic,
           isLoading: true,
         );
@@ -3194,7 +3194,7 @@ class HomeViewModel extends ChangeNotifier {
 
   static const frenchMoviesRowId = 'french_movies';
   static const frenchSeriesRowId = 'french_series';
-  static const frenchAwardsRowId = 'french_awards';
+  static const frenchClassicsRowId = 'french_classics';
 
   /// A French row ([section] is one of the French sections), whatever the
   /// server holds; a title still to request opens the request sheet.
@@ -3209,9 +3209,9 @@ class HomeViewModel extends ChangeNotifier {
         l10n.frenchSeriesRow,
         'tv',
       ),
-      HomeSectionType.frenchAwards => (
-        frenchAwardsRowId,
-        l10n.frenchAwardsRow,
+      HomeSectionType.frenchClassics => (
+        frenchClassicsRowId,
+        l10n.frenchClassicsRow,
         'movie',
       ),
       _ => (frenchMoviesRowId, l10n.frenchMoviesRow, 'movie'),
@@ -3230,7 +3230,7 @@ class HomeViewModel extends ChangeNotifier {
       } else {
         picks = switch (section) {
           HomeSectionType.frenchSeries => await _frenchSeries(repo),
-          HomeSectionType.frenchAwards => await _frenchAwards(repo),
+          HomeSectionType.frenchClassics => await _frenchClassics(repo),
           _ => await _frenchMovies(repo),
         };
         if (picks.isNotEmpty) {
@@ -3285,45 +3285,55 @@ class HomeViewModel extends ChangeNotifier {
           ),
   );
 
-  /// French cinema as France loved it: the films it went to see most in
-  /// cinemas, this decade, the last one and of all time, taking turns with
-  /// the best rated of each of the last three decades, then only what can be
-  /// watched at home.
+  /// French cinema now: the hits of the last eighteen months, those France
+  /// went to see most in cinemas this decade first, then the award winners
+  /// and the best rated of the last five years, taking turns, then only what
+  /// can be watched at home.
   Future<List<SeerrDiscoverItem>> _frenchMovies(SeerrRepository repo) async {
-    final acclaimed = await Future.wait([
-      for (final decade in const [2020, 2010, 2000])
-        _frenchAcclaimed(
-          repo,
-          'movie',
-          from: DateTime(decade),
-          to: DateTime(decade + 9, 12, 31),
-          minVotes: 300,
-        ),
-    ]);
-    final hits = await chartCards(
-      takeTurns([frenchHits2020s, frenchHits2010s, frenchHitsAllTime]),
-      known: {
-        for (final list in acclaimed)
-          for (final film in list) film.id: film,
-      },
-      fetch: (tmdbId) => repo.getDiscoverItem('movie', tmdbId),
-      depth: 15,
+    final now = DateTime.now();
+    final winners = _chartSource(
+      () => GetIt.instance<FilmAwardsClient>().frenchWinners(),
     );
+    final (recent, acclaimed) = await (
+      _chartPage(
+        () => repo.discoverMovies(
+          language: 'fr',
+          primaryReleaseDateGte: tmdbDay(
+            DateTime(now.year, now.month - 18, now.day),
+          ),
+          primaryReleaseDateLte: tmdbDay(now),
+        ),
+      ),
+      _frenchAcclaimed(
+        repo,
+        'movie',
+        from: DateTime(now.year - 5, now.month, now.day),
+        minVotes: 300,
+      ),
+    ).wait;
+    final known = {
+      for (final film in [...recent, ...acclaimed]) film.id: film,
+    };
+    Future<SeerrDiscoverItem> fetch(int tmdbId) =>
+        repo.getDiscoverItem('movie', tmdbId);
+    final (hits, awarded) = await (
+      chartCards(frenchHits2020s, known: known, fetch: fetch),
+      winners.then((ids) => chartCards(ids, known: known, fetch: fetch)),
+    ).wait;
     return _outAtHome(
       repo,
       takeTurns([
-        hits,
-        takeTurns([
-          for (final list in acclaimed) chartPicks(list, limit: 10),
-        ], keyOf: tmdbKey),
+        takeTurns([hits, _worthShowing(recent)], keyOf: tmdbKey),
+        awarded,
+        chartPicks(acclaimed, limit: 20),
       ], keyOf: tmdbKey),
-      depth: 24,
+      depth: 20,
     );
   }
 
   /// French series: what France watched most this week on BetaSeries, the
-  /// popular of the last three years and the best rated of all time, taking
-  /// turns.
+  /// popular of the last three years and the best rated of the last ten,
+  /// taking turns.
   Future<List<SeerrDiscoverItem>> _frenchSeries(SeerrRepository repo) async {
     final now = DateTime.now();
     final watched = _chartSource(
@@ -3336,7 +3346,12 @@ class HomeViewModel extends ChangeNotifier {
           firstAirDateGte: tmdbDay(DateTime(now.year - 3, now.month, now.day)),
         ),
       ),
-      _frenchAcclaimed(repo, 'tv', minVotes: 100),
+      _frenchAcclaimed(
+        repo,
+        'tv',
+        from: DateTime(now.year - 10, now.month, now.day),
+        minVotes: 100,
+      ),
     ).wait;
     final watchedCards = await chartCards(
       await watched,
@@ -3352,19 +3367,18 @@ class HomeViewModel extends ChangeNotifier {
     ], keyOf: tmdbKey);
   }
 
-  /// The award-winning French films from Wikidata, the latest winners
-  /// first, that can be watched at home.
-  Future<List<SeerrDiscoverItem>> _frenchAwards(SeerrRepository repo) async {
-    final winners = await _chartSource(
-      () => GetIt.instance<FilmAwardsClient>().frenchWinners(),
-    );
-    final cards = await chartCards(
-      winners,
-      known: const {},
+  /// The classics of French cinema: the films France went to see most of
+  /// all time and in the 2010s, taking turns with the best rated French
+  /// films of all time. All long out, so no release check.
+  Future<List<SeerrDiscoverItem>> _frenchClassics(SeerrRepository repo) async {
+    final acclaimed = await _frenchAcclaimed(repo, 'movie', minVotes: 1000);
+    final hits = await chartCards(
+      takeTurns([frenchHitsAllTime, frenchHits2010s]),
+      known: {for (final film in acclaimed) film.id: film},
       fetch: (tmdbId) => repo.getDiscoverItem('movie', tmdbId),
-      depth: 24,
+      depth: 20,
     );
-    return _outAtHome(repo, chartPicks(cards, limit: 24), depth: 24);
+    return takeTurns([hits, chartPicks(acclaimed, limit: 20)], keyOf: tmdbKey);
   }
 
   /// The titles of a popularity list fit to show: with a poster, each once,

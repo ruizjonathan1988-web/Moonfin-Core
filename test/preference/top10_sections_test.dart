@@ -71,7 +71,7 @@ void main() {
     final series = types.indexOf(HomeSectionType.top10Series);
     expect(types[series + 1], HomeSectionType.frenchMovies);
     expect(types[series + 2], HomeSectionType.frenchSeries);
-    expect(types[series + 3], HomeSectionType.frenchAwards);
+    expect(types[series + 3], HomeSectionType.frenchClassics);
     expect(types[series + 4], HomeSectionType.nextUp);
   });
 
@@ -82,7 +82,7 @@ void main() {
     for (final type in [
       HomeSectionType.frenchMovies,
       HomeSectionType.frenchSeries,
-      HomeSectionType.frenchAwards,
+      HomeSectionType.frenchClassics,
     ]) {
       expect(sections.firstWhere((c) => c.type == type).enabled, isFalse);
     }

@@ -540,7 +540,7 @@ class _HomeSectionsScreenState extends State<HomeSectionsScreen>
         section.type == HomeSectionType.top10Series ||
         section.type == HomeSectionType.frenchMovies ||
         section.type == HomeSectionType.frenchSeries ||
-        section.type == HomeSectionType.frenchAwards ||
+        section.type == HomeSectionType.frenchClassics ||
         section.type == HomeSectionType.radarrCalendar ||
         section.type == HomeSectionType.sonarrCalendar) {
       return 6;
@@ -1832,7 +1832,7 @@ class _HomeSectionsScreenState extends State<HomeSectionsScreen>
         HomeSectionType.top10Series => l10n.top10SeriesRow,
         HomeSectionType.frenchMovies => l10n.frenchMoviesRow,
         HomeSectionType.frenchSeries => l10n.frenchSeriesRow,
-        HomeSectionType.frenchAwards => l10n.frenchAwardsRow,
+        HomeSectionType.frenchClassics => l10n.frenchClassicsRow,
         HomeSectionType.surprise => l10n.surpriseRow,
         HomeSectionType.seerrMyRequests => l10n.myRequestsRow,
         HomeSectionType.seerrBecause => l10n.becauseYouWatchedSection,

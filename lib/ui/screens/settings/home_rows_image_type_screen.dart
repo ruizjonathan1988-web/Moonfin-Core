@@ -96,7 +96,7 @@ class _HomeRowsImageTypeScreenState extends State<HomeRowsImageTypeScreen> {
         HomeSectionType.top10Series => l10n.top10SeriesRow,
         HomeSectionType.frenchMovies => l10n.frenchMoviesRow,
         HomeSectionType.frenchSeries => l10n.frenchSeriesRow,
-        HomeSectionType.frenchAwards => l10n.frenchAwardsRow,
+        HomeSectionType.frenchClassics => l10n.frenchClassicsRow,
         HomeSectionType.surprise => l10n.surpriseRow,
         HomeSectionType.seerrMyRequests => l10n.myRequestsRow,
         HomeSectionType.seerrBecause => l10n.becauseYouWatchedSection,

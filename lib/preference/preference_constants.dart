@@ -520,17 +520,17 @@ enum HomeSectionType {
   /// The same chart for series.
   top10Series('top10_series'),
 
-  /// French cinema as France loved it: the biggest hits in cinemas and the
-  /// best rated of each decade, on the server or one request away.
+  /// French cinema now: the recent hits, the award winners and the best
+  /// rated of the last few years, on the server or one request away.
   frenchMovies('french_movies'),
 
   /// French series: what France watches this week, the popular and the
   /// acclaimed.
   frenchSeries('french_series'),
 
-  /// French films that won the César, the Louis-Delluc prize or a top
-  /// festival prize, the latest first.
-  frenchAwards('french_awards'),
+  /// The classics of French cinema: the films France saw most in cinemas,
+  /// of all time and in the 2010s, and the best rated of all time.
+  frenchClassics('french_classics'),
 
   /// One movie and one series picked at random, played on a single press.
   surprise('surprise'),

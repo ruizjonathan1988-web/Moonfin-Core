@@ -88,7 +88,7 @@ void main() {
       _row('top10_series'): HomeSectionType.top10Series,
       _row('french_movies'): HomeSectionType.frenchMovies,
       _row('french_series'): HomeSectionType.frenchSeries,
-      _row('french_awards'): HomeSectionType.frenchAwards,
+      _row('french_classics'): HomeSectionType.frenchClassics,
       _row('surprise'): HomeSectionType.surprise,
       _row('seerr_my_requests'): HomeSectionType.seerrMyRequests,
       _row('seerr_because_movie_603'): HomeSectionType.seerrBecause,

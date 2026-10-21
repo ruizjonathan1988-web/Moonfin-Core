@@ -222,7 +222,7 @@ class HomeSectionConfig {
       order: 3,
     ),
     HomeSectionConfig(
-      type: HomeSectionType.frenchAwards,
+      type: HomeSectionType.frenchClassics,
       enabled: true,
       order: 3,
     ),
@@ -520,7 +520,7 @@ class HomeSectionConfig {
     HomeSectionType.top10Series: HomeSectionType.top10Movies,
     HomeSectionType.frenchMovies: HomeSectionType.top10Series,
     HomeSectionType.frenchSeries: HomeSectionType.frenchMovies,
-    HomeSectionType.frenchAwards: HomeSectionType.frenchSeries,
+    HomeSectionType.frenchClassics: HomeSectionType.frenchSeries,
   };
 
   /// [config] placed right after [leader], everything below moved down one.
