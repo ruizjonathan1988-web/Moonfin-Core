@@ -233,6 +233,10 @@ void registerAppModule() {
       _getIt<SessionRepository>(),
     ),
   );
+  // The charts' sources hold nothing of the user, so they live as long as
+  // the app.
+  _getIt.registerLazySingleton(TraktClient.new);
+  _getIt.registerLazySingleton(BetaSeriesClient.new);
   _getIt.registerLazySingleton<SyncService>(
     () => SyncService(_getIt<OfflineRepository>(), _getIt<PendingRatingStore>()),
   );
@@ -354,8 +358,6 @@ void _registerUserScopedSingletons() {
       _getIt<MediaServerClient>(),
     ),
   );
-  _getIt.registerLazySingleton(TraktClient.new);
-  _getIt.registerLazySingleton(BetaSeriesClient.new);
   _getIt.registerLazySingletonAsync<SeerrDiscoverViewModel>(
     () async => SeerrDiscoverViewModel(
       await _getIt.getAsync<SeerrRepository>(),
