@@ -48,6 +48,89 @@ enum TasteGenre {
   }
 
   static TasteGenre? byName(String name) => values.asNameMap()[name];
+
+  /// The questionnaire genres a library item's genre names stand for.
+  ///
+  /// Jellyfin keeps the names its metadata came with, in English or French
+  /// for TMDB, and series combine two ("Action & Adventure"), so each name
+  /// is split and every part looked up.
+  static Set<TasteGenre> fromNames(Iterable<String> names) {
+    final found = <TasteGenre>{};
+    for (final name in names) {
+      for (final part in name.split(RegExp(r'\s*(?:&|/|,| et | and )\s*'))) {
+        final genre = _byLabel[_fold(part)];
+        if (genre != null) found.add(genre);
+      }
+      final whole = _byLabel[_fold(name)];
+      if (whole != null) found.add(whole);
+    }
+    return found;
+  }
+
+  static String _fold(String text) {
+    const from = 'àâäéèêëîïôöùûüç';
+    const to = 'aaaeeeeiioouuuc';
+    final lower = text.trim().toLowerCase();
+    final buffer = StringBuffer();
+    for (final rune in lower.runes) {
+      final char = String.fromCharCode(rune);
+      final index = from.indexOf(char);
+      buffer.write(index >= 0 ? to[index] : char);
+    }
+    return buffer.toString().replaceAll(RegExp(r'[^a-z0-9]+'), ' ').trim();
+  }
+
+  static const Map<String, TasteGenre> _byLabel = {
+    'action': TasteGenre.action,
+    'adventure': TasteGenre.adventure,
+    'aventure': TasteGenre.adventure,
+    'animation': TasteGenre.animation,
+    'anime': TasteGenre.animation,
+    'comedy': TasteGenre.comedy,
+    'comedie': TasteGenre.comedy,
+    'crime': TasteGenre.crime,
+    'policier': TasteGenre.crime,
+    'documentary': TasteGenre.documentary,
+    'documentaire': TasteGenre.documentary,
+    'drama': TasteGenre.drama,
+    'drame': TasteGenre.drama,
+    'family': TasteGenre.family,
+    'familial': TasteGenre.family,
+    'famille': TasteGenre.family,
+    'fantasy': TasteGenre.fantasy,
+    'fantastique': TasteGenre.fantasy,
+    'history': TasteGenre.history,
+    'histoire': TasteGenre.history,
+    'horror': TasteGenre.horror,
+    'horreur': TasteGenre.horror,
+    'kids': TasteGenre.kids,
+    'enfants': TasteGenre.kids,
+    'children': TasteGenre.kids,
+    'music': TasteGenre.music,
+    'musique': TasteGenre.music,
+    'musical': TasteGenre.music,
+    'mystery': TasteGenre.mystery,
+    'mystere': TasteGenre.mystery,
+    'reality': TasteGenre.reality,
+    'realite': TasteGenre.reality,
+    'reality tv': TasteGenre.reality,
+    'tele realite': TasteGenre.reality,
+    'romance': TasteGenre.romance,
+    'science fiction': TasteGenre.scifi,
+    'sci fi': TasteGenre.scifi,
+    'talk': TasteGenre.talk,
+    'talk show': TasteGenre.talk,
+    'soap': TasteGenre.talk,
+    'feuilleton': TasteGenre.talk,
+    'news': TasteGenre.talk,
+    'actualites': TasteGenre.talk,
+    'thriller': TasteGenre.thriller,
+    'suspense': TasteGenre.thriller,
+    'war': TasteGenre.war,
+    'guerre': TasteGenre.war,
+    'war politics': TasteGenre.war,
+    'western': TasteGenre.western,
+  };
 }
 
 /// Whether the viewer leans to movies, series, or neither.
@@ -288,8 +371,27 @@ double tasteFactor(
   TasteProfile profile,
   TasteFeedback feedback, {
   DateTime? now,
+}) => tasteFactorFor(
+  genres: TasteGenre.of(item.genreIds, mediaType),
+  mediaType: mediaType,
+  language: item.originalLanguage,
+  year: _releaseYear(item),
+  profile: profile,
+  feedback: feedback,
+  now: now,
+);
+
+/// [tasteFactor] for anything that knows its genres, wherever it came from:
+/// a Seerr suggestion or a title already in the library.
+double tasteFactorFor({
+  required Set<TasteGenre> genres,
+  required String mediaType,
+  required TasteProfile profile,
+  required TasteFeedback feedback,
+  String? language,
+  int? year,
+  DateTime? now,
 }) {
-  final genres = TasteGenre.of(item.genreIds, mediaType);
   if (genres.any(profile.avoided.contains)) return 0;
 
   var factor = 1.0;
@@ -307,24 +409,20 @@ double tasteFactor(
     factor *= matches == 0 ? 0.8 : 1 + 0.3 * math.min(matches, 2);
   }
 
-  final language = item.originalLanguage;
   if (profile.languages.isNotEmpty && language != null && language.isNotEmpty) {
     factor *= profile.languages.contains(language) ? 1.15 : 0.7;
   }
 
-  if (profile.era != TasteEra.any) {
-    final year = _releaseYear(item);
-    if (year != null) {
-      final thisYear = (now ?? DateTime.now()).year;
-      final recent = year >= thisYear - 8;
-      final old = year <= thisYear - 20;
-      if (profile.era == TasteEra.recent) {
-        if (recent) factor *= 1.12;
-        if (old) factor *= 0.8;
-      } else {
-        if (old) factor *= 1.25;
-        if (recent) factor *= 0.85;
-      }
+  if (profile.era != TasteEra.any && year != null) {
+    final thisYear = (now ?? DateTime.now()).year;
+    final recent = year >= thisYear - 8;
+    final old = year <= thisYear - 20;
+    if (profile.era == TasteEra.recent) {
+      if (recent) factor *= 1.12;
+      if (old) factor *= 0.8;
+    } else {
+      if (old) factor *= 1.25;
+      if (recent) factor *= 0.85;
     }
   }
 

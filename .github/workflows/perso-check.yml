@@ -1,0 +1,44 @@
+# Quick check for work in progress: analysis and tests, no APK.
+name: Verif perso
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [perso-wip]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+
+      - run: flutter pub get
+
+      - name: Analyse
+        run: |
+          set +e
+          flutter analyze --no-fatal-infos --no-fatal-warnings lib test > analyze.txt 2>&1
+          status=$?
+          grep -E "^ *(error|warning) " analyze.txt | grep -v "^ *warning .*\(deprecated\|unused_import\)" | head -60 | while IFS= read -r line; do
+            echo "::error::$line"
+          done
+          tail -5 analyze.txt
+          exit $status
+
+      - name: Tests
+        if: always()
+        run: |
+          set +e
+          flutter test test/data/services/tonight_test.dart test/data/services/for_you_ranker_test.dart test/data/services/home_highlights_test.dart test/data/services/my_requests_test.dart test/data/services/taste_profile_test.dart test/data/services/saga_test.dart > tests.txt 2>&1
+          status=$?
+          if [ $status -ne 0 ]; then
+            grep -E "Error|Expected|Actual|FAILED|\[E\]|\.dart:[0-9]+" tests.txt | head -60 | while IFS= read -r line; do
+              echo "::error::$line"
+            done
+          fi
+          tail -5 tests.txt
+          exit $status
