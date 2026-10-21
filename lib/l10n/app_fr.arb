@@ -14144,7 +14144,6 @@
     "traktDisconnect": "Délier Trakt",
     "traktNotConnected": "Des suggestions tirées de tout ce que vous avez regardé",
     "traktConnectedAs": "Relié au compte {name}",
-    "traktUnavailable": "Cette version de l'app ne peut pas se relier à Trakt",
     "traktConnectSteps": "Rendez-vous sur {address} et saisissez ce code :",
     "traktWaiting": "En attente de votre validation sur Trakt…",
     "traktOpenPage": "Ouvrir la page",

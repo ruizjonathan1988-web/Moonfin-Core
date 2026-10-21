@@ -23,17 +23,13 @@ class TraktAccountTile extends StatelessWidget {
     return ListenableBuilder(
       listenable: account,
       builder: (context, _) {
-        final subtitle = !account.canConnect
-            ? l10n.traktUnavailable
-            : account.isConnected
+        final subtitle = account.isConnected
             ? l10n.traktConnectedAs(
                 account.username.isEmpty ? 'Trakt' : account.username,
               )
             : l10n.traktNotConnected;
         return TvFocusHighlight(
-          enabled: account.canConnect,
           builder: (context, focused) => ListTile(
-            enabled: account.canConnect,
             leading: Icon(
               Icons.insights_rounded,
               color: focused ? AppColors.black.withValues(alpha: 0.54) : null,

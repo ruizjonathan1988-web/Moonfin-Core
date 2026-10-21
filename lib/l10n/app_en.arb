@@ -15423,10 +15423,6 @@
       }
     }
   },
-  "traktUnavailable": "This build of the app can't link to Trakt",
-  "@traktUnavailable": {
-    "description": "Subtitle of the Trakt setting when the build has no Trakt secret"
-  },
   "traktConnectSteps": "Go to {address} and enter this code:",
   "@traktConnectSteps": {
     "description": "Trakt linking dialog: where to type the code",

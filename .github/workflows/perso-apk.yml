@@ -67,11 +67,9 @@ jobs:
 
       # "Moonfin Beta" on the phone.
       - name: APK telephone
-        env:
-          TRAKT_CLIENT_SECRET: ${{ secrets.TRAKT_CLIENT_SECRET }}
         run: |
           set +e
-          flutter build apk --release --flavor mobile-beta --dart-define=DISTRIBUTION_CHANNEL=apk --dart-define=TRAKT_CLIENT_SECRET="$TRAKT_CLIENT_SECRET" > build-phone.txt 2>&1
+          flutter build apk --release --flavor mobile-beta --dart-define=DISTRIBUTION_CHANNEL=apk > build-phone.txt 2>&1
           status=$?
           if [ $status -ne 0 ]; then
             grep -E "Error|error:|\.dart:[0-9]+|FAILURE|What went wrong" -A2 build-phone.txt | head -40 | while IFS= read -r line; do echo "::error::$line"; done
@@ -119,10 +117,9 @@ jobs:
       - name: APK TV
         env:
           MOONFIN_TEST_ID_SUFFIX: .perso
-          TRAKT_CLIENT_SECRET: ${{ secrets.TRAKT_CLIENT_SECRET }}
         run: |
           set +e
-          flutter build apk --release --flavor androidTv --dart-define=MOONFIN_FORCE_TV=true --dart-define=DISTRIBUTION_CHANNEL=android_tv_apk --dart-define=TRAKT_CLIENT_SECRET="$TRAKT_CLIENT_SECRET" > build-tv.txt 2>&1
+          flutter build apk --release --flavor androidTv --dart-define=MOONFIN_FORCE_TV=true --dart-define=DISTRIBUTION_CHANNEL=android_tv_apk > build-tv.txt 2>&1
           status=$?
           if [ $status -ne 0 ]; then
             grep -E "Error|error:|\.dart:[0-9]+|FAILURE|What went wrong" -A2 build-tv.txt | head -40 | while IFS= read -r line; do echo "::error::$line"; done

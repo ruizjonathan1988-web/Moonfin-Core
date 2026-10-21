@@ -1,17 +1,9 @@
 import 'package:dio/dio.dart';
 
 /// The id Trakt gave this app. Like any client id it travels with every
-/// request, so it is public by nature.
+/// request, so it is public by nature. The app signs viewers in without a
+/// client secret, so Trakt issued none.
 const traktClientId = 'TCAqoSzejS8EETqVZUEc3c0RhsSgxYcM-HYt0_vcHpE';
-
-/// The secret that goes with [traktClientId], set at build time from the
-/// repository's secrets so it stays out of the code. Without it no account
-/// can be linked, and Trakt only feeds the charts.
-const traktClientSecret = String.fromEnvironment('TRAKT_CLIENT_SECRET');
-
-/// The address registered for the app. Linking by code never goes there,
-/// but renewing a token has to name it.
-const traktRedirectUri = 'http://localhost';
 
 /// A chart Trakt keeps without any account, built from what its members
 /// scrobble, so it follows what people really watch.
@@ -152,11 +144,7 @@ class TraktClient {
   Future<TraktTokens?> deviceToken(String deviceCode) async {
     final response = await _dio.post<Object?>(
       '/oauth/device/token',
-      data: {
-        'code': deviceCode,
-        'client_id': _clientId,
-        'client_secret': traktClientSecret,
-      },
+      data: {'code': deviceCode, 'client_id': _clientId},
       options: Options(validateStatus: (_) => true),
     );
     return switch (response.statusCode) {
@@ -177,8 +165,6 @@ class TraktClient {
       data: {
         'refresh_token': refreshToken,
         'client_id': _clientId,
-        'client_secret': traktClientSecret,
-        'redirect_uri': traktRedirectUri,
         'grant_type': 'refresh_token',
       },
     );

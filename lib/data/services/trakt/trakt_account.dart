@@ -19,9 +19,6 @@ class TraktAccount extends ChangeNotifier {
   /// refresh token, which only works once.
   Future<String?>? _renewing;
 
-  /// Whether this build can link an account at all.
-  bool get canConnect => traktClientSecret.isNotEmpty;
-
   bool get isConnected => _prefs.refreshToken.isNotEmpty;
 
   /// The linked account's name on Trakt, empty when unknown.
