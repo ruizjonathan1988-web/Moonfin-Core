@@ -1,0 +1,28 @@
+# Temporary: checks a BetaSeries API key against the live API and shows the
+# shape of its answers in the job annotations.
+name: Sonde BetaSeries
+
+on:
+  push:
+    branches: [perso-wip]
+    paths: ['.github/workflows/betaseries-probe.yml']
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Interroger BetaSeries
+        env:
+          KEY: '09fe278bf39e'
+        run: |
+          call() {
+            code=$(curl -sS -m 20 -o body.json -w '%{http_code}' \
+              -H "X-BetaSeries-Key: $KEY" \
+              -H 'X-BetaSeries-Version: 3.0' \
+              -A 'Moonfin-perso' "$2")
+            echo "::notice title=$1::HTTP $code $(head -c "${3:-700}" body.json | tr '\n' ' ')"
+          }
+          call ranking-all 'https://api.betaseries.com/stats/shows_ranking?country=fr&period=7&type=all&svod=only&genre=all&limit=3' 1400
+          call ranking-default 'https://api.betaseries.com/stats/shows_ranking?limit=2' 500
+          call movies-discover 'https://api.betaseries.com/movies/discover?limit=2' 500
+          call movies-list 'https://api.betaseries.com/movies/list?order=popularity&limit=2' 500
