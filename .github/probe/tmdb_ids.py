@@ -2,28 +2,17 @@
 import json, urllib.parse, urllib.request
 
 FILMS = [
-    ("Un p'tit truc en plus", 2024), ("Le Comte de Monte-Cristo", 2024),
-    ("Marsupilami", 2026), ("L'Amour ouf", 2024),
-    ("Astérix et Obélix : L'Empire du Milieu", 2023), ("Alibi.com 2", 2023),
-    ("Les Trois Mousquetaires : D'Artagnan", 2023), ("God Save the Tuche", 2025),
-    ("Kaamelott : Premier Volet", 2021), ("Qu'est-ce qu'on a tous fait au Bon Dieu ?", 2022),
-    ("Simone, le voyage du siècle", 2022), ("Novembre", 2022), ("BAC Nord", 2020),
-    ("Gourou", 2026), ("Juste une illusion", 2026),
-    ("Intouchables", 2011), ("Qu'est-ce qu'on a fait au Bon Dieu ?", 2014),
-    ("Rien à déclarer", 2010), ("La Famille Bélier", 2014),
-    ("Qu'est-ce qu'on a encore fait au Bon Dieu ?", 2019), ("Les Tuche 3", 2018),
-    ("La Ch'tite Famille", 2018), ("Les Petits Mouchoirs", 2010),
-    ("Sur la piste du Marsupilami", 2012), ("Supercondriaque", 2014),
-    ("Bienvenue chez les Ch'tis", 2008), ("La Grande Vadrouille", 1966),
-    ("Astérix et Obélix : Mission Cléopâtre", 2002), ("Les Visiteurs", 1993),
-    ("Le Petit Monde de don Camillo", 1952), ("Le Corniaud", 1965), ("Taxi 2", 2000),
+    ("Qu'est-ce qu'on a tous fait au Bon Dieu", 2022), ("Serial (Bad) Weddings 3", 2022),
+    ("Novembre film Jimenez", 2022), ("November Jimenez", 2022), ("Novembre", 2022),
+    ("Gourou film", 2026), ("Gourou", 2026),
+    ("Les Trois Mousquetaires : Milady", 2023), ("Super-héros malgré lui", 2022),
 ]
 
 QUERY = """
 SELECT ?item ?label ?tmdb (MIN(YEAR(?d)) AS ?year) WHERE {
   SERVICE wikibase:mwapi {
     bd:serviceParam wikibase:api "EntitySearch"; wikibase:endpoint "www.wikidata.org";
-      mwapi:search "%s"; mwapi:language "fr"; mwapi:limit "10".
+      mwapi:search "%s"; mwapi:language "fr"; mwapi:limit "40".
     ?item wikibase:apiOutputItem mwapi:item.
   }
   ?item wdt:P4947 ?tmdb .
