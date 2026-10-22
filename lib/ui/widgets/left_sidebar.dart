@@ -1022,6 +1022,25 @@ class _LeftSidebarState extends State<LeftSidebar> with RouteAware {
                     showTonight(context);
                   },
                 ),
+                if (!kidsMode &&
+                    _prefs.get(UserPreferences.showSeerrButton) &&
+                    GetIt.instance<PluginSyncService>().seerrAvailable)
+                  _SidebarItem(
+                    key: const ValueKey('sidebar-en-route'),
+                    icon: Icons.downloading_rounded,
+                    label: l10n.enRouteTitle,
+                    baseColor: nextMainSidebarColor(),
+                    showLabel: _showLabels,
+                    onPressed: () {
+                      _onNavigate();
+                      if (_isActive(Destinations.enRoute)) {
+                        _exitSidebarToContent();
+                        return;
+                      }
+                      _markNavigationAwayFromSidebar();
+                      context.navigateTopLevel(Destinations.enRoute);
+                    },
+                  ),
                 if (showShuffle)
                   _SidebarItem(
                     key: const ValueKey('sidebar-shuffle'),

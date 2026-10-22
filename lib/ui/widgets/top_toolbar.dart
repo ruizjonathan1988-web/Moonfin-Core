@@ -1083,6 +1083,23 @@ class _TopToolbarState extends State<TopToolbar> with RouteAware {
                   onPressed: () => showTonight(context),
                 ),
               ),
+              if (showSeerr) ...[
+                _gap(),
+                _orderButton(
+                  order: (order++).toDouble(),
+                  child: ExpandableIconButton(
+                    key: const ValueKey('toolbar_en_route'),
+                    forceExpanded: alwaysExpanded,
+                    icon: Icons.downloading_rounded,
+                    label: l10n.enRouteTitle,
+                    baseColor: nextNavColor(),
+                    onPressed: () {
+                      if (_isActive(Destinations.enRoute)) return;
+                      context.navigateTopLevel(Destinations.enRoute);
+                    },
+                  ),
+                ),
+              ],
               if (showShuffle) ...[
                 _gap(),
                 _orderButton(

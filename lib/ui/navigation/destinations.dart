@@ -74,6 +74,7 @@ class Destinations {
   static const libraryBrowse = '/library/:libraryId';
   static const allGenres = '/genres';
   static const allFavorites = '/favorites';
+  static const enRoute = '/en-route';
   static const folderView = '/folders';
   static const folderBrowse = '/folder/:folderId';
   static const collectionBrowse = '/collection/:collectionId';
