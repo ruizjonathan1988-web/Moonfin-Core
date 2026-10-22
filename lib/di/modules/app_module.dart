@@ -23,6 +23,7 @@ import '../../data/repositories/seerr_repository.dart';
 import '../../data/services/betaseries/betaseries_client.dart';
 import '../../data/services/trakt/trakt_account.dart';
 import '../../data/services/trakt/trakt_client.dart';
+import '../../data/services/seerr/seerr_age_gate.dart';
 import '../../data/services/wikidata/film_awards_client.dart';
 import '../../data/repositories/tmdb_repository.dart';
 import '../../data/repositories/user_views_repository.dart';
@@ -251,6 +252,14 @@ void registerAppModule() {
   );
   _getIt.registerLazySingleton(BetaSeriesClient.new);
   _getIt.registerLazySingleton(FilmAwardsClient.new);
+  // A title's rating is the same for everyone; the repository is looked up
+  // per call since it belongs to whoever is signed in.
+  _getIt.registerLazySingleton(
+    () => SeerrAgeGate(
+      (mediaType, tmdbId) async => (await _getIt.getAsync<SeerrRepository>())
+          .getAgeInfo(mediaType, tmdbId),
+    ),
+  );
   _getIt.registerLazySingleton<SyncService>(
     () => SyncService(_getIt<OfflineRepository>(), _getIt<PendingRatingStore>()),
   );

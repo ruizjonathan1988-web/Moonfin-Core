@@ -4,6 +4,7 @@ import 'package:server_core/server_core.dart';
 import '../../auth/repositories/session_repository.dart';
 import '../services/seerr/seerr_api_models.dart';
 import '../services/home_highlights.dart';
+import '../services/seerr/seerr_age_gate.dart' show AgeInfo, parseAgeInfo;
 import '../services/seerr/seerr_discover_sliders.dart';
 import '../services/seerr/seerr_http_client.dart';
 import '../services/seerr/seerr_models.dart';
@@ -640,6 +641,15 @@ class SeerrRepository {
   /// in its details.
   Future<List<FilmRelease>> getMovieReleases(int tmdbId) => _withClient(
     (c) async => parseFilmReleases(await c.getMovieDetails(tmdbId)),
+  );
+
+  /// The rating and genres of [mediaType] (`movie` or `tv`) title [tmdbId].
+  Future<AgeInfo> getAgeInfo(String mediaType, int tmdbId) => _withClient(
+    (c) async => parseAgeInfo(
+      mediaType == 'tv'
+          ? await c.getTvDetails(tmdbId)
+          : await c.getMovieDetails(tmdbId),
+    ),
   );
 
   Future<SeerrTvDetails> getTvDetailsByTvdb(int tvdbId) => _withClient(

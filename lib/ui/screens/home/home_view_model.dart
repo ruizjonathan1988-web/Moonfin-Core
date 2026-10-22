@@ -40,6 +40,7 @@ import '../../../data/services/seerr/taste_profile.dart';
 import '../../../data/services/seerr/taste_extras.dart';
 import '../../../data/services/seerr/saga_service.dart';
 import '../../../data/services/seerr/seed_recommendations.dart';
+import '../../../data/services/seerr/seerr_age_gate.dart';
 import '../../../data/services/betaseries/betaseries_client.dart';
 import '../../../data/services/chart_cards.dart';
 import '../../../data/services/trakt/trakt_client.dart';
@@ -55,6 +56,7 @@ import '../../../data/viewmodels/seerr_discover_view_model.dart';
 import '../../widgets/seerr/seerr_shortcuts.dart';
 import '../../../data/services/custom_external_lists_service.dart';
 import '../../../data/utils/blocked_ratings.dart';
+import '../../../util/parental_filter.dart';
 import '../../../util/seasonal_country.dart';
 import '../../../util/seerr_genre_art.dart';
 import '../../util/home_row_title_localizer.dart';
@@ -93,16 +95,26 @@ class HomeViewModel extends ChangeNotifier {
         ? _rows
         : _rows.where((row) => !_isEmptySectionPlaceholder(row)).toList();
     final requested = ForYouService.instance.requestedChanges.value;
+    final gate = _ageGate;
+    final gateVersion = gate?.version;
     final cached = _tidyRows;
     if (cached != null &&
         _tidyRequested == requested &&
+        _tidyGateVersion == gateVersion &&
+        identical(_tidyFilter, activeParentalFilter) &&
         listEquals(_tidySource, visible)) {
       return cached;
     }
     _tidySource = List.of(visible);
     _tidyRequested = requested;
+    _tidyGateVersion = gateVersion;
+    _tidyFilter = activeParentalFilter;
+    // On a profile with ratings blocked, Seerr's titles wait for theirs.
+    final allowed = gate == null || !activeParentalFilter.isActive
+        ? visible
+        : withAgeGate(visible, gate.allows);
     return _tidyRows = tidyHomeRows(
-      visible,
+      allowed,
       keptRowIds: const {
         myRequestsRowId,
         sagaRowId,
@@ -120,6 +132,8 @@ class HomeViewModel extends ChangeNotifier {
   List<HomeRow>? _tidySource;
   List<HomeRow>? _tidyRows;
   int? _tidyRequested;
+  int? _tidyGateVersion;
+  ParentalFilter? _tidyFilter;
 
   /// Placeholder ids of sections expected to come back empty, because their
   /// last load did or a cold start found nothing cached for them. Their
@@ -391,13 +405,20 @@ class HomeViewModel extends ChangeNotifier {
        _cacheStore = cacheStore ?? HomeRowCacheStore(),
        _ownerUserId = client.userId ?? '' {
     ForYouService.instance.requestedChanges.addListener(notifyListeners);
+    _ageGate?.addListener(notifyListeners);
   }
 
   @override
   void dispose() {
     ForYouService.instance.requestedChanges.removeListener(notifyListeners);
+    _ageGate?.removeListener(notifyListeners);
     super.dispose();
   }
+
+  /// Keeps Seerr's titles behind the ratings blocked on this profile.
+  final SeerrAgeGate? _ageGate = GetIt.instance.isRegistered<SeerrAgeGate>()
+      ? GetIt.instance<SeerrAgeGate>()
+      : null;
 
   /// Whether a section whose load threw keeps what is already on screen.
   ///
