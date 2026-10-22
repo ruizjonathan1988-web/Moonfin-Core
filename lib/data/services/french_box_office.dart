@@ -20,6 +20,7 @@ const frenchHits2020s = [
   577242, // Kaamelott : Premier Volet (2021), 2.65 M
   714869, // Qu'est-ce qu'on a tous fait au Bon Dieu ? (2022), 2.4 M
   740937, // Simone, le voyage du siècle (2022), 2.4 M
+  823951, // Novembre (2022), 2.4 M
   637534, // BAC Nord (2021), 2.2 M
   1259983, // Gourou (2026), 2.0 M by July 2026
   1404684, // Juste une illusion (2026), 1.9 M by July 2026
