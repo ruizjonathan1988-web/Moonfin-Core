@@ -562,7 +562,10 @@ class _HomeShellState extends State<_HomeShell>
             child: Stack(
               fit: StackFit.expand,
               children: [
-                if (backdropEnabled)
+                // VJOD keeps the rows on the page's own near-black, like the
+                // mock-up; a blurred backdrop would tint them violet or brown.
+                if (backdropEnabled &&
+                    mediaBarMode != UserPreferences.mediaBarModeVjod)
                   ValueListenableBuilder<String?>(
                     valueListenable: _backdropUrlNotifier,
                     builder: (context, url, _) {

@@ -847,6 +847,15 @@ class _CardImage extends StatelessWidget {
                       children: [
                         if (_showSeerrMediaTypeBadge) ...[
                           SeerrMediaTypeBadge(mediaType: seerrMediaType),
+                          // Side by side the two tags cover each other on a
+                          // narrow poster, so the status goes under the type.
+                          if (_showSeerrStatusIndicator) ...[
+                            const SizedBox(height: 4),
+                            SeerrStatusTag(
+                              status: seerrStatus,
+                              requestable: seerrRequestable,
+                            ),
+                          ],
                           if (animeMarkerItemId != null || isFavorite)
                             const SizedBox(height: 4),
                         ],
@@ -866,7 +875,7 @@ class _CardImage extends StatelessWidget {
                       ],
                     ),
                   ),
-                if (_showSeerrStatusIndicator)
+                if (_showSeerrStatusIndicator && !_showSeerrMediaTypeBadge)
                   Positioned(
                     top: 6,
                     right: 6,
@@ -875,7 +884,7 @@ class _CardImage extends StatelessWidget {
                       requestable: seerrRequestable,
                     ),
                   )
-                else if (_showWatchedIndicator)
+                else if (!_showSeerrStatusIndicator && _showWatchedIndicator)
                   Positioned(top: 6, right: 6, child: _buildWatchedIndicator()),
                 if (playedPercentage != null && playedPercentage! > 0)
                   Positioned(
