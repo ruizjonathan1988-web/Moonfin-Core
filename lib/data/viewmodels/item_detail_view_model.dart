@@ -568,8 +568,56 @@ class ItemDetailViewModel extends ChangeNotifier {
     final seerr = _seerr;
     if (_isSeerrOnly && _seerrResolvedLibraryId == null && seerr != null) {
       _seerrResolvedLibraryId = _libraryIdFromSeerr(seerr.state);
+      if (_seerrResolvedLibraryId == null) unawaited(_checkServerLibrary());
     }
     notifyListeners();
+  }
+
+  DateTime? _lastServerLibraryCheck;
+
+  /// Seerr only learns a title arrived on its next library scan, minutes after
+  /// the import, and says Requested until then. The media server knows at
+  /// once, so the page asks it directly, at most every 20 seconds.
+  Future<void> _checkServerLibrary({bool force = false}) async {
+    final seerr = _seerr;
+    if (seerr == null || _isDisposed) return;
+    final now = DateTime.now();
+    final last = _lastServerLibraryCheck;
+    if (!force &&
+        last != null &&
+        now.difference(last) < const Duration(seconds: 20)) {
+      return;
+    }
+    _lastServerLibraryCheck = now;
+    final id = await _libraryIdFromServer(seerr.state);
+    if (id == null || _isDisposed || _seerrResolvedLibraryId != null) return;
+    _seerrResolvedLibraryId = id;
+    notifyListeners();
+  }
+
+  Future<String?> _libraryIdFromServer(SeerrMediaDetailState state) async {
+    final tmdbId = state.tmdbId;
+    if (tmdbId == 0) return null;
+    final type = state.isTv ? 'Series' : 'Movie';
+    try {
+      final data = await _client.itemsApi.getItems(
+        anyProviderIdEquals: 'tmdb.$tmdbId',
+        includeItemTypes: [type],
+        recursive: true,
+        limit: 5,
+        fields: 'ProviderIds',
+      );
+      for (final raw in (data['Items'] as List?) ?? const []) {
+        if (raw is! Map) continue;
+        final ids = raw['ProviderIds'];
+        final tmdb = ids is Map ? (ids['Tmdb'] ?? ids['tmdb']) : null;
+        if (raw['Type'] == type && '$tmdb' == '$tmdbId') {
+          final id = raw['Id'];
+          if (id is String && id.isNotEmpty) return id;
+        }
+      }
+    } catch (_) {}
+    return null;
   }
 
   // Seerr hands back the media server's own id for a title it knows is there.
@@ -696,7 +744,8 @@ class ItemDetailViewModel extends ChangeNotifier {
 
     // Nothing else is set for a title already in the library, so the screen
     // stays on its loading state until it has swapped itself out.
-    final libraryId = _libraryIdFromSeerr(state);
+    final libraryId =
+        _libraryIdFromSeerr(state) ?? await _libraryIdFromServer(state);
     if (libraryId != null) {
       _seerrResolvedLibraryId = libraryId;
       notifyListeners();
