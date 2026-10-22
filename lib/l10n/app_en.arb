@@ -509,7 +509,7 @@
   "@recommendationSystemSubtitle": {
     "description": "Explanation under the recommendation system setting"
   },
-  "recommendationSystemVJOD": "VJOD Recommends",
+  "recommendationSystemMoonfin": "VJOD Recommends",
   "@recommendationSystemMoonfin": {
     "description": "Recommendation system option: VJOD Recommends"
   },
@@ -681,11 +681,11 @@
   "@gamepadNavigationDescription": {
     "description": "Settings subtitle for the gamepad navigation switch"
   },
-  "themeVJOD": "VJOD",
+  "themeMoonfin": "VJOD",
   "@themeMoonfin": {
     "description": "Display name for the VJOD theme"
   },
-  "themeVJODSubtitle": "The original clean VJOD default.",
+  "themeMoonfinSubtitle": "The original clean VJOD default.",
   "@themeMoonfinSubtitle": {
     "description": "Preview description for the VJOD theme"
   },
@@ -4247,7 +4247,7 @@
   "@loadingAnimationImage": {
     "description": "Title for loading animation image selection"
   },
-  "loadingAnimationImageVJODLogo": "VJOD Logo",
+  "loadingAnimationImageMoonfinLogo": "VJOD Logo",
   "@loadingAnimationImageMoonfinLogo": {
     "description": "Loading animation image option: VJOD Logo"
   },
@@ -4263,7 +4263,7 @@
   "@loadingAnimationImageMoonPhases": {
     "description": "Loading animation image option: Moon Phases"
   },
-  "loadingAnimationImageVJODPhases": "VJOD Phases",
+  "loadingAnimationImageMoonfinPhases": "VJOD Phases",
   "@loadingAnimationImageMoonfinPhases": {
     "description": "Loading animation image option: VJOD Phases in brand gradient"
   },
@@ -6345,7 +6345,7 @@
   "@mediaBarModeDescription": {
     "description": "Description for media bar style setting"
   },
-  "mediaBarModeVJOD": "VJOD",
+  "mediaBarModeMoonfin": "VJOD",
   "@mediaBarModeMoonfin": {
     "description": "Media bar style option: VJOD"
   },
@@ -6762,7 +6762,7 @@
   "@screensaverBackdropBlack": {
     "description": "Screensaver backdrop: Black"
   },
-  "screensaverBackdropVJOD": "VJOD",
+  "screensaverBackdropMoonfin": "VJOD",
   "@screensaverBackdropMoonfin": {
     "description": "Screensaver backdrop: VJOD"
   },
@@ -6782,7 +6782,7 @@
   "@screensaverAdditionalComponent": {
     "description": "Setting for screensaver additional component"
   },
-  "screensaverComponentVJODLogo": "VJOD Logo",
+  "screensaverComponentMoonfinLogo": "VJOD Logo",
   "@screensaverComponentMoonfinLogo": {
     "description": "Screensaver component: VJOD Logo"
   },
@@ -7396,7 +7396,7 @@
   "@cancelRequest4k": {
     "description": "Button/dialog title to cancel a 4K media request"
   },
-  "playInVJOD": "Play in VJOD",
+  "playInMoonfin": "Play in VJOD",
   "@playInMoonfin": {
     "description": "Button to play available media in VJOD"
   },

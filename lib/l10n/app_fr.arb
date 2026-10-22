@@ -172,11 +172,11 @@
     "@settingsAppearanceThemeSubtitle": {
         "description": "Subtitle for the theme selection screen and theme settings entry"
     },
-    "themeVJOD": "VJOD",
+    "themeMoonfin": "VJOD",
     "@themeMoonfin": {
         "description": "Display name for the VJOD theme"
     },
-    "themeVJODSubtitle": "Le look actuel de VJOD que vous aimez tous.",
+    "themeMoonfinSubtitle": "Le look actuel de VJOD que vous aimez tous.",
     "@themeMoonfinSubtitle": {
         "description": "Preview description for the VJOD theme"
     },
@@ -3503,7 +3503,7 @@
     "@mediaBarModeDescription": {
         "description": "Description for media bar style setting"
     },
-    "mediaBarModeVJOD": "VJOD",
+    "mediaBarModeMoonfin": "VJOD",
     "@mediaBarModeMoonfin": {
         "description": "Media bar style option: VJOD"
     },
@@ -4206,7 +4206,7 @@
     "@cancelRequest": {
         "description": "Button/dialog title to cancel a media request"
     },
-    "playInVJOD": "Lire dans VJOD",
+    "playInMoonfin": "Lire dans VJOD",
     "@playInMoonfin": {
         "description": "Button to play available media in VJOD"
     },
@@ -8055,7 +8055,7 @@
     "@recommendationSystem": {
         "description": "Label for the Recommendation System setting"
     },
-    "recommendationSystemVJOD": "VJOD recommande",
+    "recommendationSystemMoonfin": "VJOD recommande",
     "@recommendationSystemMoonfin": {
         "description": "Recommendation system option: VJOD Recommends"
     },
@@ -10741,7 +10741,7 @@
     "@loadingAnimationImage": {
         "description": "Title for loading animation image selection"
     },
-    "loadingAnimationImageVJODLogo": "Logo VJOD",
+    "loadingAnimationImageMoonfinLogo": "Logo VJOD",
     "@loadingAnimationImageMoonfinLogo": {
         "description": "Loading animation image option: VJOD Logo"
     },
@@ -10757,7 +10757,7 @@
     "@loadingAnimationImageMoonPhases": {
         "description": "Loading animation image option: Moon Phases"
     },
-    "loadingAnimationImageVJODPhases": "Phases VJOD",
+    "loadingAnimationImageMoonfinPhases": "Phases VJOD",
     "@loadingAnimationImageMoonfinPhases": {
         "description": "Loading animation image option: VJOD Phases in brand gradient"
     },
@@ -11036,7 +11036,7 @@
     "@screensaverBackdropBlack": {
         "description": "Screensaver backdrop: Black"
     },
-    "screensaverBackdropVJOD": "VJOD",
+    "screensaverBackdropMoonfin": "VJOD",
     "@screensaverBackdropMoonfin": {
         "description": "Screensaver backdrop: VJOD"
     },
@@ -11056,7 +11056,7 @@
     "@screensaverAdditionalComponent": {
         "description": "Setting for screensaver additional component"
     },
-    "screensaverComponentVJODLogo": "Logo VJOD",
+    "screensaverComponentMoonfinLogo": "Logo VJOD",
     "@screensaverComponentMoonfinLogo": {
         "description": "Screensaver component: VJOD Logo"
     },
