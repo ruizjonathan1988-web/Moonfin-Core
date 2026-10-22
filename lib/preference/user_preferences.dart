@@ -29,6 +29,10 @@ class UserPreferences extends ChangeNotifier {
   static const mediaBarModeGallery = 'gallery';
   static const mediaBarModeBanner = 'banner';
   static const mediaBarModeAya = 'aya';
+
+  /// Tonight's picks as the VJOD home opens on them: the pick in full, the
+  /// evening it is for, and the other choices side by side below.
+  static const mediaBarModeVjod = 'vjod';
   static const mediaBarModeOff = 'off';
   static const mediaBarModeValues = <String>{
     mediaBarModeMoonfin,
@@ -37,6 +41,7 @@ class UserPreferences extends ChangeNotifier {
     mediaBarModeGallery,
     mediaBarModeBanner,
     mediaBarModeAya,
+    mediaBarModeVjod,
     mediaBarModeOff,
   };
 
@@ -2744,9 +2749,7 @@ class UserPreferences extends ChangeNotifier {
 
   static final mediaBarMode = Preference(
     key: 'mediaBarMode',
-    defaultValue: PlatformDetection.useMobileUi
-        ? mediaBarModeGallery
-        : mediaBarModeMoonfin,
+    defaultValue: mediaBarModeVjod,
   );
 
   static final mediaBarContentType = Preference(

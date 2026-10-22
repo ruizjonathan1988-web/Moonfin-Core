@@ -9747,6 +9747,12 @@
     "seerrTagRequest": "Demander",
     "top10SwitchToSeries": "Voir les séries",
     "top10SwitchToMovies": "Voir les films",
+    "tonightNotHereYet": "Pas encore chez vous",
+    "mediaBarModeVjod": "VJOD · Ce soir",
+    "vjodBarRemoteHint": "OK Lecture · appui long Infos · ◀ ▶ autre idée",
+    "vjodBarPlay": "Lecture",
+    "vjodBarAnother": "Autre idée",
+    "vjodBarDetails": "Infos",
     "mediaBarSourceRandom": "Aléatoire",
     "@mediaBarSourceRandom": {
         "description": "Media bar source: any eligible title"

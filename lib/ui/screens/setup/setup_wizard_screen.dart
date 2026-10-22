@@ -497,6 +497,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
 
   Widget _buildMediaBarStep(AppLocalizations l10n) {
     const modes = [
+      UserPreferences.mediaBarModeVjod,
       UserPreferences.mediaBarModeMoonfin,
       UserPreferences.mediaBarModeMakd,
       UserPreferences.mediaBarModeBookshelf,
@@ -506,6 +507,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
       UserPreferences.mediaBarModeOff,
     ];
     final labels = {
+      UserPreferences.mediaBarModeVjod: l10n.mediaBarModeVjod,
       UserPreferences.mediaBarModeMoonfin: l10n.mediaBarModeMoonfin,
       UserPreferences.mediaBarModeMakd: l10n.mediaBarModeMakd,
       UserPreferences.mediaBarModeBookshelf: l10n.mediaBarModeBookshelf,

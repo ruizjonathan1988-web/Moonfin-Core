@@ -30,6 +30,8 @@ import '../../data/viewmodels/media_bar_view_model.dart';
 import '../../preference/preference_constants.dart';
 import '../../preference/user_preferences.dart';
 import '../navigation/app_router.dart';
+import '../../data/repositories/media_bar_repository.dart'
+    show seerrSlideServer;
 import '../navigation/destinations.dart';
 import '../screensaver/screensaver_controller.dart';
 import '../../util/language_matching.dart';
@@ -901,6 +903,13 @@ class _MediaBarState extends State<MediaBar>
     }
   }
 
+  bool _isVjodMode() {
+    final mode = UserPreferences.normalizeMediaBarMode(
+      widget.prefs.get(UserPreferences.mediaBarMode),
+    );
+    return mode == UserPreferences.mediaBarModeVjod;
+  }
+
   bool _isBookshelfMode() {
     final mode = UserPreferences.normalizeMediaBarMode(
       widget.prefs.get(UserPreferences.mediaBarMode),
@@ -916,7 +925,10 @@ class _MediaBarState extends State<MediaBar>
   }
 
   void _scheduleTrailerPreview(MediaBarSlideItem item) {
-    if (_isMakdMobileMode() || _isBookshelfMode() || _isAyaMobileMode()) {
+    if (_isMakdMobileMode() ||
+        _isBookshelfMode() ||
+        _isAyaMobileMode() ||
+        item.serverId == seerrSlideServer) {
       _cancelTrailerPreview();
       return;
     }
@@ -1890,6 +1902,7 @@ class _MediaBarState extends State<MediaBar>
     final useBookshelfStyle = mode == UserPreferences.mediaBarModeBookshelf;
     final useGalleryStyle = mode == UserPreferences.mediaBarModeGallery;
     final useAyaStyle = mode == UserPreferences.mediaBarModeAya;
+    final useVjodStyle = mode == UserPreferences.mediaBarModeVjod;
 
     return switch (state) {
       MediaBarLoading() => _wrapStatusFocus(
@@ -1913,6 +1926,8 @@ class _MediaBarState extends State<MediaBar>
       MediaBarReady(items: final items) =>
         items.isEmpty
             ? const SizedBox.shrink()
+            : useVjodStyle
+            ? _buildVjodSlideshow(context, items)
             : (useAyaStyle
                   ? _buildAyaSlideshow(context, items)
                   : (useGalleryStyle
@@ -2179,6 +2194,233 @@ class _MediaBarState extends State<MediaBar>
                     ),
                   if (items.length > 1 && !PlatformDetection.useMobileUi)
                     ..._buildNavArrows(context, items.length),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// The VJOD banner: tonight's pick, the reason it was picked, when it
+  /// would end, and the other ideas underneath to switch to.
+  Widget _buildVjodSlideshow(
+    BuildContext context,
+    List<MediaBarSlideItem> items,
+  ) {
+    final l10n = AppLocalizations.of(context);
+    final current = items.elementAtOrNull(_currentIndex);
+    final isMobile = PlatformDetection.useMobileUi;
+    final media = MediaQuery.of(context);
+    final hasLeftSidebar =
+        !isMobile &&
+        widget.prefs.get(UserPreferences.navbarPosition) == NavbarPosition.left;
+    final left = isMobile ? 16.0 : 64.0 + (hasLeftSidebar ? 88.0 : 0.0);
+    final navbarAtTop =
+        isMobile &&
+        widget.prefs.get(UserPreferences.navbarPosition) == NavbarPosition.top;
+    final toolbarInset = navbarAtTop ? media.padding.top + 60.0 : 0.0;
+    final hasVisibleTrailerVideo =
+        (_activeYouTubeVideoId != null ||
+            _activeWebTrailerUrl != null ||
+            _trailerUsingMedia3 ||
+            _trailerController != null) &&
+        _trailerVideoOpacity > 0;
+    final bg = AppColorScheme.background;
+    final infoWidth = isMobile
+        ? media.size.width - 32
+        : (media.size.width * 0.42).clamp(320.0, 720.0);
+    final chips = (current?.kicker ?? '')
+        .split('·')
+        .map((c) => c.trim())
+        .where((c) => c.isNotEmpty)
+        .toList();
+    final picks = items.take(3).toList();
+
+    return MouseRegion(
+      onEnter: (_) => _setPaused(true),
+      onExit: (_) => _setPaused(false),
+      child: Focus(
+        focusNode: widget.focusNode,
+        autofocus: widget.focusNode == null && PlatformDetection.useLeanbackUi,
+        skipTraversal: true,
+        onFocusChange: _handleFocusChange,
+        onKeyEvent: (node, event) => _handleKeyEvent(event, items),
+        child: GestureDetector(
+          onTap: () => _navigateToItem(context, items),
+          onLongPress: () => _navigateToItemAndPlay(context, items),
+          onHorizontalDragEnd: isMobile
+              ? (details) {
+                  final v = details.primaryVelocity ?? 0;
+                  if (v < -300 && _currentIndex < items.length - 1) {
+                    _goToPage(_currentIndex + 1);
+                  } else if (v > 300 && _currentIndex > 0) {
+                    _goToPage(_currentIndex - 1);
+                  }
+                }
+              : null,
+          child: Padding(
+            padding: EdgeInsets.only(top: toolbarInset),
+            child: SizedBox(
+              height: widget.height - toolbarInset,
+              width: double.infinity,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  AnimatedOpacity(
+                    opacity: hasVisibleTrailerVideo ? 0 : 1,
+                    duration: const Duration(milliseconds: 250),
+                    child: _BackdropLayer(
+                      items: items,
+                      currentIndex: _currentIndex,
+                    ),
+                  ),
+                  ..._buildVideoOverlays(allowPersistentMedia3: true),
+                  // Two plain gradients from the page colour: the text sits on
+                  // the dark side and the rows below start on the same black.
+                  IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [
+                            bg.withValues(alpha: 0.92),
+                            bg.withValues(alpha: 0.55),
+                            bg.withValues(alpha: 0),
+                          ],
+                          stops: const [0, 0.38, 0.7],
+                        ),
+                      ),
+                    ),
+                  ),
+                  IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                          colors: [bg, bg.withValues(alpha: 0)],
+                          stops: const [0, 0.45],
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (current != null)
+                    Positioned(
+                      left: left,
+                      bottom: isMobile ? 20 : (picks.length > 1 ? 150 : 48),
+                      width: infoWidth,
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        child: Column(
+                          key: ValueKey('vjod_${current.itemId}'),
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (chips.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: Wrap(
+                                  spacing: 8,
+                                  runSpacing: 6,
+                                  children: [
+                                    for (final (i, c) in chips.indexed)
+                                      _VjodChip(label: c, dot: i == 0),
+                                  ],
+                                ),
+                              ),
+                            SizedBox(
+                              height: isMobile ? 72 : 110,
+                              width: isMobile ? 260 : MediaBar.logoBoxWidth,
+                              child: current.logoUrl != null
+                                  ? _buildLogoWithShadow(
+                                      current.logoUrl,
+                                      current.title,
+                                    )
+                                  : Align(
+                                      alignment: Alignment.bottomLeft,
+                                      child: Text(
+                                        current.title.toUpperCase(),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: AppColorScheme.onBackground,
+                                          fontSize: isMobile ? 30 : 46,
+                                          height: 1,
+                                          fontWeight: FontWeight.w900,
+                                          shadows: _textShadows,
+                                        ),
+                                      ),
+                                    ),
+                            ),
+                            const SizedBox(height: 12),
+                            _MetadataRow(item: current.withKicker(null)),
+                            const SizedBox(height: 16),
+                            if (isMobile)
+                              Row(
+                                children: [
+                                  _VjodButton(
+                                    label: l10n.vjodBarPlay,
+                                    icon: Icons.play_arrow_rounded,
+                                    primary: true,
+                                    onTap: () =>
+                                        _navigateToItemAndPlay(context, items),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  if (items.length > 1)
+                                    _VjodButton(
+                                      label: l10n.vjodBarAnother,
+                                      icon: Icons.shuffle_rounded,
+                                      onTap: () => _goToPage(
+                                        (_currentIndex + 1) % items.length,
+                                      ),
+                                    ),
+                                  const SizedBox(width: 8),
+                                  _VjodButton(
+                                    label: l10n.vjodBarDetails,
+                                    icon: Icons.info_outline_rounded,
+                                    onTap: () =>
+                                        _navigateToItem(context, items),
+                                  ),
+                                ],
+                              )
+                            else
+                              Text(
+                                l10n.vjodBarRemoteHint,
+                                style: TextStyle(
+                                  color: AppColorScheme.onBackground
+                                      .withValues(alpha: 0.65),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  if (!isMobile && picks.length > 1)
+                    Positioned(
+                      left: left,
+                      bottom: 24,
+                      child: Row(
+                        children: [
+                          for (final (i, p) in picks.indexed)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 14),
+                              child: _VjodPickCard(
+                                item: p,
+                                selected: i == _currentIndex,
+                                label: p.serverId == seerrSlideServer
+                                    ? l10n.tonightNotHereYet
+                                    : null,
+                                onTap: () => _goToPage(i),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -2851,9 +3093,14 @@ class _MediaBarState extends State<MediaBar>
             _playFromBookshelf(context, items);
           } else if (_isGalleryMode()) {
             _playFromGallery(context, items);
+          } else if (_isVjodMode()) {
+            _navigateToItem(context, items);
           } else {
             _navigateToItemAndPlay(context, items);
           }
+        } else if (_isVjodMode()) {
+          // Tonight's pick is there to be watched: OK plays it.
+          _navigateToItemAndPlay(context, items);
         } else {
           _navigateToItem(context, items);
         }
@@ -2903,8 +3150,23 @@ class _MediaBarState extends State<MediaBar>
     final item = items.elementAtOrNull(_currentIndex);
     if (item != null) {
       _cancelTrailerPreview();
+      if (_openSeerrSlide(context, item)) return;
       context.push(Destinations.item(item.itemId, serverId: item.serverId));
     }
+  }
+
+  /// A title not on the server opens Seerr's page for it, to request.
+  bool _openSeerrSlide(BuildContext context, MediaBarSlideItem item) {
+    final tmdbId = item.tmdbId;
+    if (item.serverId != seerrSlideServer || tmdbId == null) return false;
+    context.push(
+      Destinations.seerrMedia(
+        tmdbId,
+        mediaType: item.itemType == 'Series' ? 'tv' : 'movie',
+        title: item.title,
+      ),
+    );
+    return true;
   }
 
   List<Widget> _buildVideoOverlays({bool allowPersistentMedia3 = false}) {
@@ -3042,6 +3304,7 @@ class _MediaBarState extends State<MediaBar>
     final item = items.elementAtOrNull(_currentIndex);
     if (item != null) {
       _cancelTrailerPreview();
+      if (_openSeerrSlide(context, item)) return;
       context.push(
         Destinations.item(item.itemId, serverId: item.serverId, autoPlay: true),
       );
@@ -3751,6 +4014,197 @@ class _TheaterLoadingOverlay extends StatelessWidget {
                 color: AppColorScheme.onSurface.withValues(alpha: 0.7),
                 fontWeight: FontWeight.w600,
                 letterSpacing: 3.0,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+class _VjodChip extends StatelessWidget {
+  final String label;
+  final bool dot;
+
+  const _VjodChip({required this.label, this.dot = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: AppColorScheme.background.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: AppColorScheme.onBackground.withValues(alpha: 0.18),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (dot) ...[
+            Container(
+              width: 7,
+              height: 7,
+              decoration: BoxDecoration(
+                color: AppColorScheme.accent,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 7),
+          ],
+          Text(
+            label.toUpperCase(),
+            style: TextStyle(
+              color: AppColorScheme.onBackground.withValues(alpha: 0.85),
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VjodButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool primary;
+  final VoidCallback onTap;
+
+  const _VjodButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    this.primary = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = primary ? AppColorScheme.onBackground : AppColorScheme.buttonNormal;
+    final fg = primary ? AppColorScheme.background : AppColorScheme.onBackground;
+    return Material(
+      color: bg,
+      borderRadius: BorderRadius.circular(6),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(6),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 18, color: fg),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  color: fg,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _VjodPickCard extends StatelessWidget {
+  final MediaBarSlideItem item;
+  final bool selected;
+  final String? label;
+  final VoidCallback onTap;
+
+  const _VjodPickCard({
+    required this.item,
+    required this.selected,
+    required this.onTap,
+    this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final image = item.backdropUrl ?? item.posterUrl;
+    final ink = AppColorScheme.onBackground;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 200,
+        height: 112,
+        decoration: BoxDecoration(
+          color: AppColorScheme.surface,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: selected ? ink : Colors.transparent,
+            width: 3,
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (image != null)
+              Opacity(
+                opacity: selected ? 1 : 0.6,
+                child: OfflineAwareImage(imageUrl: image, fit: BoxFit.cover),
+              ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.85),
+                    Colors.black.withValues(alpha: 0),
+                  ],
+                  stops: const [0, 0.7],
+                ),
+              ),
+            ),
+            if (label != null)
+              Positioned(
+                left: 8,
+                top: 8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColorScheme.background.withValues(alpha: 0.8),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                  child: Text(
+                    label!,
+                    style: TextStyle(
+                      color: ink,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            Positioned(
+              left: 10,
+              right: 10,
+              bottom: 8,
+              child: Text(
+                item.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
           ],

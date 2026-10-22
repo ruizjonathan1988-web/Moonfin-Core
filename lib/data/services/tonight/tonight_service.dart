@@ -320,14 +320,16 @@ class TonightService {
 
   /// Gathers what could be watched and ranks it for [answers].
   ///
-  /// [libraryOnly] ranks only what the server can play now, for the home
-  /// banner. Its picks aren't remembered as shown: the Tonight sheet's
-  /// are what the engine learns from.
+  /// [libraryOnly] ranks only what the server can play now, and
+  /// [requestableOnly] only what it can't, for the home banner. Their picks
+  /// aren't remembered as shown: the Tonight sheet's are what the engine
+  /// learns from.
   Future<TonightView> load(
     TonightAnswers answers, {
     Set<String> exclude = const {},
     bool forceRefresh = false,
     bool libraryOnly = false,
+    bool requestableOnly = false,
   }) async {
     final client = GetIt.instance<MediaServerClient>();
     final serverId = client.baseUrl;
@@ -463,12 +465,14 @@ class TonightService {
 
     var candidates = [
       for (final candidate in pool.values)
-        if (!libraryOnly ||
-            candidate.availability == TonightAvailability.inLibrary)
+        if ((!libraryOnly ||
+                candidate.availability == TonightAvailability.inLibrary) &&
+            (!requestableOnly ||
+                candidate.availability == TonightAvailability.requestable))
           _withKnownRuntime(candidate),
     ];
     var result = TonightEngine.rank(input(candidates));
-    if (libraryOnly) {
+    if (libraryOnly || requestableOnly) {
       return TonightView(result: result, answers: answers);
     }
 

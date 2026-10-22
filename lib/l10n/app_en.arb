@@ -6408,6 +6408,12 @@
   "seerrTagRequest": "Request",
   "top10SwitchToSeries": "See series",
   "top10SwitchToMovies": "See films",
+  "tonightNotHereYet": "Not here yet",
+  "mediaBarModeVjod": "VJOD · Tonight",
+  "vjodBarRemoteHint": "OK Play · hold for details · ◀ ▶ another idea",
+  "vjodBarPlay": "Play",
+  "vjodBarAnother": "Another idea",
+  "vjodBarDetails": "Details",
   "mediaBarSourceRandom": "Random",
   "@mediaBarSourceRandom": {
     "description": "Media bar source: any eligible title"

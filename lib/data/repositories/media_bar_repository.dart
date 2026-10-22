@@ -551,16 +551,64 @@ class MediaBarRepository {
             .cast<Map<String, dynamic>>())
           item['Id']?.toString(): item,
       };
-      final kicker = tonightKicker(currentAppLocalizations(), answers);
-      return [
+      final l10n = currentAppLocalizations();
+      final kicker = tonightKicker(l10n, answers);
+      final slides = [
         for (final id in ids)
           if (byId[id] case final data?
               when !isRatingBlocked(data['OfficialRating']?.toString()))
             _toSlideItem(data).withKicker(kicker),
       ];
+      // One title not here yet, third, to request in a press. Never on a
+      // profile with ratings blocked: its rating isn't known here.
+      if (slides.isNotEmpty && !activeParentalFilter.isActive) {
+        final toRequest = await _tonightRequestable(tonight, answers);
+        if (toRequest != null) {
+          slides.insert(
+            slides.length < 2 ? slides.length : 2,
+            toRequest.withKicker(l10n.tonightNotHereYet),
+          );
+        }
+      }
+      return slides;
     } catch (e) {
       // The usual draw takes over.
       return const [];
+    }
+  }
+
+  /// Tonight's best pick among titles the server doesn't have, as a slide
+  /// that opens the request page.
+  Future<MediaBarSlideItem?> _tonightRequestable(
+    TonightService tonight,
+    TonightAnswers answers,
+  ) async {
+    try {
+      final view = await tonight
+          .load(answers, requestableOnly: true)
+          .timeout(const Duration(seconds: 15));
+      final pick = view.result.picks
+          .where((p) => p.candidate.tmdbId != null)
+          .firstOrNull;
+      if (pick == null) return null;
+      final c = pick.candidate;
+      return MediaBarSlideItem(
+        itemId: seerrSlideId(c.mediaType, c.tmdbId!),
+        serverId: seerrSlideServer,
+        title: c.title,
+        overview: c.overview,
+        backdropUrl: c.backdropUrl,
+        posterUrl: c.posterUrl,
+        year: c.year,
+        runtime: c.runtimeMinutes == null || c.mediaType == 'tv'
+            ? null
+            : Duration(minutes: c.runtimeMinutes!),
+        communityRating: c.rating,
+        tmdbId: '${c.tmdbId}',
+        itemType: c.mediaType == 'tv' ? 'Series' : 'Movie',
+      );
+    } catch (_) {
+      return null;
     }
   }
 
@@ -668,3 +716,9 @@ String tonightKicker(AppLocalizations l10n, TonightAnswers answers) {
   };
   return [l10n.tonightTitle, company, ?time, ?mood].join(' \u00b7 ');
 }
+
+/// Slides for titles not on the server carry this as their server, and
+/// open Seerr's page for the title rather than the library's.
+const seerrSlideServer = 'seerr';
+
+String seerrSlideId(String mediaType, int tmdbId) => 'seerr:$mediaType:$tmdbId';

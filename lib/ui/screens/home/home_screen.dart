@@ -2348,6 +2348,16 @@ class _ContentRowsState extends State<_ContentRows>
       return screenHeight * 0.65;
     }
 
+    // Tonight's picks leave the head of the first row in view, so the rows
+    // below are never a surprise.
+    final isVjod = UserPreferences.normalizeMediaBarMode(
+          widget.prefs.get(UserPreferences.mediaBarMode),
+        ) ==
+        UserPreferences.mediaBarModeVjod;
+    if (isVjod && !PlatformDetection.useMobileUi) {
+      return screenHeight * 0.86;
+    }
+
     if (!PlatformDetection.useMobileUi) {
       return screenHeight;
     }
@@ -2373,6 +2383,9 @@ class _ContentRowsState extends State<_ContentRows>
     if (ScreenForm.of(context) == ScreenForm.cover) {
       return screenHeight * 0.46;
     }
+
+    // The pick's title, details and buttons sit on the artwork.
+    if (isVjod) return screenHeight * 0.62;
 
     return screenHeight * 0.55;
   }
