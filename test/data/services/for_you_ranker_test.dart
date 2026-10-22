@@ -483,6 +483,7 @@ void main() {
         loadHistory: () async => (
           recent: [libraryItem('Movie', '603', 'The Matrix')],
           favorites: const <AggregatedItem>[],
+          abandoned: const <AggregatedItem>[],
         ),
         fetchRecommendations: (seed) async {
           asked.add(seed.tmdbId);
@@ -497,10 +498,10 @@ void main() {
     });
 
     test('Trakt alone fills For You but names no Because row', () async {
-      Future<({List<AggregatedItem> recent, List<AggregatedItem> favorites})>
-      history() async => (
+      Future<TasteHistory> history() async => (
         recent: const <AggregatedItem>[],
         favorites: const <AggregatedItem>[],
+        abandoned: const <AggregatedItem>[],
       );
       Future<SeerrDiscoverPage> fetch(TasteSeed seed) async =>
           const SeerrDiscoverPage();
