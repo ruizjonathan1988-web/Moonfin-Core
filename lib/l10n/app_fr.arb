@@ -1,6 +1,6 @@
 {
     "@@locale": "fr",
-    "appTitle": "Moonfin",
+    "appTitle": "VJOD",
     "@appTitle": {
         "description": "The application title"
     },
@@ -82,7 +82,7 @@
     "@selectServer": {
         "description": "Button to navigate back to server selection"
     },
-    "appVersionFooter": "Moonfin version {version}",
+    "appVersionFooter": "VJOD version {version}",
     "@appVersionFooter": {
         "description": "App version shown in footer",
         "placeholders": {
@@ -156,7 +156,7 @@
     "@secureStorageUnavailable": {
         "description": "Dialog title when system keyring is inaccessible"
     },
-    "secureStorageUnavailableMessage": "Moonfin n'a pas pu accéder au trousseau de votre système. La connexion peut continuer, mais le stockage sécurisé des jetons peut rester indisponible tant que le trousseau n'est pas déverrouillé.",
+    "secureStorageUnavailableMessage": "VJOD n'a pas pu accéder au trousseau de votre système. La connexion peut continuer, mais le stockage sécurisé des jetons peut rester indisponible tant que le trousseau n'est pas déverrouillé.",
     "@secureStorageUnavailableMessage": {
         "description": "Explanation when secure storage is not available"
     },
@@ -172,13 +172,13 @@
     "@settingsAppearanceThemeSubtitle": {
         "description": "Subtitle for the theme selection screen and theme settings entry"
     },
-    "themeMoonfin": "Moonfin",
+    "themeVJOD": "VJOD",
     "@themeMoonfin": {
-        "description": "Display name for the Moonfin theme"
+        "description": "Display name for the VJOD theme"
     },
-    "themeMoonfinSubtitle": "Le look actuel de Moonfin que vous aimez tous.",
+    "themeVJODSubtitle": "Le look actuel de VJOD que vous aimez tous.",
     "@themeMoonfinSubtitle": {
-        "description": "Preview description for the Moonfin theme"
+        "description": "Preview description for the VJOD theme"
     },
     "themeNeonPulse": "Neon Pulse",
     "@themeNeonPulse": {
@@ -249,7 +249,7 @@
             }
         }
     },
-    "exitApp": "Quitter Moonfin ?",
+    "exitApp": "Quitter VJOD ?",
     "@exitApp": {
         "description": "Title of exit confirmation dialog"
     },
@@ -3075,7 +3075,7 @@
     "@customMpvConfPath": {
         "description": "Setting for custom mpv.conf path"
     },
-    "notSetMpvConf": "Non défini. Moonfin tentera d’utiliser un mpv.conf par défaut dans les dossiers app/data.",
+    "notSetMpvConf": "Non défini. VJOD tentera d’utiliser un mpv.conf par défaut dans les dossiers app/data.",
     "@notSetMpvConf": {
         "description": "Description when no custom mpv.conf is set"
     },
@@ -3282,7 +3282,7 @@
     "@saveToDownloadsFolder": {
         "description": "Setting for saving to downloads folder"
     },
-    "downloadsVisibleToOtherApps": "Téléchargements/Moonfin — visible pour les autres applications",
+    "downloadsVisibleToOtherApps": "Téléchargements/VJOD — visible pour les autres applications",
     "@downloadsVisibleToOtherApps": {
         "description": "Description for downloads folder visibility"
     },
@@ -3318,7 +3318,7 @@
     "@saveToDownloadsFolderQuestion": {
         "description": "Dialog title for saving to downloads folder"
     },
-    "saveToDownloadsFolderDescription": "Les médias téléchargés seront enregistrés dans Téléchargements/Moonfin sur votre appareil. Ces fichiers seront visibles par d’autres applications, comme votre galerie ou votre lecteur de musique.\n\nLes téléchargements existants resteront à leur emplacement actuel.",
+    "saveToDownloadsFolderDescription": "Les médias téléchargés seront enregistrés dans Téléchargements/VJOD sur votre appareil. Ces fichiers seront visibles par d’autres applications, comme votre galerie ou votre lecteur de musique.\n\nLes téléchargements existants resteront à leur emplacement actuel.",
     "@saveToDownloadsFolderDescription": {
         "description": "Description for saving to downloads folder"
     },
@@ -3503,9 +3503,9 @@
     "@mediaBarModeDescription": {
         "description": "Description for media bar style setting"
     },
-    "mediaBarModeMoonfin": "Moonfin",
+    "mediaBarModeVJOD": "VJOD",
     "@mediaBarModeMoonfin": {
-        "description": "Media bar style option: Moonfin"
+        "description": "Media bar style option: VJOD"
     },
     "mediaBarModeMakd": "MakD",
     "@mediaBarModeMakd": {
@@ -4206,9 +4206,9 @@
     "@cancelRequest": {
         "description": "Button/dialog title to cancel a media request"
     },
-    "playInMoonfin": "Lire dans Moonfin",
+    "playInVJOD": "Lire dans VJOD",
     "@playInMoonfin": {
-        "description": "Button to play available media in Moonfin"
+        "description": "Button to play available media in VJOD"
     },
     "requestedByName": "Demandé par {name}",
     "@requestedByName": {
@@ -4260,7 +4260,7 @@
     "@keep": {
         "description": "Button to keep/dismiss a cancel dialog"
     },
-    "itemNotFoundInLibrary": "Élément introuvable dans votre bibliothèque Moonfin",
+    "itemNotFoundInLibrary": "Élément introuvable dans votre bibliothèque VJOD",
     "@itemNotFoundInLibrary": {
         "description": "Snackbar when Seerr item cannot be found in Jellyfin"
     },
@@ -4516,7 +4516,7 @@
         }
     },
     "adminServerRebootInProgress": "Redémarrage du serveur en cours",
-    "adminServerRebootMessage": "Redémarrage du serveur en cours, veuillez redémarrer Moonfin",
+    "adminServerRebootMessage": "Redémarrage du serveur en cours, veuillez redémarrer VJOD",
     "adminActiveSessions": "Sessions actives",
     "adminSessionsLoadFailed": "Échec du chargement des sessions",
     "adminNoActiveSessions": "Aucune session active",
@@ -6307,7 +6307,7 @@
     "@subtitlePreviewText": {
         "description": "Sample text shown in the subtitle live preview"
     },
-    "libraryVisibilityDescription": "Affichez ou masquez chaque bibliothèque sur la page d'accueil. Redémarrez Moonfin pour appliquer les modifications.",
+    "libraryVisibilityDescription": "Affichez ou masquez chaque bibliothèque sur la page d'accueil. Redémarrez VJOD pour appliquer les modifications.",
     "@libraryVisibilityDescription": {
         "description": "Explanation shown on the library visibility settings screen"
     },
@@ -6552,7 +6552,7 @@
     "settingsShowGenresButtonInNavigation": "Afficher le bouton des genres dans la barre de navigation",
     "settingsShowFavoritesButtonInNavigation": "Afficher le bouton Favoris dans la barre de navigation",
     "settingsShowLibrariesButtonInNavigation": "Afficher le bouton des bibliothèques dans la barre de navigation",
-    "settingsLibraryVisibilitySubtitle": "Affichez ou masquez chaque bibliothèque sur la page d'accueil. Redémarrez Moonfin pour appliquer les modifications.",
+    "settingsLibraryVisibilitySubtitle": "Affichez ou masquez chaque bibliothèque sur la page d'accueil. Redémarrez VJOD pour appliquer les modifications.",
     "settingsMediaBarAndLocalPreviews": "Barre multimédia et aperçus locaux",
     "settingsVisualOverlays": "Superpositions visuelles",
     "settingsSeasonalSurprise": "Surprise saisonnière",
@@ -6576,7 +6576,7 @@
     "settingsLicenses": "Licences",
     "settingsOpenSourceLicenseNotices": "Avis de licence open source",
     "settingsPrivacyPolicy": "Politique de confidentialité",
-    "settingsPrivacyPolicySubtitle": "Comment Moonfin gère vos données",
+    "settingsPrivacyPolicySubtitle": "Comment VJOD gère vos données",
     "settingsCheckForUpdates": "Vérifier les mises à jour",
     "settingsCheckForUpdatesSubtitle": "Recherchez la dernière version de Moonfin",
     "settingsPoweredByFlutter": "Propulsé par Flutter",
@@ -7098,12 +7098,12 @@
     "preferSdhSubtitles": "Préférer les sous-titres SME",
     "preferSdhSubtitlesSubtitle": "Donnez la priorité aux pistes de sous-titres SME/CC lors de la sélection automatique.",
     "webDiagnostics": "Diagnostic Web",
-    "webDiagnosticsTitle": "Moonfin Diagnostic Web",
+    "webDiagnosticsTitle": "VJOD Diagnostic Web",
     "webDiagnosticsIntro": "Utilisez cette page pour diagnostiquer les problèmes de connectivité du navigateur (CORS, contenu mixte et paramètres de découverte).",
     "webDiagnosticsDetectedMixedContentFailure": "Échec de contenu mixte détecté",
     "webDiagnosticsDetectedCorsPreflightFailure": "Échec CORS/Preflight détecté",
-    "webDiagnosticsMixedContentFailureBody": "Moonfin a détecté une page HTTPS essayant d'appeler une URL de serveur HTTP. Les navigateurs bloquent cette demande avant qu'elle n'atteigne votre serveur.",
-    "webDiagnosticsCorsFailureBody": "Moonfin a détecté un échec de requête au niveau du navigateur, généralement provoqué par l'absence d'en-têtes CORS ou de contrôle en amont sur le serveur multimédia.",
+    "webDiagnosticsMixedContentFailureBody": "VJOD a détecté une page HTTPS essayant d'appeler une URL de serveur HTTP. Les navigateurs bloquent cette demande avant qu'elle n'atteigne votre serveur.",
+    "webDiagnosticsCorsFailureBody": "VJOD a détecté un échec de requête au niveau du navigateur, généralement provoqué par l'absence d'en-têtes CORS ou de contrôle en amont sur le serveur multimédia.",
     "webDiagnosticsTargetUrl": "URL cible : {url}",
     "@webDiagnosticsTargetUrl": {
         "description": "Target URL shown in diagnostics summary",
@@ -7133,7 +7133,7 @@
     "notConfigured": "non configuré",
     "webDiagnosticsMixedContent": "Contenu mixte",
     "webDiagnosticsMixedContentDetected": "Cette page est chargée via HTTPS, mais une ou plusieurs URL configurées sont HTTP. Les navigateurs empêchent les pages HTTPS d'appeler les API HTTP.",
-    "webDiagnosticsMixedContentFix": "Correctif : servez votre serveur multimédia ou point de terminaison proxy via HTTPS, ou chargez Moonfin via HTTP sur les réseaux locaux de confiance uniquement.",
+    "webDiagnosticsMixedContentFix": "Correctif : servez votre serveur multimédia ou point de terminaison proxy via HTTPS, ou chargez VJOD via HTTP sur les réseaux locaux de confiance uniquement.",
     "webDiagnosticsNoMixedContentDetected": "Aucune configuration de contenu mixte évidente détectée à partir des paramètres d'exécution actuels.",
     "webDiagnosticsCorsChecklist": "Liste de contrôle CORS",
     "webDiagnosticsCorsChecklistItem1": "• Autorisez l'origine du navigateur dans Access-Control-Allow-Origin.",
@@ -8055,9 +8055,9 @@
     "@recommendationSystem": {
         "description": "Label for the Recommendation System setting"
     },
-    "recommendationSystemMoonfin": "Moonfin recommande",
+    "recommendationSystemVJOD": "VJOD recommande",
     "@recommendationSystemMoonfin": {
-        "description": "Recommendation system option: Moonfin Recommends"
+        "description": "Recommendation system option: VJOD Recommends"
     },
     "audiobookSave": "Enregistrer",
     "detailScreenStyleModern": "Moderne",
@@ -8068,7 +8068,7 @@
     "@detailScreenStyle": {
         "description": "Label for the media detail screen layout style setting"
     },
-    "detailScreenStyleSubtitle": "Classique correspond à la mise en page centrée d'origine de Moonfin. Moderne propose une mise en page cinématographique et adaptative. Spotlight met en avant un grand visuel, avec des fenêtres surgissantes pour le contenu. Nouveau occupe tout l'écran, avec des sections empilées les unes sous les autres. Minimaliste se résume au visuel, à un bouton de lecture et aux épisodes.",
+    "detailScreenStyleSubtitle": "Classique correspond à la mise en page centrée d'origine de VJOD. Moderne propose une mise en page cinématographique et adaptative. Spotlight met en avant un grand visuel, avec des fenêtres surgissantes pour le contenu. Nouveau occupe tout l'écran, avec des sections empilées les unes sous les autres. Minimaliste se résume au visuel, à un bouton de lecture et aux épisodes.",
     "@detailScreenStyleSubtitle": {
         "description": "Explanation under the detail screen style setting"
     },
@@ -8088,7 +8088,7 @@
     "@showTechnicalDetailsSubtitle": {
         "description": "Explanation under the show technical details setting"
     },
-    "recommendationSystemSubtitle": "Utilisez l'algorithme local « Moonfin recommande », le serveur « Jellyfin recommande » ou les mesures de similarité TMDb en ligne. Remarque : les recommandations en ligne nécessitent l'intégration Seerr.",
+    "recommendationSystemSubtitle": "Utilisez l'algorithme local « VJOD recommande », le serveur « Jellyfin recommande » ou les mesures de similarité TMDb en ligne. Remarque : les recommandations en ligne nécessitent l'intégration Seerr.",
     "@recommendationSystemSubtitle": {
         "description": "Explanation under the recommendation system setting"
     },
@@ -8100,7 +8100,7 @@
     "@recommendationsApplyParentalRatingCap": {
         "description": "Label for the toggle that controls whether similar suggestions are capped by target media parental rating"
     },
-    "recommendationsApplyParentalRatingCapSubtitle": "Limiter les suggestions de « Moonfin recommande » selon la classification parentale du média ciblé",
+    "recommendationsApplyParentalRatingCapSubtitle": "Limiter les suggestions de « VJOD recommande » selon la classification parentale du média ciblé",
     "@recommendationsApplyParentalRatingCapSubtitle": {
         "description": "Explanation under the parental rating cap setting toggle"
     },
@@ -8112,7 +8112,7 @@
     "@glassQualitySubtitle": {
         "description": "Explanation under the glass quality setting"
     },
-    "customThemeSubtitle": "Les thèmes personnalisés modifient les éléments visuels dans tout Moonfin. Choisissez l'une de ces options selon votre style.",
+    "customThemeSubtitle": "Les thèmes personnalisés modifient les éléments visuels dans tout VJOD. Choisissez l'une de ces options selon votre style.",
     "@customThemeSubtitle": {
         "description": "Description under custom themes section"
     },
@@ -8211,7 +8211,7 @@
     "@shuffleAllMusic": {
         "description": "Car browse action that shuffles the whole music library"
     },
-    "carSignInPrompt": "Connectez-vous à Moonfin sur votre téléphone",
+    "carSignInPrompt": "Connectez-vous à VJOD sur votre téléphone",
     "@carSignInPrompt": {
         "description": "Shown in the car when no account is signed in"
     },
@@ -8943,7 +8943,7 @@
     "@impellerRendering": {
         "description": "Title of the setting that selects the Flutter rendering engine (Impeller vs. legacy)."
     },
-    "impellerRenderingSubtitle": "Impeller est le moteur de rendu GPU moderne de Flutter : animations plus fluides et moins de saccades. Sur certains boîtiers TV et GPU anciens, il peut provoquer des artefacts ou une image noire ; désactivez-le si vous constatez ces problèmes. Automatique choisit le meilleur réglage pour votre appareil. Redémarrez Moonfin pour appliquer.",
+    "impellerRenderingSubtitle": "Impeller est le moteur de rendu GPU moderne de Flutter : animations plus fluides et moins de saccades. Sur certains boîtiers TV et GPU anciens, il peut provoquer des artefacts ou une image noire ; désactivez-le si vous constatez ces problèmes. Automatique choisit le meilleur réglage pour votre appareil. Redémarrez VJOD pour appliquer.",
     "@impellerRenderingSubtitle": {
         "description": "Explanatory description under the rendering engine setting."
     },
@@ -8954,7 +8954,7 @@
     "@impellerRestartTitle": {
         "description": "Title of the dialog shown after changing the rendering engine."
     },
-    "impellerRestartMessage": "Moonfin doit redémarrer pour changer de moteur de rendu. Fermez l'application maintenant, puis rouvrez-la pour appliquer le changement.",
+    "impellerRestartMessage": "VJOD doit redémarrer pour changer de moteur de rendu. Fermez l'application maintenant, puis rouvrez-la pour appliquer le changement.",
     "@impellerRestartMessage": {
         "description": "Body of the dialog shown after changing the rendering engine."
     },
@@ -9407,7 +9407,7 @@
     "@playbackTimeBelowBarCenter": {
         "description": "Progress bar time slot below the bar in the center"
     },
-    "downloadLocationLimitedByAndroid": "Android autorise Moonfin à écrire uniquement dans ses propres dossiers, et cet appareil n'a pas de stockage amovible. Activez « Enregistrer dans le dossier Téléchargements » ci-dessus pour que vos téléchargements soient accessibles.",
+    "downloadLocationLimitedByAndroid": "Android autorise VJOD à écrire uniquement dans ses propres dossiers, et cet appareil n'a pas de stockage amovible. Activez « Enregistrer dans le dossier Téléchargements » ci-dessus pour que vos téléchargements soient accessibles.",
     "@downloadLocationLimitedByAndroid": {
         "description": "Note shown when the only download location Android allows is the default one"
     },
@@ -9662,7 +9662,7 @@
     "@interfaceLayout": {
         "description": "Setting to override which UI layout the app uses"
     },
-    "interfaceLayoutSubtitle": "Remplacer le type détecté si votre appareil n'est pas reconnu correctement. Redémarrez Moonfin pour appliquer les modifications.",
+    "interfaceLayoutSubtitle": "Remplacer le type détecté si votre appareil n'est pas reconnu correctement. Redémarrez VJOD pour appliquer les modifications.",
     "@interfaceLayoutSubtitle": {
         "description": "Subtitle for the interface layout setting"
     },
@@ -10576,7 +10576,7 @@
     "@shortcutToggleFullscreen": {
         "description": "F11 and Alt+Enter anywhere, F in the player"
     },
-    "shortcutQuit": "Quitter Moonfin",
+    "shortcutQuit": "Quitter VJOD",
     "@shortcutQuit": {
         "description": "What Ctrl+Q does on desktop"
     },
@@ -10729,7 +10729,7 @@
     "@loadingAnimation": {
         "description": "Setting title for custom loading animation"
     },
-    "loadingAnimationDescription": "Personnalisez les animations de chargement utilisées dans Moonfin",
+    "loadingAnimationDescription": "Personnalisez les animations de chargement utilisées dans VJOD",
     "@loadingAnimationDescription": {
         "description": "Description for loading animation customization settings"
     },
@@ -10741,9 +10741,9 @@
     "@loadingAnimationImage": {
         "description": "Title for loading animation image selection"
     },
-    "loadingAnimationImageMoonfinLogo": "Logo Moonfin",
+    "loadingAnimationImageVJODLogo": "Logo VJOD",
     "@loadingAnimationImageMoonfinLogo": {
-        "description": "Loading animation image option: Moonfin Logo"
+        "description": "Loading animation image option: VJOD Logo"
     },
     "loadingAnimationImageSpinner": "Roue de chargement",
     "@loadingAnimationImageSpinner": {
@@ -10757,9 +10757,9 @@
     "@loadingAnimationImageMoonPhases": {
         "description": "Loading animation image option: Moon Phases"
     },
-    "loadingAnimationImageMoonfinPhases": "Phases Moonfin",
+    "loadingAnimationImageVJODPhases": "Phases VJOD",
     "@loadingAnimationImageMoonfinPhases": {
-        "description": "Loading animation image option: Moonfin Phases in brand gradient"
+        "description": "Loading animation image option: VJOD Phases in brand gradient"
     },
     "loadingAnimationImageNeonfinPhases": "Phases Neonfin",
     "@loadingAnimationImageNeonfinPhases": {
@@ -11036,9 +11036,9 @@
     "@screensaverBackdropBlack": {
         "description": "Screensaver backdrop: Black"
     },
-    "screensaverBackdropMoonfin": "Moonfin",
+    "screensaverBackdropVJOD": "VJOD",
     "@screensaverBackdropMoonfin": {
-        "description": "Screensaver backdrop: Moonfin"
+        "description": "Screensaver backdrop: VJOD"
     },
     "screensaverBackdropCalm": "Apaisé",
     "@screensaverBackdropCalm": {
@@ -11056,9 +11056,9 @@
     "@screensaverAdditionalComponent": {
         "description": "Setting for screensaver additional component"
     },
-    "screensaverComponentMoonfinLogo": "Logo Moonfin",
+    "screensaverComponentVJODLogo": "Logo VJOD",
     "@screensaverComponentMoonfinLogo": {
-        "description": "Screensaver component: Moonfin Logo"
+        "description": "Screensaver component: VJOD Logo"
     },
     "screensaverComponentRunner": "Runner",
     "@screensaverComponentRunner": {
@@ -11287,7 +11287,7 @@
             }
         }
     },
-    "autoDownloadTranscodedForegroundNote": "Les qualités transcodées ne se téléchargent que lorsque Moonfin est ouvert. La qualité d'origine se télécharge aussi en arrière-plan.",
+    "autoDownloadTranscodedForegroundNote": "Les qualités transcodées ne se téléchargent que lorsque VJOD est ouvert. La qualité d'origine se télécharge aussi en arrière-plan.",
     "@autoDownloadTranscodedForegroundNote": {
         "description": "Shown under transcoded options when choosing the quality of an auto-download subscription"
     },
@@ -11295,7 +11295,7 @@
     "@autoDownloadTranscodedRunningNote": {
         "description": "Shown under a running transcoded download that a subscription queued"
     },
-    "autoDownloadForegroundOnly": "Télécharge uniquement lorsque Moonfin est ouvert",
+    "autoDownloadForegroundOnly": "Télécharge uniquement lorsque VJOD est ouvert",
     "@autoDownloadForegroundOnly": {
         "description": "Short note next to a followed series in a transcoded quality"
     },
@@ -11365,15 +11365,15 @@
     "@autoDownloadBackgroundRefresh": {
         "description": "Setting that lets the system wake the app to check for new episodes"
     },
-    "autoDownloadBackgroundRefreshSubtitle": "Autorise le système à rechercher périodiquement de nouveaux épisodes lorsque Moonfin est fermé",
+    "autoDownloadBackgroundRefreshSubtitle": "Autorise le système à rechercher périodiquement de nouveaux épisodes lorsque VJOD est fermé",
     "@autoDownloadBackgroundRefreshSubtitle": {
         "description": "Explains the background refresh setting"
     },
-    "autoDownloadBackgroundRefreshDenied": "L'actualisation en arrière-plan est désactivée pour Moonfin. Activez-la dans les réglages iOS.",
+    "autoDownloadBackgroundRefreshDenied": "L'actualisation en arrière-plan est désactivée pour VJOD. Activez-la dans les réglages iOS.",
     "@autoDownloadBackgroundRefreshDenied": {
         "description": "Shown when iOS forbids background refresh for the app"
     },
-    "autoDownloadBackgroundRestrictedAndroid": "L'utilisation en arrière-plan est restreinte pour Moonfin dans les paramètres Android.",
+    "autoDownloadBackgroundRestrictedAndroid": "L'utilisation en arrière-plan est restreinte pour VJOD dans les paramètres Android.",
     "@autoDownloadBackgroundRestrictedAndroid": {
         "description": "Shown when Android restricts the app from running in the background"
     },
@@ -13620,9 +13620,9 @@
     },
     "topShelf": "Top Shelf",
     "@topShelf": {
-        "description": "Apple TV settings label for what the tvOS home screen shows above the Moonfin icon. Top Shelf is Apple's name for that area"
+        "description": "Apple TV settings label for what the tvOS home screen shows above the VJOD icon. Top Shelf is Apple's name for that area"
     },
-    "topShelfDescription": "Ce que l'écran d'accueil de l'Apple TV affiche au-dessus de l'icône Moonfin lorsqu'elle est sélectionnée. Ce paramètre ne s'applique qu'à cet appareil.",
+    "topShelfDescription": "Ce que l'écran d'accueil de l'Apple TV affiche au-dessus de l'icône VJOD lorsqu'elle est sélectionnée. Ce paramètre ne s'applique qu'à cet appareil.",
     "@topShelfDescription": {
         "description": "Apple TV settings subtitle for the Top Shelf option"
     },
@@ -13630,9 +13630,9 @@
     "@topShelfLatestMedia": {
         "description": "Top Shelf option that shows a carousel of the newest items from the home screen's Latest rows"
     },
-    "topShelfAppBanner": "Bannière Moonfin",
+    "topShelfAppBanner": "Bannière VJOD",
     "@topShelfAppBanner": {
-        "description": "Top Shelf option that shows only the static Moonfin logo banner, nothing from the library"
+        "description": "Top Shelf option that shows only the static VJOD logo banner, nothing from the library"
     },
     "detailsPage": "Page de détails",
     "@detailsPage": {
@@ -14154,5 +14154,5 @@
     "traktCodeExpired": "Le code a expiré avant d'être validé.",
     "traktDenied": "L'accès a été refusé sur Trakt.",
     "traktFailed": "Impossible de relier Trakt pour le moment.",
-    "traktDisconnectBody": "Moonfin n'utilisera plus les recommandations de ce compte. Votre historique reste sur Trakt."
+    "traktDisconnectBody": "VJOD n'utilisera plus les recommandations de ce compte. Votre historique reste sur Trakt."
 }

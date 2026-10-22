@@ -80,7 +80,7 @@ android {
     flavorDimensions += "device"
     productFlavors {
         val baseAppId = "org.moonfin.androidtv"
-        val baseAppName = "Moonfin"
+        val baseAppName = "VJOD"
         // Optional application-id suffix for on-device testing, set through the
         // environment so an unset build is byte-identical to before:
         //   MOONFIN_TEST_ID_SUFFIX=.hwtest flutter build apk --flavor androidTv --debug
@@ -108,7 +108,7 @@ android {
             versionCode = flutter.versionCode
             versionName = flutter.versionName
             ndk { abiFilters += mobileAbis }
-            manifestPlaceholders["appName"] = "$baseAppName Beta"
+            manifestPlaceholders["appName"] = baseAppName
         }
         create("androidTv") {
             dimension = "device"
@@ -129,7 +129,7 @@ android {
             versionCode = androidTvVersionCode
             versionName = androidTvVersionName
             ndk { abiFilters += tvAbis }
-            manifestPlaceholders["appName"] = "$baseAppName Beta"
+            manifestPlaceholders["appName"] = baseAppName
             manifestPlaceholders["enableImpeller"] = "false"
         }
     }
