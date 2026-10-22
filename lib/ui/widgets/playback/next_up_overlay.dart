@@ -184,6 +184,24 @@ class _NextUpOverlayState extends State<NextUpOverlay>
       ],
     );
 
+    // VJOD and Écrin keep red for marks, not buttons: the button that will
+    // play is the light one, the way the rest of their screens show focus.
+    final activeTheme = ThemeRegistry.active.id;
+    final quiet =
+        activeTheme == ThemeRegistry.vjodId ||
+        activeTheme == ThemeRegistry.ecrinId;
+    final playLit = !tvFocusMode || _playFocused;
+    final playBackground = quiet
+        ? (playLit ? AppColorScheme.onSurface : AppColorScheme.buttonNormal)
+        : tvFocusMode
+        ? (_playFocused
+              ? AppColorScheme.accent
+              : AppColorScheme.surfaceVariant.scaleAlpha(0.9))
+        : AppColorScheme.accent;
+    final playForeground = quiet && playLit
+        ? AppColorScheme.background
+        : Colors.white;
+
     final cardRadius = AppColorScheme.isPixel ? 0.0 : 18.0;
     final cardBorder = ThemeRegistry.active.borders.cardBorder;
     final hasCardBorder =
@@ -313,13 +331,8 @@ class _NextUpOverlayState extends State<NextUpOverlay>
                                   autofocus: widget.focusNode == null,
                                   onPressed: widget.onPlayNext,
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: tvFocusMode
-                                        ? (_playFocused
-                                              ? AppColorScheme.accent
-                                              : AppColorScheme.surfaceVariant
-                                                    .scaleAlpha(0.9))
-                                        : AppColorScheme.accent,
-                                    foregroundColor: Colors.white,
+                                    backgroundColor: playBackground,
+                                    foregroundColor: playForeground,
                                     side: _playFocused
                                         ? ThemeRegistry
                                               .active
@@ -347,6 +360,7 @@ class _NextUpOverlayState extends State<NextUpOverlay>
                                                 progress:
                                                     1.0 -
                                                     _countdownController.value,
+                                                color: playForeground,
                                               ),
                                         )
                                       else
@@ -387,9 +401,11 @@ class _NextUpOverlayState extends State<NextUpOverlay>
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: Colors.white,
                                     backgroundColor: _dismissFocused
-                                        ? AppColorScheme.accent.withValues(
-                                            alpha: 0.24,
-                                          )
+                                        ? (quiet
+                                              ? AppColorScheme.onSurface
+                                                    .withValues(alpha: 0.2)
+                                              : AppColorScheme.accent
+                                                    .withValues(alpha: 0.24))
                                         : Colors.white.withValues(alpha: 0.08),
                                     side: _dismissFocused
                                         ? ThemeRegistry
@@ -408,10 +424,17 @@ class _NextUpOverlayState extends State<NextUpOverlay>
                                       borderRadius: AppRadius.circular(12),
                                     ),
                                   ),
-                                  child: const Icon(
-                                    Icons.close_rounded,
-                                    size: 20,
-                                  ),
+                                  child: quiet
+                                      ? Text(
+                                          l10n.cancel,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Icons.close_rounded,
+                                          size: 20,
+                                        ),
                                 ),
                               ),
                             ),
@@ -442,9 +465,10 @@ class _NextUpOverlayState extends State<NextUpOverlay>
 }
 
 class _PlayButtonRing extends StatelessWidget {
-  const _PlayButtonRing({required this.progress});
+  const _PlayButtonRing({required this.progress, this.color = Colors.white});
 
   final double progress;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -458,11 +482,11 @@ class _PlayButtonRing extends StatelessWidget {
             child: CircularProgressIndicator(
               value: progress.clamp(0.0, 1.0),
               strokeWidth: 2.5,
-              backgroundColor: Colors.white24,
-              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+              backgroundColor: color.withValues(alpha: 0.24),
+              valueColor: AlwaysStoppedAnimation<Color>(color),
             ),
           ),
-          const Icon(Icons.play_arrow_rounded, size: 12, color: Colors.white),
+          Icon(Icons.play_arrow_rounded, size: 12, color: color),
         ],
       ),
     );
