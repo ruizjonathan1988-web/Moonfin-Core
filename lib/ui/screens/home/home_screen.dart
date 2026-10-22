@@ -3797,8 +3797,20 @@ class _ContentRowsState extends State<_ContentRows>
 
   static const _unfoldedRowScale = 1.2;
 
+  /// TV cards are drawn smaller than desktop ones, except under VJOD, whose
+  /// mock-up has posters big enough to read from the sofa.
+  double get _tvCardScale =>
+      UserPreferences.normalizeMediaBarMode(
+            widget.prefs.get(UserPreferences.mediaBarMode),
+          ) ==
+          UserPreferences.mediaBarModeVjod
+      ? 1.2
+      : 0.8;
+
   double _rowPlatformScale(HomeRow row, double desktopScale) {
-    final base = PlatformDetection.isTV ? 0.8 * desktopScale : desktopScale;
+    final base = PlatformDetection.isTV
+        ? _tvCardScale * desktopScale
+        : desktopScale;
     if (_isHomeRowsStyleV2() && _isWideArtworkRow(row)) {
       return base * _wideArtworkModernScale;
     }
@@ -3808,7 +3820,7 @@ class _ContentRowsState extends State<_ContentRows>
   double _squarePosterSide(PosterSize posterSize) {
     final scaleFactor = _desktopUiScaleFactor();
     final platformScale = PlatformDetection.isTV
-        ? 0.8 * scaleFactor
+        ? _tvCardScale * scaleFactor
         : scaleFactor;
     return posterSize.portraitHeight.toDouble() * platformScale;
   }

@@ -33,6 +33,7 @@ import '../navigation/app_router.dart';
 import '../../data/repositories/media_bar_repository.dart'
     show seerrSlideServer;
 import '../navigation/destinations.dart';
+import '../screens/tonight/tonight_screen.dart' show showTonight;
 import '../screensaver/screensaver_controller.dart';
 import '../../util/language_matching.dart';
 import '../../util/overlay_color_palette.dart';
@@ -901,6 +902,91 @@ class _MediaBarState extends State<MediaBar>
     if (focused) {
       _lastFocusReceivedAt = DateTime.now();
     }
+    if (_isVjodMode() && focused != _vjodFocused) {
+      setState(() => _vjodFocused = focused);
+    }
+  }
+
+  /// The VJOD banner's buttons, which the remote moves between.
+  bool _vjodFocused = false;
+  int _vjodAction = 0;
+
+  List<_VjodAction> _vjodActions(int count) => [
+    _VjodAction.play,
+    if (count > 1) _VjodAction.another,
+    _VjodAction.details,
+    _VjodAction.evening,
+  ];
+
+  void _runVjodAction(
+    BuildContext context,
+    _VjodAction action,
+    List<MediaBarSlideItem> items,
+  ) {
+    switch (action) {
+      case _VjodAction.play:
+        _navigateToItemAndPlay(context, items);
+      case _VjodAction.another:
+        _goToPage((_currentIndex + 1) % items.length);
+      case _VjodAction.details:
+        _navigateToItem(context, items);
+      case _VjodAction.evening:
+        // New answers reload the banner through TonightService.
+        _cancelTrailerPreview();
+        unawaited(showTonight(context));
+    }
+  }
+
+  KeyEventResult _handleVjodKey(KeyEvent event, List<MediaBarSlideItem> items) {
+    final key = event.logicalKey;
+    final actions = _vjodActions(items.length);
+    final index = _vjodAction.clamp(0, actions.length - 1);
+    if (key == LogicalKeyboardKey.select || key == LogicalKeyboardKey.enter) {
+      if (event is KeyDownEvent || event is KeyRepeatEvent) {
+        _keyDownTime ??= DateTime.now();
+        return KeyEventResult.handled;
+      }
+      if (event is KeyUpEvent) {
+        final now = DateTime.now();
+        final downTime = _keyDownTime;
+        _keyDownTime = null;
+        final focusedAt = _lastFocusReceivedAt;
+        if (downTime == null &&
+            focusedAt != null &&
+            now.difference(focusedAt) < _focusActivationGuardDuration) {
+          return KeyEventResult.handled;
+        }
+        if (downTime != null &&
+            now.difference(downTime) >= _keyLongPressThreshold) {
+          _navigateToItem(context, items);
+        } else {
+          _runVjodAction(context, actions[index], items);
+        }
+      }
+      return KeyEventResult.handled;
+    }
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    if (key == LogicalKeyboardKey.arrowLeft ||
+        key == LogicalKeyboardKey.arrowRight) {
+      final isRtl = Directionality.of(context) == TextDirection.rtl;
+      final forward = (key == LogicalKeyboardKey.arrowRight) != isRtl;
+      final next = index + (forward ? 1 : -1);
+      if (next < 0) {
+        widget.onNavigateLeft?.call();
+      } else if (next < actions.length) {
+        setState(() => _vjodAction = next);
+      }
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.arrowDown && widget.onNavigateDown != null) {
+      unawaited(widget.onNavigateDown!());
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.arrowUp) {
+      widget.onNavigateUp?.call();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
   }
 
   bool _isVjodMode() {
@@ -2237,6 +2323,8 @@ class _MediaBarState extends State<MediaBar>
         .where((c) => c.isNotEmpty)
         .toList();
     final picks = items.take(3).toList();
+    final actions = _vjodActions(items.length);
+    final activeAction = _vjodAction.clamp(0, actions.length - 1);
 
     return MouseRegion(
       onEnter: (_) => _setPaused(true),
@@ -2358,44 +2446,36 @@ class _MediaBarState extends State<MediaBar>
                             const SizedBox(height: 12),
                             _MetadataRow(item: current.withKicker(null)),
                             const SizedBox(height: 16),
-                            if (isMobile)
-                              Row(
-                                children: [
+                            Wrap(
+                              spacing: isMobile ? 8 : 14,
+                              runSpacing: 8,
+                              children: [
+                                for (final (i, action) in actions.indexed)
                                   _VjodButton(
-                                    label: l10n.vjodBarPlay,
-                                    icon: Icons.play_arrow_rounded,
-                                    primary: true,
+                                    label: switch (action) {
+                                      _VjodAction.play => l10n.vjodBarPlay,
+                                      _VjodAction.another => l10n.vjodBarAnother,
+                                      _VjodAction.details => l10n.vjodBarDetails,
+                                      _VjodAction.evening => l10n.vjodBarEvening,
+                                    },
+                                    icon: switch (action) {
+                                      _VjodAction.play => Icons.play_arrow_rounded,
+                                      _VjodAction.another => Icons.shuffle_rounded,
+                                      _VjodAction.details =>
+                                        Icons.info_outline_rounded,
+                                      _VjodAction.evening => Icons.tune_rounded,
+                                    },
+                                    // With the remote, the lit button is the one
+                                    // OK will press; otherwise Play leads.
+                                    primary: !isMobile && _vjodFocused
+                                        ? i == activeAction
+                                        : action == _VjodAction.play,
+                                    large: !isMobile,
                                     onTap: () =>
-                                        _navigateToItemAndPlay(context, items),
+                                        _runVjodAction(context, action, items),
                                   ),
-                                  const SizedBox(width: 8),
-                                  if (items.length > 1)
-                                    _VjodButton(
-                                      label: l10n.vjodBarAnother,
-                                      icon: Icons.shuffle_rounded,
-                                      onTap: () => _goToPage(
-                                        (_currentIndex + 1) % items.length,
-                                      ),
-                                    ),
-                                  const SizedBox(width: 8),
-                                  _VjodButton(
-                                    label: l10n.vjodBarDetails,
-                                    icon: Icons.info_outline_rounded,
-                                    onTap: () =>
-                                        _navigateToItem(context, items),
-                                  ),
-                                ],
-                              )
-                            else
-                              Text(
-                                l10n.vjodBarRemoteHint,
-                                style: TextStyle(
-                                  color: AppColorScheme.onBackground
-                                      .withValues(alpha: 0.65),
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                              ],
+                            ),
                           ],
                         ),
                       ),
@@ -3064,6 +3144,7 @@ class _MediaBarState extends State<MediaBar>
     KeyEvent event,
     List<MediaBarSlideItem> items,
   ) {
+    if (_isVjodMode()) return _handleVjodKey(event, items);
     final key = event.logicalKey;
 
     if (key == LogicalKeyboardKey.select || key == LogicalKeyboardKey.enter) {
@@ -4074,6 +4155,7 @@ class _VjodButton extends StatelessWidget {
   final String label;
   final IconData icon;
   final bool primary;
+  final bool large;
   final VoidCallback onTap;
 
   const _VjodButton({
@@ -4081,6 +4163,7 @@ class _VjodButton extends StatelessWidget {
     required this.icon,
     required this.onTap,
     this.primary = false,
+    this.large = false,
   });
 
   @override
@@ -4094,17 +4177,20 @@ class _VjodButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+          padding: EdgeInsets.symmetric(
+            horizontal: large ? 22 : 14,
+            vertical: large ? 14 : 11,
+          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 18, color: fg),
-              const SizedBox(width: 6),
+              Icon(icon, size: large ? 24 : 18, color: fg),
+              SizedBox(width: large ? 10 : 6),
               Text(
                 label,
                 style: TextStyle(
                   color: fg,
-                  fontSize: 14,
+                  fontSize: large ? 19 : 14,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -4213,3 +4299,5 @@ class _VjodPickCard extends StatelessWidget {
     );
   }
 }
+
+enum _VjodAction { play, another, details, evening }

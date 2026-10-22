@@ -9753,6 +9753,7 @@
     "vjodBarPlay": "Lecture",
     "vjodBarAnother": "Autre idée",
     "vjodBarDetails": "Infos",
+    "vjodBarEvening": "Ma soirée",
     "mediaBarSourceRandom": "Aléatoire",
     "@mediaBarSourceRandom": {
         "description": "Media bar source: any eligible title"

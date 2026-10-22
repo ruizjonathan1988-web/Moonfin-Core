@@ -6414,6 +6414,7 @@
   "vjodBarPlay": "Play",
   "vjodBarAnother": "Another idea",
   "vjodBarDetails": "Details",
+  "vjodBarEvening": "My evening",
   "mediaBarSourceRandom": "Random",
   "@mediaBarSourceRandom": {
     "description": "Media bar source: any eligible title"
