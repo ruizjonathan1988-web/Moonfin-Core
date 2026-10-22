@@ -172,11 +172,11 @@
     "@settingsAppearanceThemeSubtitle": {
         "description": "Subtitle for the theme selection screen and theme settings entry"
     },
-    "themeMoonfin": "VJOD",
+    "themeMoonfin": "Moonfin",
     "@themeMoonfin": {
         "description": "Display name for the VJOD theme"
     },
-    "themeMoonfinSubtitle": "Le look actuel de VJOD que vous aimez tous.",
+    "themeMoonfinSubtitle": "Le look d'origine de Moonfin, avec ses touches cyan.",
     "@themeMoonfinSubtitle": {
         "description": "Preview description for the VJOD theme"
     },
@@ -3503,7 +3503,7 @@
     "@mediaBarModeDescription": {
         "description": "Description for media bar style setting"
     },
-    "mediaBarModeMoonfin": "VJOD",
+    "mediaBarModeMoonfin": "Moonfin",
     "@mediaBarModeMoonfin": {
         "description": "Media bar style option: VJOD"
     },
@@ -10747,7 +10747,7 @@
     "@loadingAnimationImage": {
         "description": "Title for loading animation image selection"
     },
-    "loadingAnimationImageMoonfinLogo": "Logo VJOD",
+    "loadingAnimationImageMoonfinLogo": "Logo Moonfin",
     "@loadingAnimationImageMoonfinLogo": {
         "description": "Loading animation image option: VJOD Logo"
     },
@@ -10763,7 +10763,7 @@
     "@loadingAnimationImageMoonPhases": {
         "description": "Loading animation image option: Moon Phases"
     },
-    "loadingAnimationImageMoonfinPhases": "Phases VJOD",
+    "loadingAnimationImageMoonfinPhases": "Phases Moonfin",
     "@loadingAnimationImageMoonfinPhases": {
         "description": "Loading animation image option: VJOD Phases in brand gradient"
     },
@@ -11042,7 +11042,7 @@
     "@screensaverBackdropBlack": {
         "description": "Screensaver backdrop: Black"
     },
-    "screensaverBackdropMoonfin": "VJOD",
+    "screensaverBackdropMoonfin": "Moonfin",
     "@screensaverBackdropMoonfin": {
         "description": "Screensaver backdrop: VJOD"
     },
@@ -11062,7 +11062,7 @@
     "@screensaverAdditionalComponent": {
         "description": "Setting for screensaver additional component"
     },
-    "screensaverComponentMoonfinLogo": "Logo VJOD",
+    "screensaverComponentMoonfinLogo": "Logo Moonfin",
     "@screensaverComponentMoonfinLogo": {
         "description": "Screensaver component: VJOD Logo"
     },

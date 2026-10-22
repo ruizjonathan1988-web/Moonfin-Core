@@ -681,11 +681,11 @@
   "@gamepadNavigationDescription": {
     "description": "Settings subtitle for the gamepad navigation switch"
   },
-  "themeMoonfin": "VJOD",
+  "themeMoonfin": "Moonfin",
   "@themeMoonfin": {
     "description": "Display name for the VJOD theme"
   },
-  "themeMoonfinSubtitle": "The original clean VJOD default.",
+  "themeMoonfinSubtitle": "The original clean Moonfin default.",
   "@themeMoonfinSubtitle": {
     "description": "Preview description for the VJOD theme"
   },
@@ -4251,7 +4251,7 @@
   "@loadingAnimationImage": {
     "description": "Title for loading animation image selection"
   },
-  "loadingAnimationImageMoonfinLogo": "VJOD Logo",
+  "loadingAnimationImageMoonfinLogo": "Moonfin Logo",
   "@loadingAnimationImageMoonfinLogo": {
     "description": "Loading animation image option: VJOD Logo"
   },
@@ -4267,7 +4267,7 @@
   "@loadingAnimationImageMoonPhases": {
     "description": "Loading animation image option: Moon Phases"
   },
-  "loadingAnimationImageMoonfinPhases": "VJOD Phases",
+  "loadingAnimationImageMoonfinPhases": "Moonfin Phases",
   "@loadingAnimationImageMoonfinPhases": {
     "description": "Loading animation image option: VJOD Phases in brand gradient"
   },
@@ -6349,7 +6349,7 @@
   "@mediaBarModeDescription": {
     "description": "Description for media bar style setting"
   },
-  "mediaBarModeMoonfin": "VJOD",
+  "mediaBarModeMoonfin": "Moonfin",
   "@mediaBarModeMoonfin": {
     "description": "Media bar style option: VJOD"
   },
@@ -6774,7 +6774,7 @@
   "@screensaverBackdropBlack": {
     "description": "Screensaver backdrop: Black"
   },
-  "screensaverBackdropMoonfin": "VJOD",
+  "screensaverBackdropMoonfin": "Moonfin",
   "@screensaverBackdropMoonfin": {
     "description": "Screensaver backdrop: VJOD"
   },
@@ -6794,7 +6794,7 @@
   "@screensaverAdditionalComponent": {
     "description": "Setting for screensaver additional component"
   },
-  "screensaverComponentMoonfinLogo": "VJOD Logo",
+  "screensaverComponentMoonfinLogo": "Moonfin Logo",
   "@screensaverComponentMoonfinLogo": {
     "description": "Screensaver component: VJOD Logo"
   },
