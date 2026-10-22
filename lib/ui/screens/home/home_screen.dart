@@ -5302,7 +5302,11 @@ class _ContentRowsState extends State<_ContentRows>
                     watchedBehavior: watchedBehavior,
                     itemType: item.type,
                     seerrMediaType: showMediaTypeBadges ? item.seerrMediaType : null,
-                    seerrStatus: item.seerrStatus,
+                    // My Requests already says where each one stands, with
+                    // the progress, so a second tag would only repeat it.
+                    seerrStatus: row.id == HomeViewModel.myRequestsRowId
+                        ? null
+                        : item.seerrStatus,
                     seerrRequestable:
                         item.rawData[HomeViewModel.forYouFlag] == true,
                     isGenreFallback: (row.rowType == HomeRowType.genres && row.id == 'genres') &&
