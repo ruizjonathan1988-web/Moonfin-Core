@@ -4,7 +4,8 @@ import '../theme_spec.dart';
 
 /// VJOD: near black rather than pure black, which tires the eye on a TV, an
 /// ivory halo for whatever is selected, and statuses in soft, distinct hues.
-/// The logo's red stays out of the chrome: a saturated red glares on a TV.
+/// The accent is the logo's red, muted: a saturated red glares on a TV, and
+/// the app sets white text on the accent, so it has to carry it.
 const vjodThemeSpec = ThemeSpec(
   id: 'vjod',
   displayName: 'VJOD',
@@ -24,12 +25,12 @@ const vjodThemeSpec = ThemeSpec(
     onSurface: Color(0xFFEDEBE6),
     surfaceVariant: Color(0xFF1F2026),
     scrim: Color(0xD90B0B0D),
-    accent: Color(0xFFEDEBE6),
-    onAccent: Color(0xFF0B0B0D),
-    buttonNormal: Color(0x29EDEBE6),
+    accent: Color(0xFFC9403F),
+    onAccent: Color(0xFFFFFFFF),
+    buttonNormal: Color(0xFF24252B),
     buttonFocused: Color(0xFFEDEBE6),
-    buttonDisabled: Color(0x14EDEBE6),
-    buttonActive: Color(0x40EDEBE6),
+    buttonDisabled: Color(0xFF1A1B1F),
+    buttonActive: Color(0xFF34363D),
     onButtonNormal: Color(0xFFEDEBE6),
     onButtonFocused: Color(0xFF0B0B0D),
     onButtonDisabled: Color(0x80EDEBE6),
@@ -41,9 +42,9 @@ const vjodThemeSpec = ThemeSpec(
     rangeProgress: Color(0xFFEDEBE6),
     rangeThumb: Color(0xFFEDEBE6),
     seekbarBuffered: Color(0x66EDEBE6),
-    badgeBackground: Color(0xFF2A2B31),
-    onBadge: Color(0xFFEDEBE6),
-    badgeUnplayed: Color(0xFFEDEBE6),
+    badgeBackground: Color(0xFFC9403F),
+    onBadge: Color(0xFFFFFFFF),
+    badgeUnplayed: Color(0xFFC9403F),
     badgeWatched: Color(0xFF7FD6A8),
     recordingActive: Color(0xFFC93A3A),
     recordingScheduled: Color(0xFFE3C07E),

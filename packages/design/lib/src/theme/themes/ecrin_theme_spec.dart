@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import '../theme_spec.dart';
 
 /// Écrin: the calm alternative to VJOD. Warm graphite, generous rounding,
-/// soft shadows instead of halos, and an accent that never raises its voice.
+/// soft shadows instead of halos, and a terracotta accent that never raises
+/// its voice but still carries the white text the app sets on it.
 const ecrinThemeSpec = ThemeSpec(
   id: 'ecrin',
   displayName: 'Écrin',
@@ -23,12 +24,12 @@ const ecrinThemeSpec = ThemeSpec(
     onSurface: Color(0xFFF5F2EE),
     surfaceVariant: Color(0xFF24211E),
     scrim: Color(0xD90F0E0D),
-    accent: Color(0xFFF5F2EE),
-    onAccent: Color(0xFF0F0E0D),
-    buttonNormal: Color(0x24F5F2EE),
+    accent: Color(0xFFB4553A),
+    onAccent: Color(0xFFFFFFFF),
+    buttonNormal: Color(0xFF2A2724),
     buttonFocused: Color(0xFFF5F2EE),
-    buttonDisabled: Color(0x12F5F2EE),
-    buttonActive: Color(0x38F5F2EE),
+    buttonDisabled: Color(0xFF1E1C1A),
+    buttonActive: Color(0xFF38342F),
     onButtonNormal: Color(0xFFF5F2EE),
     onButtonFocused: Color(0xFF0F0E0D),
     onButtonDisabled: Color(0x80F5F2EE),
@@ -40,9 +41,9 @@ const ecrinThemeSpec = ThemeSpec(
     rangeProgress: Color(0xFFF5F2EE),
     rangeThumb: Color(0xFFF5F2EE),
     seekbarBuffered: Color(0x66F5F2EE),
-    badgeBackground: Color(0xFF2E2A26),
-    onBadge: Color(0xFFF5F2EE),
-    badgeUnplayed: Color(0xFFF5F2EE),
+    badgeBackground: Color(0xFFB4553A),
+    onBadge: Color(0xFFFFFFFF),
+    badgeUnplayed: Color(0xFFB4553A),
     badgeWatched: Color(0xFF8FD4A8),
     recordingActive: Color(0xFFC95A4A),
     recordingScheduled: Color(0xFFE6C48A),
