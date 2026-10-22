@@ -9738,6 +9738,8 @@
     "@mediaBarModeBookshelf": {
         "description": "Media bar style option: Bookshelf"
     },
+    "mediaBarSourceTonight": "Les choix de ce soir",
+    "mediaBarEndsAt": "Fin à {time}",
     "mediaBarSourceRandom": "Aléatoire",
     "@mediaBarSourceRandom": {
         "description": "Media bar source: any eligible title"

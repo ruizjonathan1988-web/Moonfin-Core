@@ -109,6 +109,9 @@ class UserPreferences extends ChangeNotifier {
   static const mediaBarSourceRecentlyAdded = 'recentlyAdded';
   static const mediaBarSourceRecentlyReleased = 'recentlyReleased';
 
+  /// Tonight's picks for the evening as the viewer last described it.
+  static const mediaBarSourceTonight = 'tonight';
+
   final PreferenceStore _store;
 
   UserPreferences(this._store) {
@@ -2753,7 +2756,7 @@ class UserPreferences extends ChangeNotifier {
 
   static final mediaBarSourceType = Preference(
     key: 'mediaBarSourceType',
-    defaultValue: mediaBarSourceRandom,
+    defaultValue: mediaBarSourceTonight,
   );
 
   static final mediaBarItemCount = Preference(

@@ -6393,6 +6393,14 @@
   "@mediaBarSourceType": {
     "description": "Setting for which titles the media bar draws from"
   },
+  "mediaBarSourceTonight": "Tonight's picks",
+  "mediaBarEndsAt": "Ends at {time}",
+  "@mediaBarEndsAt": {
+    "description": "When a film started now would end, on a media bar slide",
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
   "mediaBarSourceRandom": "Random",
   "@mediaBarSourceRandom": {
     "description": "Media bar source: any eligible title"

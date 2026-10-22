@@ -8,7 +8,11 @@ import 'package:server_core/server_core.dart';
 
 import '../../preference/user_preferences.dart';
 import '../models/media_bar_slide_item.dart';
+import '../../l10n/app_localizations.dart';
+import '../../l10n/current_app_localizations.dart';
 import '../models/media_bar_state.dart';
+import '../services/tonight/tonight_models.dart';
+import '../services/tonight/tonight_service.dart';
 import '../services/library_scope_service.dart';
 import '../utils/blocked_ratings.dart';
 
@@ -40,6 +44,13 @@ class MediaBarRepository {
 
     final maxItems =
         int.tryParse(_prefs.get(UserPreferences.mediaBarItemCount)) ?? 10;
+
+    // Tonight's picks when there are any; the usual draw otherwise.
+    if (_prefs.get(UserPreferences.mediaBarSourceType) ==
+        UserPreferences.mediaBarSourceTonight) {
+      final tonight = await _tonightSlides(maxItems);
+      if (tonight.isNotEmpty) return MediaBarReady(tonight);
+    }
     // The pickers in settings are open to everyone and the filtering below is
     // plain item queries, so a plugin is not needed to honour the choice.
     final libraryIds = _splitCsv(UserPreferences.mediaBarLibraryIds);
@@ -515,6 +526,44 @@ class MediaBarRepository {
     }
   }
 
+  /// What Tonight picks for the evening as the viewer last described it,
+  /// best first, limited to what the library can play now. Each slide says
+  /// which evening it was picked for.
+  Future<List<MediaBarSlideItem>> _tonightSlides(int maxItems) async {
+    try {
+      final tonight = TonightService.instance;
+      final answers = tonight.suggestAnswers();
+      final view = await tonight
+          .load(answers)
+          .timeout(const Duration(seconds: 20));
+      final ids = <String>[];
+      for (final pick in view.result.picks) {
+        final id = pick.candidate.libraryItemId;
+        if (id != null && !ids.contains(id)) ids.add(id);
+        if (ids.length >= maxItems) break;
+      }
+      if (ids.isEmpty) return const [];
+      final response = await _client.itemsApi
+          .getItems(ids: ids, fields: _fields)
+          .timeout(const Duration(seconds: 15));
+      final byId = {
+        for (final item in (response['Items'] as List? ?? [])
+            .cast<Map<String, dynamic>>())
+          item['Id']?.toString(): item,
+      };
+      final kicker = tonightKicker(currentAppLocalizations(), answers);
+      return [
+        for (final id in ids)
+          if (byId[id] case final data?
+              when !isRatingBlocked(data['OfficialRating']?.toString()))
+            _toSlideItem(data).withKicker(kicker),
+      ];
+    } catch (e) {
+      // The usual draw takes over.
+      return const [];
+    }
+  }
+
   MediaBarSlideItem _toSlideItem(Map<String, dynamic> data) {
     final itemId = data['Id']?.toString() ?? '';
     final serverId = data['ServerId']?.toString() ?? '';
@@ -595,4 +644,27 @@ bool supportsMediaBarLibrary(
   if (type.isEmpty || type == 'mixed' || type == 'unknown') return true;
 
   return preferredTypes.contains(type);
+}
+
+/// "Tonight · With friends · A laugh": the evening a slide was picked for.
+String tonightKicker(AppLocalizations l10n, TonightAnswers answers) {
+  final company = switch (answers.company) {
+    TonightCompany.alone => l10n.tonightWhoAlone,
+    TonightCompany.couple => l10n.tonightWhoCouple,
+    TonightCompany.family => l10n.tonightWhoFamily,
+    TonightCompany.friends => l10n.tonightWhoFriends,
+  };
+  final time = switch (answers.time) {
+    TonightTime.short => l10n.tonightTimeShort,
+    TonightTime.evening || TonightTime.any => null,
+  };
+  final mood = switch (answers.mood) {
+    TonightMood.laugh => l10n.tonightMoodLaugh,
+    TonightMood.chills => l10n.tonightMoodChills,
+    TonightMood.escape => l10n.tonightMoodEscape,
+    TonightMood.think => l10n.tonightMoodThink,
+    TonightMood.comfort => l10n.tonightMoodComfort,
+    TonightMood.surprise => null,
+  };
+  return [l10n.tonightTitle, company, ?time, ?mood].join(' \u00b7 ');
 }

@@ -3386,13 +3386,29 @@ class _MetadataRow extends StatelessWidget {
       final h = item.runtime!.inHours;
       final m = item.runtime!.inMinutes.remainder(60);
       parts.add(_infoText(theme, h > 0 ? '${h}h ${m}m' : '${m}m'));
+      // When it would end if started now, which settles many an evening.
+      final ends = TimeOfDay.fromDateTime(DateTime.now().add(item.runtime!));
+      parts.add(
+        _infoText(
+          theme,
+          AppLocalizations.of(context).mediaBarEndsAt(
+            MaterialLocalizations.of(context).formatTimeOfDay(
+              ends,
+              alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(
+                context,
+              ),
+            ),
+          ),
+        ),
+      );
     }
 
     if (item.genres.isNotEmpty) {
       parts.add(_infoText(theme, item.genres.join(' \u2022 ')));
     }
 
-    if (parts.isEmpty) return const SizedBox.shrink();
+    final kicker = item.kicker;
+    if (parts.isEmpty && kicker == null) return const SizedBox.shrink();
 
     final separated = <Widget>[];
     for (var i = 0; i < parts.length; i++) {
@@ -3410,11 +3426,31 @@ class _MetadataRow extends StatelessWidget {
       }
     }
 
-    return Wrap(
+    final details = Wrap(
       crossAxisAlignment: WrapCrossAlignment.center,
       spacing: 2,
       runSpacing: 4,
       children: separated,
+    );
+    if (kicker == null) return details;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          kicker.toUpperCase(),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: AppColorScheme.onSurface.withValues(alpha: 0.75),
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.2,
+            shadows: _textShadows,
+          ),
+        ),
+        const SizedBox(height: 6),
+        details,
+      ],
     );
   }
 

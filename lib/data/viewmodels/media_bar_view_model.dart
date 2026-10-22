@@ -9,6 +9,7 @@ import '../models/media_bar_slide_item.dart';
 import '../models/media_bar_state.dart';
 import '../repositories/mdblist_repository.dart';
 import '../repositories/media_bar_repository.dart';
+import '../services/tonight/tonight_service.dart';
 
 class MediaBarViewModel extends ChangeNotifier {
   final MediaBarRepository _repository;
@@ -116,6 +117,15 @@ class MediaBarViewModel extends ChangeNotifier {
     _lastContentType = _prefs.get(UserPreferences.mediaBarContentType);
     _lastItemCount = _prefs.get(UserPreferences.mediaBarItemCount);
     _prefs.addListener(_onPrefsChanged);
+    TonightService.instance.answersChanged.addListener(_onTonightChanged);
+  }
+
+  /// A new evening described: the Tonight slides change with it.
+  void _onTonightChanged() {
+    if (_prefs.get(UserPreferences.mediaBarSourceType) ==
+        UserPreferences.mediaBarSourceTonight) {
+      load(force: true);
+    }
   }
 
   void _onPrefsChanged() {
@@ -138,6 +148,7 @@ class MediaBarViewModel extends ChangeNotifier {
   @override
   void dispose() {
     _prefs.removeListener(_onPrefsChanged);
+    TonightService.instance.answersChanged.removeListener(_onTonightChanged);
     super.dispose();
   }
 

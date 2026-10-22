@@ -307,8 +307,13 @@ class TonightService {
     );
   }
 
-  Future<void> saveAnswers(TonightAnswers answers) =>
-      _prefs.setTonightAnswersJson(answers.encode());
+  Future<void> saveAnswers(TonightAnswers answers) async {
+    await _prefs.setTonightAnswersJson(answers.encode());
+    answersChanged.value++;
+  }
+
+  /// Counts the answers saved, for what shows tonight's picks elsewhere.
+  final ValueNotifier<int> answersChanged = ValueNotifier(0);
 
   // ---------------------------------------------------------------------
   // Suggestions

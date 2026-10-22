@@ -20,6 +20,10 @@ class MediaBarSlideItem {
   final String itemType;
   final List<Map<String, dynamic>> remoteTrailers;
 
+  /// Why the slide is there, shown above its details, such as the evening
+  /// it was picked for.
+  final String? kicker;
+
   const MediaBarSlideItem({
     required this.itemId,
     required this.serverId,
@@ -39,5 +43,28 @@ class MediaBarSlideItem {
     this.imdbId,
     this.itemType = 'Movie',
     this.remoteTrailers = const [],
+    this.kicker,
   });
+
+  MediaBarSlideItem withKicker(String? kicker) => MediaBarSlideItem(
+    itemId: itemId,
+    serverId: serverId,
+    title: title,
+    overview: overview,
+    backdropUrl: backdropUrl,
+    bannerUrl: bannerUrl,
+    logoUrl: logoUrl,
+    posterUrl: posterUrl,
+    officialRating: officialRating,
+    year: year,
+    genres: genres,
+    runtime: runtime,
+    communityRating: communityRating,
+    criticRating: criticRating,
+    tmdbId: tmdbId,
+    imdbId: imdbId,
+    itemType: itemType,
+    remoteTrailers: remoteTrailers,
+    kicker: kicker,
+  );
 }

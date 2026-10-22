@@ -265,6 +265,8 @@ class _MediaBarSettingsScreenState extends State<MediaBarSettingsScreen> {
                   title: l10n.mediaBarSourceType,
                   icon: Icons.auto_awesome_motion,
                   options: {
+                    UserPreferences.mediaBarSourceTonight:
+                        l10n.mediaBarSourceTonight,
                     UserPreferences.mediaBarSourceRandom:
                         l10n.mediaBarSourceRandom,
                     UserPreferences.mediaBarSourceRecentlyAdded:
