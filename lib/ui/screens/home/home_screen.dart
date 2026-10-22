@@ -5040,6 +5040,8 @@ class _ContentRowsState extends State<_ContentRows>
             context.push(Destinations.studio(item.name));
           } else if (item.rawData[HomeViewModel.surpriseFlag] == true) {
             _playSurprise(context, item);
+          } else if (item.rawData[HomeViewModel.top10SwitchFlag] == true) {
+            widget.viewModel.toggleTop10();
           } else if (item.serverId == 'seerr') {
             _navigateToSeerrItem(
               context,
@@ -5263,7 +5265,8 @@ class _ContentRowsState extends State<_ContentRows>
                   // Seerr genre cards print their name across the artwork,
                   // the way the Jellyfin genre row does.
                   final isSeerrGenreCard =
-                      _isSeerrFilterRow(row) && item.type == 'Genre';
+                      (_isSeerrFilterRow(row) && item.type == 'Genre') ||
+                      item.rawData[HomeViewModel.top10SwitchFlag] == true;
                   final card = MediaCard(
                     animeMarkerItemId: isSeerrGenreCard ? null : item.id,
                     title: cardTitle,
@@ -5287,6 +5290,8 @@ class _ContentRowsState extends State<_ContentRows>
                     itemType: item.type,
                     seerrMediaType: showMediaTypeBadges ? item.seerrMediaType : null,
                     seerrStatus: item.seerrStatus,
+                    seerrRequestable:
+                        item.rawData[HomeViewModel.forYouFlag] == true,
                     isGenreFallback: (row.rowType == HomeRowType.genres && row.id == 'genres') &&
                         (() {
                           final primaryAr = item.rawData['PrimaryImageAspectRatio'] as num?;
@@ -5818,7 +5823,14 @@ class _ContentRowsState extends State<_ContentRows>
           icon: Icons.diamond_outlined,
         )
       else if (HomeViewModel.isTop10Row(row))
-        RankNumberOverlay(rank: index + 1)
+        // The films-or-series switch, when it leads the row, has no rank.
+        if (item.rawData[HomeViewModel.top10SwitchFlag] != true)
+          RankNumberOverlay(
+            rank: row.items.firstOrNull?.rawData[HomeViewModel.top10SwitchFlag] ==
+                    true
+                ? index
+                : index + 1,
+          )
       else if (row.id == HomeViewModel.surpriseRowId)
         CardHighlightPill(
           label: l10n.surprisePlayNow,

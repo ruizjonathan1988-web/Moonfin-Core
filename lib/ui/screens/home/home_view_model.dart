@@ -641,6 +641,12 @@ class HomeViewModel extends ChangeNotifier {
                 .toList()
           : effectiveConfigs;
 
+      // Without its own series row, the Top 10 switches between films and
+      // series in place.
+      _top10Switches = !effectiveConfigs.any(
+        (c) => c.isBuiltin && c.type == HomeSectionType.top10Series,
+      );
+
       final showMergedResume =
           merge &&
           effectiveConfigs.any(
@@ -3013,6 +3019,20 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   static const top10MoviesRowId = 'top10_movies';
+
+  /// The card that switches the Top 10 between films and series.
+  static const top10SwitchFlag = 'Top10Switch';
+
+  bool _top10Switches = false;
+  bool _top10ShowsSeries = false;
+
+  /// Shows the Top 10 of the other kind in the films' row.
+  Future<void> toggleTop10() async {
+    _top10ShowsSeries = !_top10ShowsSeries;
+    final l10n = currentAppLocalizations();
+    final rows = await _loadTop10Row(l10n, 'movie');
+    if (rows.isNotEmpty) _replaceRowById(rows.single);
+  }
   static const top10SeriesRowId = 'top10_series';
   static const surpriseRowId = 'surprise';
 
@@ -3032,9 +3052,12 @@ class HomeViewModel extends ChangeNotifier {
   /// other suggestions.
   Future<List<HomeRow>> _loadTop10Row(
     AppLocalizations l10n,
-    String mediaType, {
+    String section, {
     bool forceRefresh = false,
   }) async {
+    // The films' row takes the series' place when they share it.
+    final switches = _top10Switches && section == 'movie';
+    final mediaType = switches && _top10ShowsSeries ? 'tv' : section;
     final isTv = mediaType == 'tv';
     try {
       final repo = await GetIt.instance.getAsync<SeerrRepository>();
@@ -3053,9 +3076,23 @@ class HomeViewModel extends ChangeNotifier {
       ].take(10).toList();
       // A Top 3 isn't much of a chart.
       if (items.length < 3) return [];
+      if (switches) {
+        items.insert(
+          0,
+          AggregatedItem(
+            id: top10SwitchFlag,
+            serverId: 'seerr',
+            rawData: {
+              'Name': isTv ? l10n.top10SwitchToMovies : l10n.top10SwitchToSeries,
+              'Type': 'Genre',
+              top10SwitchFlag: true,
+            },
+          ),
+        );
+      }
       return [
         HomeRow(
-          id: isTv ? top10SeriesRowId : top10MoviesRowId,
+          id: section == 'tv' ? top10SeriesRowId : top10MoviesRowId,
           title: isTv ? l10n.top10SeriesRow : l10n.top10MoviesRow,
           rowType: HomeRowType.pluginDynamic,
           items: items,

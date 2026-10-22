@@ -6401,6 +6401,13 @@
       "time": {"type": "String"}
     }
   },
+  "seerrTagReady": "Ready",
+  "seerrTagPartial": "Partly",
+  "seerrTagRequested": "Requested",
+  "seerrTagOnTheWay": "On the way",
+  "seerrTagRequest": "Request",
+  "top10SwitchToSeries": "See series",
+  "top10SwitchToMovies": "See films",
   "mediaBarSourceRandom": "Random",
   "@mediaBarSourceRandom": {
     "description": "Media bar source: any eligible title"

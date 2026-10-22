@@ -13,14 +13,25 @@ List<HomeSectionType> ordered(List<HomeSectionConfig> sections) => [
 ];
 
 void main() {
-  test('a fresh install shows both Top 10 rows', () {
-    final top10 = HomeSectionConfig.defaults().where(
-      (c) =>
-          c.type == HomeSectionType.top10Movies ||
-          c.type == HomeSectionType.top10Series,
+  test('a fresh install opens on the VJOD rows, one Top 10 for both', () {
+    final on = [
+      for (final c in HomeSectionConfig.defaults())
+        if (c.enabled) c.type,
+    ];
+    expect(on.take(5), [
+      HomeSectionType.resume,
+      HomeSectionType.nextUp,
+      HomeSectionType.top10Movies,
+      HomeSectionType.seerrForYou,
+      HomeSectionType.frenchMovies,
+    ]);
+    // Off rather than gone, so the settings can bring it back.
+    expect(
+      HomeSectionConfig.defaults().where(
+        (c) => c.type == HomeSectionType.top10Series && !c.enabled,
+      ),
+      hasLength(1),
     );
-    expect(top10, hasLength(2));
-    expect(top10.every((c) => c.enabled), isTrue);
   });
 
   test('the old Top 10 becomes the films one, with series right under it', () {

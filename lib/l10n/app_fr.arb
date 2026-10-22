@@ -9740,6 +9740,13 @@
     },
     "mediaBarSourceTonight": "Les choix de ce soir",
     "mediaBarEndsAt": "Fin à {time}",
+    "seerrTagReady": "Prêt",
+    "seerrTagPartial": "En partie",
+    "seerrTagRequested": "Demandé",
+    "seerrTagOnTheWay": "En route",
+    "seerrTagRequest": "Demander",
+    "top10SwitchToSeries": "Voir les séries",
+    "top10SwitchToMovies": "Voir les films",
     "mediaBarSourceRandom": "Aléatoire",
     "@mediaBarSourceRandom": {
         "description": "Media bar source: any eligible title"

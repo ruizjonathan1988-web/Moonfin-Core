@@ -186,82 +186,84 @@ class HomeSectionConfig {
   bool get isBuiltin => kind == HomeSectionKind.builtin;
   bool get isPluginDynamic => kind == HomeSectionKind.pluginDynamic;
 
+  /// The VJOD home: what was left half watched first, the Top 10 (films and
+  /// series in one row), suggestions and French cinema. Tonight's picks sit
+  /// above in the media bar. Every other row is here, switched off, to turn
+  /// on in the settings.
   static List<HomeSectionConfig> defaults() => const [
-    HomeSectionConfig(
-      type: HomeSectionType.libraryTilesSmall,
-      enabled: true,
-      order: 0,
-    ),
-    HomeSectionConfig(type: HomeSectionType.resume, enabled: true, order: 1),
-    HomeSectionConfig(type: HomeSectionType.nextUp, enabled: true, order: 2),
-    // Only shows once Seerr is signed in.
-    HomeSectionConfig(
-      type: HomeSectionType.seerrForYou,
-      enabled: true,
-      order: 2,
-    ),
-    // Also need Seerr, for the charts.
+    HomeSectionConfig(type: HomeSectionType.resume, enabled: true, order: 0),
+    HomeSectionConfig(type: HomeSectionType.nextUp, enabled: true, order: 1),
+    // These need Seerr: for the charts, the suggestions and the requests.
     HomeSectionConfig(
       type: HomeSectionType.top10Movies,
       enabled: true,
-      order: 3,
+      order: 2,
     ),
     HomeSectionConfig(
-      type: HomeSectionType.top10Series,
+      type: HomeSectionType.seerrForYou,
       enabled: true,
       order: 3,
     ),
     HomeSectionConfig(
       type: HomeSectionType.frenchMovies,
       enabled: true,
-      order: 3,
+      order: 4,
+    ),
+    HomeSectionConfig(
+      type: HomeSectionType.top10Series,
+      enabled: false,
+      order: 5,
     ),
     HomeSectionConfig(
       type: HomeSectionType.frenchSeries,
-      enabled: true,
-      order: 3,
+      enabled: false,
+      order: 5,
     ),
     HomeSectionConfig(
       type: HomeSectionType.frenchClassics,
-      enabled: true,
-      order: 3,
+      enabled: false,
+      order: 5,
     ),
-    HomeSectionConfig(type: HomeSectionType.surprise, enabled: true, order: 4),
-    // Seerr again: the viewer's own requests, and rows built on their taste.
+    HomeSectionConfig(
+      type: HomeSectionType.libraryTilesSmall,
+      enabled: false,
+      order: 5,
+    ),
+    HomeSectionConfig(type: HomeSectionType.surprise, enabled: false, order: 5),
     HomeSectionConfig(
       type: HomeSectionType.seerrMyRequests,
-      enabled: true,
-      order: 4,
+      enabled: false,
+      order: 5,
     ),
     HomeSectionConfig(
       type: HomeSectionType.seerrBecause,
-      enabled: true,
-      order: 4,
+      enabled: false,
+      order: 5,
     ),
     HomeSectionConfig(
       type: HomeSectionType.seerrSagas,
-      enabled: true,
-      order: 4,
+      enabled: false,
+      order: 5,
     ),
     HomeSectionConfig(
       type: HomeSectionType.seerrGems,
-      enabled: true,
-      order: 4,
+      enabled: false,
+      order: 5,
     ),
     HomeSectionConfig(
       type: HomeSectionType.seerrUpcoming,
-      enabled: true,
-      order: 4,
+      enabled: false,
+      order: 5,
     ),
     HomeSectionConfig(
       type: HomeSectionType.familyNight,
-      enabled: true,
-      order: 4,
+      enabled: false,
+      order: 5,
     ),
     HomeSectionConfig(
       type: HomeSectionType.latestMedia,
-      enabled: true,
-      order: 3,
+      enabled: false,
+      order: 5,
     ),
     HomeSectionConfig(
       type: HomeSectionType.recentlyReleased,

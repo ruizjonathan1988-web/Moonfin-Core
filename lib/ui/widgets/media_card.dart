@@ -104,6 +104,9 @@ class MediaCard extends StatefulWidget {
   final String? itemType;
   final String? seerrMediaType;
   final int? seerrStatus;
+
+  /// A Seerr title not here yet that can be asked for, tagged as such.
+  final bool seerrRequestable;
   final Color? focusColor;
   final bool cardFocusExpansion;
   final FocusNode? focusNode;
@@ -157,6 +160,7 @@ class MediaCard extends StatefulWidget {
     this.itemType,
     this.seerrMediaType,
     this.seerrStatus,
+    this.seerrRequestable = false,
     this.focusColor,
     this.cardFocusExpansion = true,
     this.focusNode,
@@ -419,6 +423,7 @@ class _MediaCardState extends State<MediaCard> with FocusStateMixin {
                       itemType: widget.itemType,
                       seerrMediaType: widget.seerrMediaType,
                       seerrStatus: widget.seerrStatus,
+                      seerrRequestable: widget.seerrRequestable,
                       imageOverlays: widget.imageOverlays,
                       overlayOccupiesTopLeft: widget.overlayOccupiesTopLeft,
                       animeMarkerItemId: widget.animeMarkerItemId,
@@ -673,6 +678,9 @@ class _CardImage extends StatelessWidget {
   final String? itemType;
   final String? seerrMediaType;
   final int? seerrStatus;
+
+  /// A Seerr title not here yet that can be asked for, tagged as such.
+  final bool seerrRequestable;
   final List<Widget> imageOverlays;
   final bool overlayOccupiesTopLeft;
   final bool isGenreFallback;
@@ -696,6 +704,7 @@ class _CardImage extends StatelessWidget {
     this.itemType,
     this.seerrMediaType,
     this.seerrStatus,
+    this.seerrRequestable = false,
     this.imageOverlays = const [],
     this.overlayOccupiesTopLeft = false,
     this.isGenreFallback = false,
@@ -861,7 +870,10 @@ class _CardImage extends StatelessWidget {
                   Positioned(
                     top: 6,
                     right: 6,
-                    child: SeerrStatusDot(status: seerrStatus),
+                    child: SeerrStatusTag(
+                      status: seerrStatus,
+                      requestable: seerrRequestable,
+                    ),
                   )
                 else if (_showWatchedIndicator)
                   Positioned(top: 6, right: 6, child: _buildWatchedIndicator()),
@@ -928,7 +940,8 @@ class _CardImage extends StatelessWidget {
     return type == 'movie' || type == 'tv';
   }
 
-  bool get _showSeerrStatusIndicator => SeerrMediaStatus.hasDot(seerrStatus);
+  bool get _showSeerrStatusIndicator =>
+      SeerrStatusTag.shows(seerrStatus, requestable: seerrRequestable);
 
   Widget _buildWatchedIndicator() {
     if (isPlayed) {
