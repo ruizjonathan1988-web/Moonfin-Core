@@ -94,6 +94,7 @@ void main() {
       _row('seerr_because_movie_603'): HomeSectionType.seerrBecause,
       _row('seerr_sagas'): HomeSectionType.seerrSagas,
       _row('seerr_gems'): HomeSectionType.seerrGems,
+      _row('seerr_upcoming'): HomeSectionType.seerrUpcoming,
       _row('family_night'): HomeSectionType.familyNight,
       _row('seerr_upcoming_series'): HomeSectionType.seerrUpcomingSeries,
       _row('seerr_trending'): HomeSectionType.seerrTrending,

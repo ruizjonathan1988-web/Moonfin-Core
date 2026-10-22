@@ -41,6 +41,7 @@ import '../../../data/services/seerr/taste_extras.dart';
 import '../../../data/services/seerr/saga_service.dart';
 import '../../../data/services/seerr/seed_recommendations.dart';
 import '../../../data/services/seerr/seerr_age_gate.dart';
+import '../../../data/services/seerr/upcoming_picks.dart';
 import '../../../data/services/betaseries/betaseries_client.dart';
 import '../../../data/services/chart_cards.dart';
 import '../../../data/services/trakt/trakt_client.dart';
@@ -306,6 +307,7 @@ class HomeViewModel extends ChangeNotifier {
       HomeSectionType.seerrMyRequests ||
       HomeSectionType.seerrSagas ||
       HomeSectionType.seerrGems ||
+      HomeSectionType.seerrUpcoming ||
       HomeSectionType.familyNight ||
       HomeSectionType.seerrBecause ||
       HomeSectionType.top10Movies ||
@@ -572,6 +574,7 @@ class HomeViewModel extends ChangeNotifier {
                         c.type != HomeSectionType.seerrMyRequests &&
                         c.type != HomeSectionType.seerrSagas &&
                         c.type != HomeSectionType.seerrGems &&
+                        c.type != HomeSectionType.seerrUpcoming &&
                         c.type != HomeSectionType.seerrBecause &&
                         c.type != HomeSectionType.top10Movies &&
                         c.type != HomeSectionType.top10Series &&
@@ -1007,6 +1010,8 @@ class HomeViewModel extends ChangeNotifier {
         return row.id == sagaRowId;
       case HomeSectionType.seerrGems:
         return row.id == gemsRowId;
+      case HomeSectionType.seerrUpcoming:
+        return row.id == upcomingRowId;
       case HomeSectionType.familyNight:
         return row.id == familyRowId;
       case HomeSectionType.seerrBecause:
@@ -1379,6 +1384,8 @@ class HomeViewModel extends ChangeNotifier {
         return const {'seerrSagas'};
       case HomeSectionType.seerrGems:
         return const {'seerrGems'};
+      case HomeSectionType.seerrUpcoming:
+        return const {'seerrUpcoming'};
       case HomeSectionType.familyNight:
         return const {'familyNight'};
       case HomeSectionType.seerrBecause:
@@ -1751,6 +1758,8 @@ class HomeViewModel extends ChangeNotifier {
         return _loadSagaRow(l10n, forceRefresh: forceRefresh);
       case HomeSectionType.seerrGems:
         return _loadGemsRow(l10n, forceRefresh: forceRefresh);
+      case HomeSectionType.seerrUpcoming:
+        return _loadUpcomingRow(l10n, forceRefresh: forceRefresh);
       case HomeSectionType.familyNight:
         return _loadFamilyRow(l10n);
       case HomeSectionType.seerrBecause:
@@ -2239,6 +2248,7 @@ class HomeViewModel extends ChangeNotifier {
       // These only show when they have something, so no empty shell first.
       case HomeSectionType.seerrSagas:
       case HomeSectionType.seerrGems:
+      case HomeSectionType.seerrUpcoming:
       case HomeSectionType.familyNight:
         return null;
       case HomeSectionType.seerrForYou:
@@ -3639,6 +3649,7 @@ class HomeViewModel extends ChangeNotifier {
 
   static const sagaRowId = 'seerr_sagas';
   static const gemsRowId = 'seerr_gems';
+  static const upcomingRowId = 'seerr_upcoming';
   static const familyRowId = 'family_night';
 
   /// A Seerr suggestion as a card. Something to ask for opens the request
@@ -3771,6 +3782,84 @@ class HomeViewModel extends ChangeNotifier {
     }
   }
 
+  /// What comes out in the year ahead that the viewer would want, to
+  /// request before it is out.
+  Future<List<HomeRow>> _loadUpcomingRow(
+    AppLocalizations l10n, {
+    bool forceRefresh = false,
+  }) async {
+    try {
+      final repo = await GetIt.instance.getAsync<SeerrRepository>();
+      await repo.ensureInitialized();
+      if (!repo.isAvailable) return [];
+      final blockNsfw = GetIt.instance<SeerrPreferences>().blockNsfw;
+      final taste = _taste();
+
+      Future<List<(SeerrDiscoverItem, String)>> listed(
+        Future<SeerrDiscoverPage> Function({int page}) fetch,
+        String mediaType,
+      ) async {
+        try {
+          final pages = await Future.wait([fetch(page: 1), fetch(page: 2)]);
+          return [
+            for (final page in pages)
+              for (final item in page.results) (item, mediaType),
+          ];
+        } catch (e) {
+          debugPrint('[SeerrHomeRow] Upcoming $mediaType failed: $e');
+          return const [];
+        }
+      }
+
+      final (raw, movies, series) = await (
+        ForYouService.instance.loadRaw(
+          serverId: _serverId,
+          loadHistory: () => _dataSource.loadTasteHistory(_serverId),
+          fetchRecommendations: (seed) => seedRecommendations(repo, seed),
+          loadExtras: () => _loadTasteExtras(repo, taste.profile),
+          forceRefresh: forceRefresh,
+        ),
+        listed(repo.getUpcomingMovies, 'movie'),
+        listed(repo.getUpcomingTv, 'tv'),
+      ).wait;
+
+      final picks = UpcomingPicks.rank(
+        seeds: raw.seeds,
+        recommendationsBySeed: raw.recommendations,
+        upcoming: takeTurns([movies, series]),
+        excludeKeys: {...raw.exclude, ...taste.feedback.hiddenKeys},
+        blockAdult: blockNsfw,
+        weigh: taste.weigh,
+      );
+      final items = [
+        for (final pick in picks)
+          if (_suggestionCard(
+                pick.item,
+                pick.mediaType,
+                reason: switch (pick.because?.title) {
+                  final title? when title.isNotEmpty => title,
+                  _ => null,
+                },
+                blockNsfw: blockNsfw,
+              )
+              case final card?)
+            card,
+      ];
+      if (items.length < 5) return [];
+      return [
+        _seerrRow(
+          upcomingRowId,
+          l10n.upcomingRow,
+          items,
+          totalCount: items.length,
+        ),
+      ];
+    } catch (e) {
+      debugPrint('[SeerrHomeRow] Failed to load Upcoming row: $e');
+      return [];
+    }
+  }
+
   /// Unwatched family films from the library, best rated first.
   Future<List<HomeRow>> _loadFamilyRow(AppLocalizations l10n) async {
     try {
@@ -3877,6 +3966,7 @@ class HomeViewModel extends ChangeNotifier {
       if (row.id != forYouRowId &&
           row.id != sagaRowId &&
           row.id != gemsRowId &&
+          row.id != upcomingRowId &&
           !row.id.startsWith(becauseRowIdPrefix)) {
         continue;
       }
@@ -3904,7 +3994,8 @@ class HomeViewModel extends ChangeNotifier {
     for (final row in _rows.toList()) {
       if (!row.id.startsWith(becauseRowIdPrefix) &&
           row.id != sagaRowId &&
-          row.id != gemsRowId) {
+          row.id != gemsRowId &&
+          row.id != upcomingRowId) {
         continue;
       }
       if (!row.items.any((i) => i.id == item.id)) continue;

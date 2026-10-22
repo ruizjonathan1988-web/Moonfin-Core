@@ -536,6 +536,7 @@ class _HomeSectionsScreenState extends State<HomeSectionsScreen>
         section.type == HomeSectionType.seerrBecause ||
         section.type == HomeSectionType.seerrSagas ||
         section.type == HomeSectionType.seerrGems ||
+        section.type == HomeSectionType.seerrUpcoming ||
         section.type == HomeSectionType.top10Movies ||
         section.type == HomeSectionType.top10Series ||
         section.type == HomeSectionType.frenchMovies ||
@@ -1838,6 +1839,7 @@ class _HomeSectionsScreenState extends State<HomeSectionsScreen>
         HomeSectionType.seerrBecause => l10n.becauseYouWatchedSection,
         HomeSectionType.seerrSagas => l10n.sagaRow,
         HomeSectionType.seerrGems => l10n.gemsRow,
+        HomeSectionType.seerrUpcoming => l10n.upcomingRow,
         HomeSectionType.familyNight => l10n.familyNightRow,
         HomeSectionType.seerrRecentRequests => l10n.recentRequests,
         HomeSectionType.seerrWatchlist => l10n.yourWatchlist,

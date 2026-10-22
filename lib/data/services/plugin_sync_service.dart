@@ -1710,6 +1710,7 @@ class PluginSyncService extends ChangeNotifier {
       type == prefs.HomeSectionType.seerrBecause ||
       type == prefs.HomeSectionType.seerrSagas ||
       type == prefs.HomeSectionType.seerrGems ||
+      type == prefs.HomeSectionType.seerrUpcoming ||
       type == prefs.HomeSectionType.familyNight ||
       type == prefs.HomeSectionType.top10Movies ||
       type == prefs.HomeSectionType.top10Series ||

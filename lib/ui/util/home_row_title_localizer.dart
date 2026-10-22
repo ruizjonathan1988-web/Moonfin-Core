@@ -99,6 +99,8 @@ String localizeHomeRowTitle({
       return l10n.sagaRow;
     case 'seerr_gems':
       return l10n.gemsRow;
+    case 'seerr_upcoming':
+      return l10n.upcomingRow;
     case 'family_night':
       return l10n.familyNightRow;
     case 'surprise':

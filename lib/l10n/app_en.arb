@@ -15402,6 +15402,10 @@
   "@gemsRow": {
     "description": "Home row of well-loved, little-known titles"
   },
+  "upcomingRow": "Coming soon for you",
+  "@upcomingRow": {
+    "description": "Home row of titles coming out in the year ahead, close to the viewer's taste"
+  },
   "familyNightRow": "Family night",
   "@familyNightRow": {
     "description": "Home row of unwatched family films"

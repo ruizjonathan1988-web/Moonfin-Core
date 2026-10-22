@@ -547,6 +547,9 @@ enum HomeSectionType {
   /// Well-loved, little-known titles close to the viewer's taste.
   seerrGems('seerr_gems'),
 
+  /// What comes out in the year ahead close to the viewer's taste.
+  seerrUpcoming('seerr_upcoming'),
+
   /// Unwatched family films from the library.
   familyNight('family_night'),
   seerrShortcuts('seerr_shortcuts'),

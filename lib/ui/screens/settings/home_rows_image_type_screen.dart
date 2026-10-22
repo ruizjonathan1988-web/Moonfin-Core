@@ -102,6 +102,7 @@ class _HomeRowsImageTypeScreenState extends State<HomeRowsImageTypeScreen> {
         HomeSectionType.seerrBecause => l10n.becauseYouWatchedSection,
         HomeSectionType.seerrSagas => l10n.sagaRow,
         HomeSectionType.seerrGems => l10n.gemsRow,
+        HomeSectionType.seerrUpcoming => l10n.upcomingRow,
         HomeSectionType.familyNight => l10n.familyNightRow,
         HomeSectionType.seerrRecentRequests => l10n.recentRequests,
         HomeSectionType.seerrWatchlist => l10n.yourWatchlist,

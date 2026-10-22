@@ -249,6 +249,11 @@ class HomeSectionConfig {
       order: 4,
     ),
     HomeSectionConfig(
+      type: HomeSectionType.seerrUpcoming,
+      enabled: true,
+      order: 4,
+    ),
+    HomeSectionConfig(
       type: HomeSectionType.familyNight,
       enabled: true,
       order: 4,
@@ -521,6 +526,7 @@ class HomeSectionConfig {
     HomeSectionType.frenchMovies: HomeSectionType.top10Series,
     HomeSectionType.frenchSeries: HomeSectionType.frenchMovies,
     HomeSectionType.frenchClassics: HomeSectionType.frenchSeries,
+    HomeSectionType.seerrUpcoming: HomeSectionType.seerrGems,
   };
 
   /// [config] placed right after [leader], everything below moved down one.
