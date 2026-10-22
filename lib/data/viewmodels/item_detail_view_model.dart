@@ -486,6 +486,9 @@ class ItemDetailViewModel extends ChangeNotifier {
   String? _seerrOnlyTitle;
   set seerrOnlyTitle(String? value) => _seerrOnlyTitle = value;
 
+  /// The title that earned this suggestion its place, when it came from one.
+  String? because;
+
   /// Resolves the Seerr side of a library item, if there is one to resolve.
   /// A miss leaves the screen exactly as it was, so nothing here ever surfaces
   /// an error.

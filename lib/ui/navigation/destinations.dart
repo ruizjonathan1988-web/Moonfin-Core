@@ -357,9 +357,17 @@ class Destinations {
 
   /// Everything the screen needs travels in the route, so a restored or shared
   /// link resolves the same way a fresh tap does.
-  static String seerrMedia(String itemId, {String? mediaType, String? title}) {
+  static String seerrMedia(
+    String itemId, {
+    String? mediaType,
+    String? title,
+    String? because,
+  }) {
     final base = '/seerr/media/$itemId';
     final params = <String, String>{};
+    if (because != null && because.trim().isNotEmpty) {
+      params['because'] = because;
+    }
     if (mediaType != null && mediaType.trim().isNotEmpty) {
       params['mediaType'] = mediaType;
     }

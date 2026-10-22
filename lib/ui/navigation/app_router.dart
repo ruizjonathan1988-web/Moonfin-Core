@@ -679,6 +679,7 @@ final appRouter = GoRouter(
           key: ValueKey(ref.itemId),
           itemId: ref.itemId,
           seerrTitle: state.uri.queryParameters['title'],
+          seerrBecause: state.uri.queryParameters['because'],
         );
       },
     ),

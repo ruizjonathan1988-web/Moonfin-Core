@@ -4186,6 +4186,18 @@ class _ModernDetailContentState extends State<ModernDetailContent> {
     ];
   }
 
+  /// The line above the title: why this was suggested, or that it still has
+  /// to be requested.
+  String? _heroKicker(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final because = _vm.because;
+    if (because != null && because.trim().isNotEmpty) {
+      return l10n.seerrForYouBecause(because.trim());
+    }
+    if (_vm.isSeerrOnly) return l10n.tonightNotHereYet;
+    return null;
+  }
+
   Widget _buildHero(
     BuildContext context,
     AggregatedItem item,
@@ -4571,6 +4583,7 @@ class _ModernDetailContentState extends State<ModernDetailContent> {
       mainAxisSize: hasUpNext ? MainAxisSize.max : MainAxisSize.min,
       children: [
         if (!hideTitleAndLogo) ...[
+          if (_heroKicker(context) case final kicker?) _HeroKicker(kicker),
           if (showLogo && isSeason && _seriesLogoTag != null && _seriesLogoId != null) ...[
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -5847,4 +5860,41 @@ String getExtraCategoryLabel(String key, AppLocalizations l10n) {
     default:
       return l10n.extras;
   }
+}
+
+class _HeroKicker extends StatelessWidget {
+  final String text;
+  const _HeroKicker(this.text);
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 10),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 7,
+          height: 7,
+          decoration: BoxDecoration(
+            color: AppColorScheme.accent,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            text.toUpperCase(),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: AppColorScheme.onSurface.withValues(alpha: 0.8),
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.4,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 }

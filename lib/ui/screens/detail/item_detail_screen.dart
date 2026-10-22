@@ -273,6 +273,9 @@ class ItemDetailScreen extends StatefulWidget {
   /// Only used to resolve an IMDb-keyed Seerr id by searching for it.
   final String? seerrTitle;
 
+  /// The title that earned a suggestion its place, said above its name.
+  final String? seerrBecause;
+
   /// The season the viewer came from, when it is not this item's own season —
   /// see [ItemDetailViewModel.contextSeasonId].
   final String? contextSeasonId;
@@ -283,6 +286,7 @@ class ItemDetailScreen extends StatefulWidget {
     this.serverId,
     this.autoPlay = false,
     this.seerrTitle,
+    this.seerrBecause,
     this.contextSeasonId,
   });
 
@@ -340,6 +344,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
       tmdbRepository: GetIt.instance<TmdbRepository>(),
     );
     _viewModel.seerrOnlyTitle = widget.seerrTitle;
+    _viewModel.because = widget.seerrBecause;
     _viewModel.addListener(_onChanged);
     _sectionVisibility = DetailSectionVisibility.of(_prefs);
     _prefs.addListener(_onPrefsChanged);

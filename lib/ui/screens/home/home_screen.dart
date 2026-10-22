@@ -5886,6 +5886,7 @@ class _ContentRowsState extends State<_ContentRows>
         tmdbId != null && tmdbId.isNotEmpty ? tmdbId : item.id,
         mediaType: mediaType,
         title: item.name,
+        because: item.rawData[HomeViewModel.forYouReasonKey] as String?,
       ),
     );
   }
