@@ -35,7 +35,7 @@ jobs:
         if: always()
         run: |
           grep -E "unused_import|unused_element|unused_field|unused_local_variable|dead_code|unnecessary_non_null_assertion" analyze.txt \
-            | grep -E "lib/(data/services/(trakt|betaseries|wikidata|chart_cards|french_box_office|home_highlights|home_row_tidy|home_row_cache_store|seerr/(seed_recommendations|taste_extras|for_you_ranker|for_you_service))|preference/(trakt_preferences|home_section_config)|ui/screens/settings/trakt_account_tile|ui/screens/home/home_view_model|di/modules/app_module)" \
+            | grep -E "lib/(data/services/(trakt|betaseries|wikidata|chart_cards|french_box_office|home_highlights|home_row_tidy|home_row_cache_store|seerr/(seed_recommendations|taste_extras|for_you_ranker|for_you_service|abandoned|seerr_age_gate|upcoming_picks))|preference/(trakt_preferences|home_section_config)|ui/screens/settings/trakt_account_tile|ui/screens/home/home_view_model|di/modules/app_module)" \
             | while IFS= read -r line; do echo "::warning::$line"; done
           true
 
