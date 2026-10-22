@@ -319,10 +319,15 @@ class TonightService {
   // Suggestions
 
   /// Gathers what could be watched and ranks it for [answers].
+  ///
+  /// [libraryOnly] ranks only what the server can play now, for the home
+  /// banner. Its picks aren't remembered as shown: the Tonight sheet's
+  /// are what the engine learns from.
   Future<TonightView> load(
     TonightAnswers answers, {
     Set<String> exclude = const {},
     bool forceRefresh = false,
+    bool libraryOnly = false,
   }) async {
     final client = GetIt.instance<MediaServerClient>();
     final serverId = client.baseUrl;
@@ -456,8 +461,16 @@ class TonightService {
       blockAdult: blockAdult,
     );
 
-    var candidates = pool.values.map(_withKnownRuntime).toList();
+    var candidates = [
+      for (final candidate in pool.values)
+        if (!libraryOnly ||
+            candidate.availability == TonightAvailability.inLibrary)
+          _withKnownRuntime(candidate),
+    ];
     var result = TonightEngine.rank(input(candidates));
+    if (libraryOnly) {
+      return TonightView(result: result, answers: answers);
+    }
 
     // Seerr doesn't say how long a film runs until asked about it. Ask for
     // the ones in the running, then rank again with their real length.

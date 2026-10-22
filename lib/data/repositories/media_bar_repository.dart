@@ -534,7 +534,7 @@ class MediaBarRepository {
       final tonight = TonightService.instance;
       final answers = tonight.suggestAnswers();
       final view = await tonight
-          .load(answers)
+          .load(answers, libraryOnly: true)
           .timeout(const Duration(seconds: 20));
       final ids = <String>[];
       for (final pick in view.result.picks) {
