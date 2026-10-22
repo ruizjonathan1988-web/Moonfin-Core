@@ -36,11 +36,15 @@ class _AppearanceScreenState extends State<_AppearanceScreen> {
           builder: (context, _) => ListView(
             padding: EdgeInsets.only(bottom: bottomPad),
             children: [
+              _SectionHeader(l10n.ambianceTitle),
+              AmbianceSection(
+                prefs: GetIt.instance<UserPreferences>(),
+                autofocus: true,
+              ),
               _SectionHeader(l10n.navigation),
               adaptiveListSection(
                 children: [
                   _TvSettingsListTile(
-                    autofocus: true,
                     leading: const Icon(Icons.view_sidebar),
                     title: Text(l10n.navigationBar),
                     subtitle: Text(l10n.navbarStyleToolbarAppearance),

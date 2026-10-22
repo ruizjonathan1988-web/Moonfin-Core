@@ -33,6 +33,7 @@ import '../../../util/focus/gamepad/gamepad_navigation_scope.dart';
 import '../../../util/language_codes.dart';
 import '../../../util/locale_names.dart';
 import '../../util/home_row_title_localizer.dart';
+import 'ambiance.dart';
 import '../../../util/overlay_color_palette.dart';
 import '../../../util/game_cores.dart';
 import '../../../util/platform_detection.dart';
