@@ -37,6 +37,8 @@ class AppThemeController extends ChangeNotifier {
       VisualThemeId.neonPulse => ThemeRegistry.neonPulseId,
       VisualThemeId.glass => ThemeRegistry.glassId,
       VisualThemeId.eightbitHero => ThemeRegistry.eightbitHeroId,
+      VisualThemeId.vjod => ThemeRegistry.vjodId,
+      VisualThemeId.ecrin => ThemeRegistry.ecrinId,
     };
   }
 
@@ -46,6 +48,8 @@ class AppThemeController extends ChangeNotifier {
       ThemeRegistry.neonPulseId => VisualThemeId.neonPulse,
       ThemeRegistry.glassId => VisualThemeId.glass,
       ThemeRegistry.eightbitHeroId => VisualThemeId.eightbitHero,
+      ThemeRegistry.vjodId => VisualThemeId.vjod,
+      ThemeRegistry.ecrinId => VisualThemeId.ecrin,
       _ => null,
     };
   }
@@ -56,6 +60,7 @@ class AppThemeController extends ChangeNotifier {
       VisualThemeId.neonPulse => AppTheme.neonPulseMagenta,
       VisualThemeId.glass => AppTheme.white,
       VisualThemeId.eightbitHero => AppTheme.eightBitGold,
+      VisualThemeId.vjod || VisualThemeId.ecrin => AppTheme.white,
     };
   }
 
@@ -122,7 +127,7 @@ class AppThemeController extends ChangeNotifier {
       return;
     }
     if (!ThemeRegistry.availableThemes.containsKey(themeId)) {
-      await applyThemeSelection(prefs, VisualThemeId.moonfin);
+      await applyThemeSelection(prefs, VisualThemeId.vjod);
       return;
     }
     await applyCustomTheme(prefs, themeId);

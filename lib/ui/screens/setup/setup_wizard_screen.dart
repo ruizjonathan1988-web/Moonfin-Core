@@ -1488,6 +1488,8 @@ class _ThemeSwatch extends StatelessWidget {
       VisualThemeId.neonPulse => l10n.themeNeonPulse,
       VisualThemeId.glass => l10n.themeGlass,
       VisualThemeId.eightbitHero => l10n.theme8BitHero,
+      VisualThemeId.vjod => l10n.themeVjod,
+      VisualThemeId.ecrin => l10n.themeEcrin,
     };
     final spec = ThemeRegistry.resolveById(
       AppThemeController.builtInThemeIdFor(theme),

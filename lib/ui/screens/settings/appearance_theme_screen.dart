@@ -107,6 +107,8 @@ class _AppearanceThemeScreenState extends State<AppearanceThemeScreen> {
       ThemeRegistry.neonPulseId => l10n.themeNeonPulse,
       ThemeRegistry.glassId => l10n.themeGlass,
       ThemeRegistry.eightbitHeroId => l10n.theme8BitHero,
+      ThemeRegistry.vjodId => l10n.themeVjod,
+      ThemeRegistry.ecrinId => l10n.themeEcrin,
       _ => spec.displayName,
     };
   }
@@ -117,16 +119,20 @@ class _AppearanceThemeScreenState extends State<AppearanceThemeScreen> {
       ThemeRegistry.neonPulseId => l10n.themeNeonPulseSubtitle,
       ThemeRegistry.glassId => l10n.themeGlassSubtitle,
       ThemeRegistry.eightbitHeroId => l10n.theme8BitHeroSubtitle,
+      ThemeRegistry.vjodId => l10n.themeVjodSubtitle,
+      ThemeRegistry.ecrinId => l10n.themeEcrinSubtitle,
       _ => spec.description,
     };
   }
 
   static int _themeSortRank(String id) {
-    if (id == ThemeRegistry.moonfinId) return 0;
-    if (id == ThemeRegistry.neonPulseId) return 1;
-    if (id == ThemeRegistry.glassId) return 2;
-    if (id == ThemeRegistry.eightbitHeroId) return 3;
-    return 4;
+    if (id == ThemeRegistry.vjodId) return 0;
+    if (id == ThemeRegistry.ecrinId) return 1;
+    if (id == ThemeRegistry.moonfinId) return 2;
+    if (id == ThemeRegistry.neonPulseId) return 3;
+    if (id == ThemeRegistry.glassId) return 4;
+    if (id == ThemeRegistry.eightbitHeroId) return 5;
+    return 6;
   }
 }
 

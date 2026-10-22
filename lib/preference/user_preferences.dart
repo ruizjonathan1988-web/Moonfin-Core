@@ -1530,7 +1530,7 @@ class UserPreferences extends ChangeNotifier {
     key: 'app_theme_id',
     defaultValue: PlatformDetection.isApple || PlatformDetection.isAppleTV
         ? VisualThemeId.glass
-        : VisualThemeId.moonfin,
+        : VisualThemeId.vjod,
     values: VisualThemeId.values,
   );
 

@@ -334,6 +334,8 @@ enum VisualThemeId {
   neonPulse,
   glass,
   eightbitHero,
+  vjod,
+  ecrin,
 }
 
 /// Selectable structural style for the media detail screen.

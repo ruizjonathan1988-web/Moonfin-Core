@@ -697,6 +697,10 @@
   "@themeNeonPulseSubtitle": {
     "description": "Preview description for the Neon Pulse theme"
   },
+  "themeVjod": "VJOD",
+  "themeVjodSubtitle": "Near black, an ivory halo on what you select and soft status colours. The house look.",
+  "themeEcrin": "Écrin",
+  "themeEcrinSubtitle": "Calm and warm: graphite, rounded artwork, soft shadows.",
   "themeGlass": "Glass",
   "@themeGlass": {
     "description": "Display name for the Glass theme"

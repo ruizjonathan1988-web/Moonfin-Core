@@ -7334,6 +7334,10 @@
     "@empty": {
         "description": "Label indicating a section or category is empty"
     },
+    "themeVjod": "VJOD",
+    "themeVjodSubtitle": "Presque noir, un halo ivoire sur ce que vous sélectionnez et des statuts aux couleurs douces. Le look maison.",
+    "themeEcrin": "Écrin",
+    "themeEcrinSubtitle": "Calme et chaleureux : graphite, affiches arrondies, ombres douces.",
     "themeGlass": "Glass",
     "@themeGlass": {
         "description": "Display name for the Glass theme"
