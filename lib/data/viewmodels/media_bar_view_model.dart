@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:server_core/server_core.dart';
 
@@ -34,6 +36,7 @@ class MediaBarViewModel extends ChangeNotifier {
   late String _lastMode;
   late String _lastContentType;
   late String _lastItemCount;
+  late String _lastSource;
 
   List<MediaBarSlideItem> get items =>
       _state is MediaBarReady ? (_state as MediaBarReady).items : const [];
@@ -116,8 +119,30 @@ class MediaBarViewModel extends ChangeNotifier {
     );
     _lastContentType = _prefs.get(UserPreferences.mediaBarContentType);
     _lastItemCount = _prefs.get(UserPreferences.mediaBarItemCount);
+    _lastSource = _prefs.get(UserPreferences.mediaBarSourceType);
     _prefs.addListener(_onPrefsChanged);
     TonightService.instance.answersChanged.addListener(_onTonightChanged);
+  }
+
+  Timer? _tonightRetry;
+  int _tonightRetries = 0;
+
+  /// Tonight can take a while the first time, while it reads the play
+  /// history, and the usual draw stands in meanwhile. Asks again a little
+  /// later, twice at most, so the bar comes round to tonight's picks.
+  void _retryTonightIfMissed(List<MediaBarSlideItem> items) {
+    if (_prefs.get(UserPreferences.mediaBarSourceType) !=
+        UserPreferences.mediaBarSourceTonight) {
+      return;
+    }
+    if (items.any((item) => item.kicker != null)) {
+      _tonightRetries = 0;
+      return;
+    }
+    if (_tonightRetries >= 2) return;
+    _tonightRetries++;
+    _tonightRetry?.cancel();
+    _tonightRetry = Timer(const Duration(seconds: 30), () => load(force: true));
   }
 
   /// A new evening described: the Tonight slides change with it.
@@ -134,13 +159,17 @@ class MediaBarViewModel extends ChangeNotifier {
     );
     final contentType = _prefs.get(UserPreferences.mediaBarContentType);
     final itemCount = _prefs.get(UserPreferences.mediaBarItemCount);
+    final source = _prefs.get(UserPreferences.mediaBarSourceType);
 
     if (mode != _lastMode ||
         contentType != _lastContentType ||
-        itemCount != _lastItemCount) {
+        itemCount != _lastItemCount ||
+        source != _lastSource) {
       _lastMode = mode;
       _lastContentType = contentType;
       _lastItemCount = itemCount;
+      _lastSource = source;
+      _tonightRetries = 0;
       load(force: true);
     }
   }
@@ -148,6 +177,7 @@ class MediaBarViewModel extends ChangeNotifier {
   @override
   void dispose() {
     _prefs.removeListener(_onPrefsChanged);
+    _tonightRetry?.cancel();
     TonightService.instance.answersChanged.removeListener(_onTonightChanged);
     super.dispose();
   }
@@ -191,6 +221,7 @@ class MediaBarViewModel extends ChangeNotifier {
 
       if (_state is MediaBarReady) {
         _loadRatings((_state as MediaBarReady).items);
+        _retryTonightIfMissed((_state as MediaBarReady).items);
       }
     } finally {
       _isLoading = false;
