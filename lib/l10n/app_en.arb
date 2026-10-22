@@ -14018,6 +14018,7 @@
     }
   },
   "top10MoviesRow": "Top 10 Movies",
+  "top10Row": "Top 10 right now",
   "@top10MoviesRow": {
     "description": "Home row: the ten trending or best rated movies, ranked"
   },

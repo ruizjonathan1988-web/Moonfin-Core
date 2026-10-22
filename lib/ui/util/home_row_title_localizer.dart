@@ -84,7 +84,11 @@ String localizeHomeRowTitle({
     case 'seerr_for_you':
       return l10n.seerrForYouRow;
     case 'top10_movies':
-      return l10n.top10MoviesRow;
+      // With the Films/Series switch card first, the row holds either.
+      // The key is HomeViewModel.top10SwitchFlag.
+      final switches =
+          row.items.isNotEmpty && row.items.first.rawData['Top10Switch'] == true;
+      return switches ? l10n.top10Row : l10n.top10MoviesRow;
     case 'top10_series':
       return l10n.top10SeriesRow;
     case 'french_movies':

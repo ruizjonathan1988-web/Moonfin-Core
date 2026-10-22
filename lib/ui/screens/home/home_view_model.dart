@@ -3093,7 +3093,9 @@ class HomeViewModel extends ChangeNotifier {
       return [
         HomeRow(
           id: section == 'tv' ? top10SeriesRowId : top10MoviesRowId,
-          title: isTv ? l10n.top10SeriesRow : l10n.top10MoviesRow,
+          title: switches
+              ? l10n.top10Row
+              : (isTv ? l10n.top10SeriesRow : l10n.top10MoviesRow),
           rowType: HomeRowType.pluginDynamic,
           items: items,
           totalCount: items.length,
