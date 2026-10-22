@@ -995,7 +995,17 @@ class _ModernDetailContentState extends State<ModernDetailContent> {
     // A title that isn't in the library has no episodes to list, no chapters,
     // no extras and no file to describe, so the rest would all be empty.
     if (_vm.isSeerrOnly) {
-      return [if (hasCast) cast, ?seerrTab];
+      return [
+        // What can be watched tonight while this one downloads.
+        if (_vm.readyNow.isNotEmpty)
+          _ModernTab(
+            'readyNow',
+            l10n.readyNowTab,
+            (_, _) => _similarTab(context, _vm.readyNow),
+          ),
+        if (hasCast) cast,
+        ?seerrTab,
+      ];
     }
 
     final hasCrew = sections.shows(DetailSection.crew) &&

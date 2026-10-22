@@ -9753,6 +9753,12 @@
     "vjodBarPlay": "Lecture",
     "vjodBarAnother": "Autre idée",
     "vjodBarDetails": "Infos",
+    "notForMe": "Pas pour moi",
+    "readyNowTab": "Prêts tout de suite",
+    "requestSentTitle": "Demandé",
+    "requestSentBody": "Vous serez prévenu quand il est prêt.",
+    "requestSentBodyUndo": "Vous serez prévenu quand il est prêt. Touchez ici pour annuler.",
+    "requestUndone": "Demande annulée",
     "vjodBarEvening": "Ma soirée",
     "mediaBarSourceRandom": "Aléatoire",
     "@mediaBarSourceRandom": {

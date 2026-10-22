@@ -3,6 +3,9 @@ import 'dart:ui';
 
 import '../../theme/focus_foreground.dart';
 import '../../widgets/bounded_network_image.dart';
+import '../../widgets/floating_notification.dart';
+import '../../../data/services/seerr/taste_profile.dart';
+import '../../../data/services/seerr/for_you_ranker.dart' show forYouKey;
 import '../../widgets/offline_aware_image.dart';
 import '../../widgets/anime_marker_badge.dart';
 import '../../../data/repositories/anime_marker_repository.dart';
@@ -7096,6 +7099,13 @@ class DetailActionButtonsState extends State<DetailActionButtons> {
           isActive: _displayRatingLikes(item) != null,
           activeColor: Colors.amber,
         ),
+      if (shows(DetailButton.notForMe))
+        if (_notForMeTarget(viewModel, item, seerr) case final target?)
+          DetailButton.notForMe: _DetailActionButton(
+            label: l10n.notForMe,
+            icon: Icons.thumb_down_alt_outlined,
+            onPressed: () => _markNotForMe(context, target),
+          ),
       if (!isBook && shows(DetailButton.playlist))
         DetailButton.playlist: _DetailActionButton(
           label: l10n.addToPlaylist,
@@ -14209,20 +14219,117 @@ Widget? _seerrRequestButton(
     hasUnrequestedSeasons: hasUnrequestedSeasons,
   );
   if (action.kind != SeerrRequestActionKind.request) return null;
+  void openSheet() => showSeerrRequestDialog(
+    context: context,
+    vm: seerr,
+    is4k: is4k,
+    qualityToggle: qualityToggle,
+    isContinuing: isContinuing,
+  );
+  // A film has nothing to choose, so one press asks for it with the server's
+  // defaults. The sheet, with quality and advanced options, stays a long
+  // press away. A series still opens it, to pick its seasons.
+  final quick = !seerr.state.isTv && !is4k;
   return _DetailActionButton(
     label: action.label,
     icon: Icons.add,
     isPrimary: isPrimary,
     focusNode: focusNode,
     autofocus: autofocus,
-    onPressed: () => showSeerrRequestDialog(
-      context: context,
-      vm: seerr,
-      is4k: is4k,
-      qualityToggle: qualityToggle,
-      isContinuing: isContinuing,
-    ),
+    onPressed: quick ? () => _quickRequest(context, seerr) : openSheet,
+    onLongPress: quick ? openSheet : null,
   );
+}
+
+/// Asks for a film in one press, then says so with a way back.
+Future<void> _quickRequest(
+  BuildContext context,
+  SeerrMediaDetailViewModel seerr,
+) async {
+  final l10n = AppLocalizations.of(context);
+  await seerr.submitRequest();
+  if (!context.mounted || seerr.state.requestError != null) return;
+  // A remote can't reach the card, but the page's own primary button turns
+  // into Cancel Request, so the way back is still one press away there.
+  final touch = PlatformDetection.useMobileUi;
+  FloatingNotification.show(
+    context,
+    l10n.requestSentTitle,
+    touch ? l10n.requestSentBodyUndo : l10n.requestSentBody,
+    touch
+        ? () async {
+            final ids = [
+              for (final r in seerr.state.quality(is4k: false).cancelableRequests)
+                r.id,
+            ];
+            if (ids.isEmpty) return;
+            await seerr.cancelRequests(ids);
+            if (context.mounted) {
+              FloatingNotification.show(
+                context,
+                l10n.requestUndone,
+                '',
+                null,
+                icon: Icons.undo_rounded,
+              );
+            }
+          }
+        : null,
+    icon: Icons.check_circle_outline_rounded,
+  );
+}
+
+/// What Not for me is about: the title's type, TMDB id and genres.
+({String mediaType, int tmdbId, List<int> genreIds, String title})?
+_notForMeTarget(
+  ItemDetailViewModel viewModel,
+  AggregatedItem item,
+  SeerrMediaDetailViewModel? seerr,
+) {
+  if (viewModel.isSeerrOnly) {
+    final state = seerr?.state;
+    if (state == null || state.tmdbId == 0) return null;
+    return (
+      mediaType: state.isTv ? 'tv' : 'movie',
+      tmdbId: state.tmdbId,
+      genreIds: [for (final g in state.genres) g.id],
+      title: state.movie?.title ?? state.tv?.name ?? item.name,
+    );
+  }
+  if (item.type != 'Movie' && item.type != 'Series') return null;
+  final tmdbId = int.tryParse(item.tmdbId ?? '');
+  if (tmdbId == null) return null;
+  return (
+    mediaType: item.type == 'Series' ? 'tv' : 'movie',
+    tmdbId: tmdbId,
+    genreIds: const [],
+    title: item.name,
+  );
+}
+
+/// Keeps the title out of For You and Tonight, and its genres a little
+/// further back, the same as Not interested on a For You card. Then leaves
+/// the page, since there is nothing more to do with it.
+Future<void> _markNotForMe(
+  BuildContext context,
+  ({String mediaType, int tmdbId, List<int> genreIds, String title}) target,
+) async {
+  final l10n = AppLocalizations.of(context);
+  final prefs = GetIt.instance<SeerrPreferences>();
+  final feedback = TasteFeedback.decode(prefs.tasteFeedbackJson).notInterested(
+    forYouKey(target.mediaType, target.tmdbId),
+    TasteGenre.of(target.genreIds, target.mediaType),
+  );
+  await prefs.setTasteFeedbackJson(feedback.encode());
+  if (!context.mounted) return;
+  FloatingNotification.show(
+    context,
+    l10n.notInterestedDone,
+    l10n.notInterestedDoneBody(target.title),
+    null,
+    icon: Icons.thumb_down_alt_outlined,
+  );
+  if (context.canPop()) context.pop();
 }
 
 /// Takes this track's open request back. Rides in the same arrangement slot

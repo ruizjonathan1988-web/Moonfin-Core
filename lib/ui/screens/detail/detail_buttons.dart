@@ -30,6 +30,7 @@ enum DetailButton {
   watched('watched'),
   favorite('favorite'),
   personalRating('personalRating'),
+  notForMe('notForMe'),
   playlist('playlist'),
   download('download'),
   deleteFiles('deleteFiles'),
@@ -55,6 +56,7 @@ enum DetailButton {
     DetailButton.seerrWatchlist ||
     DetailButton.seerrReportIssue ||
     DetailButton.seerrManage ||
+    DetailButton.notForMe ||
     DetailButton.trailer => true,
     _ => false,
   };
@@ -73,6 +75,7 @@ enum DetailButton {
       DetailButton.seerrRequest4k ||
       DetailButton.seerrWatchlist ||
       DetailButton.seerrReportIssue ||
+      DetailButton.notForMe ||
       DetailButton.seerrManage =>
         GetIt.instance<PluginSyncService>().seerrAvailable,
       DetailButton.watchWithGroup => _syncPlayAvailable,
@@ -134,6 +137,7 @@ enum DetailButton {
     DetailButton.watched => Icons.check_circle_outline,
     DetailButton.favorite => Icons.favorite_border,
     DetailButton.personalRating => Icons.star_outline,
+    DetailButton.notForMe => Icons.thumb_down_alt_outlined,
     DetailButton.playlist => Icons.playlist_add,
     DetailButton.download => Icons.download_for_offline,
     DetailButton.deleteFiles => Icons.delete_outline,
@@ -157,6 +161,7 @@ enum DetailButton {
     DetailButton.watched => l10n.watched,
     DetailButton.favorite => l10n.favorite,
     DetailButton.personalRating => l10n.rate,
+    DetailButton.notForMe => l10n.notForMe,
     DetailButton.playlist => l10n.addToPlaylist,
     DetailButton.download => l10n.download,
     DetailButton.deleteFiles => l10n.deleteDownloadedFiles,

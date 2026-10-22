@@ -6414,6 +6414,12 @@
   "vjodBarPlay": "Play",
   "vjodBarAnother": "Another idea",
   "vjodBarDetails": "Details",
+  "notForMe": "Not for me",
+  "readyNowTab": "Ready right now",
+  "requestSentTitle": "Requested",
+  "requestSentBody": "You will be told when it is ready.",
+  "requestSentBodyUndo": "You will be told when it is ready. Tap here to undo.",
+  "requestUndone": "Request cancelled",
   "vjodBarEvening": "My evening",
   "mediaBarSourceRandom": "Random",
   "@mediaBarSourceRandom": {

@@ -266,6 +266,11 @@ class ItemDetailViewModel extends ChangeNotifier {
   }
 
   List<AggregatedItem> _similar = const [];
+
+  /// For a title still to request: films or series of the same genres that
+  /// are in the library and not seen yet, to watch while it downloads.
+  List<AggregatedItem> _readyNow = const [];
+  List<AggregatedItem> get readyNow => _readyNow;
   List<AggregatedItem> get similar => _similar;
   bool _similarInitialLoadComplete = false;
   bool get similarInitialLoadComplete => _similarInitialLoadComplete;
@@ -595,6 +600,28 @@ class ItemDetailViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> _loadReadyNow(SeerrMediaDetailState state) async {
+    final genres = [
+      for (final g in state.genres)
+        if (g.name.trim().isNotEmpty) g.name.trim(),
+    ].take(2).toList();
+    if (genres.isEmpty) return;
+    try {
+      final data = await _client.itemsApi.getItems(
+        includeItemTypes: [state.isTv ? 'Series' : 'Movie'],
+        genres: genres,
+        filters: const ['IsUnplayed'],
+        sortBy: 'Random',
+        recursive: true,
+        limit: 12,
+        fields: 'PrimaryImageAspectRatio,BasicSyncInfo,ProductionYear',
+      );
+      if (_isDisposed) return;
+      _readyNow = _mapItems((data['Items'] as List?) ?? const []);
+      notifyListeners();
+    } catch (_) {}
+  }
+
   Future<String?> _libraryIdFromServer(SeerrMediaDetailState state) async {
     final tmdbId = state.tmdbId;
     if (tmdbId == 0) return null;
@@ -765,6 +792,7 @@ class ItemDetailViewModel extends ChangeNotifier {
     _seasonsLoaded = true;
     _state = ItemDetailState.ready;
     notifyListeners();
+    unawaited(_loadReadyNow(state));
 
     // Everything else in _loadSecondary needs a library id, but ratings are
     // keyed by TMDB id, which this does have.
