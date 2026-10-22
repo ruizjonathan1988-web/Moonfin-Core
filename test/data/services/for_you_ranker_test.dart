@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:moonfin/data/models/aggregated_item.dart';
+import 'package:moonfin/data/services/seerr/abandoned.dart';
 import 'package:moonfin/data/services/seerr/for_you_ranker.dart';
 import 'package:moonfin/data/services/seerr/for_you_service.dart';
 import 'package:moonfin/data/services/seerr/seerr_api_models.dart';
@@ -348,10 +349,10 @@ void main() {
         return SeerrDiscoverPage(results: [_item(700), _item(701)]);
       }
 
-      Future<({List<AggregatedItem> recent, List<AggregatedItem> favorites})>
-      history() async => (
+      Future<TasteHistory> history() async => (
         recent: [libraryItem('Movie', '603', 'The Matrix')],
         favorites: const <AggregatedItem>[],
+        abandoned: const <AggregatedItem>[],
       );
 
       final first = await ForYouService.instance.load(
@@ -394,10 +395,47 @@ void main() {
             libraryItem('Movie', '2', 'Here'),
           ],
           favorites: const <AggregatedItem>[],
+          abandoned: const <AggregatedItem>[],
         ),
         fetchRecommendations: fetch,
       );
       expect(_ids(picks), [900]);
+    });
+
+    test('what goes with an abandoned title ranks lower', () async {
+      Future<SeerrDiscoverPage> fetch(TasteSeed seed) async =>
+          SeerrDiscoverPage(
+            results: seed.tmdbId == 603
+                ? [_item(700), _item(701)]
+                // The dropped film: TMDB lists 700 first next to it.
+                : [_item(700)],
+          );
+
+      final picks = await ForYouService.instance.load(
+        serverId: 's4',
+        loadHistory: () async => (
+          recent: [libraryItem('Movie', '603', 'The Matrix')],
+          favorites: const <AggregatedItem>[],
+          abandoned: [libraryItem('Movie', '42', 'Dropped')],
+        ),
+        fetchRecommendations: fetch,
+      );
+      expect(_ids(picks), [701, 700]);
+    });
+
+    test('an abandoned title seeds nothing and stays out', () async {
+      final raw = await ForYouService.instance.loadRaw(
+        serverId: 's5',
+        loadHistory: () async => (
+          recent: [libraryItem('Movie', '603', 'The Matrix')],
+          favorites: [libraryItem('Series', '42', 'Dropped')],
+          abandoned: [libraryItem('Series', '42', 'Dropped')],
+        ),
+        fetchRecommendations: (_) async =>
+            SeerrDiscoverPage(results: [_item(700)]),
+      );
+      expect(raw.exclude, contains('tv:42'));
+      expect(raw.seeds.map((s) => s.key), ['movie:603']);
     });
 
     test('the For You and Because rows share one round of calls', () async {
@@ -409,10 +447,10 @@ void main() {
         );
       }
 
-      Future<({List<AggregatedItem> recent, List<AggregatedItem> favorites})>
-      history() async => (
+      Future<TasteHistory> history() async => (
         recent: [libraryItem('Movie', '603', 'The Matrix')],
         favorites: const <AggregatedItem>[],
+        abandoned: const <AggregatedItem>[],
       );
 
       final results = await Future.wait([
@@ -484,6 +522,100 @@ void main() {
         loadExtras: extras,
       );
       expect(rows, isEmpty);
+    });
+  });
+
+  group('Abandoned', () {
+    String daysAgo(int days) =>
+        _now.subtract(Duration(days: days)).toIso8601String();
+
+    test('a film stopped early and left two weeks is abandoned', () {
+      expect(
+        Abandoned.movie({
+          'PlayedPercentage': 12,
+          'LastPlayedDate': daysAgo(20),
+        }, _now),
+        isTrue,
+      );
+    });
+
+    test('a film paused a few days ago is not', () {
+      expect(
+        Abandoned.movie({
+          'PlayedPercentage': 12,
+          'LastPlayedDate': daysAgo(3),
+        }, _now),
+        isFalse,
+      );
+    });
+
+    test('a film stopped near its end or kept as favourite is not', () {
+      expect(
+        Abandoned.movie({
+          'PlayedPercentage': 85,
+          'LastPlayedDate': daysAgo(40),
+        }, _now),
+        isFalse,
+      );
+      expect(
+        Abandoned.movie({
+          'PlayedPercentage': 10,
+          'LastPlayedDate': daysAgo(40),
+          'IsFavorite': true,
+        }, _now),
+        isFalse,
+      );
+    });
+
+    test('a series dropped after its first episodes is abandoned', () {
+      final data = {'PlayedPercentage': 10, 'UnplayedItemCount': 18};
+      expect(
+        Abandoned.series(
+          data,
+          _now,
+          lastEpisode: _now.subtract(const Duration(days: 30)),
+        ),
+        isTrue,
+      );
+      expect(
+        Abandoned.series(
+          data,
+          _now,
+          lastEpisode: _now.subtract(const Duration(days: 5)),
+        ),
+        isFalse,
+      );
+    });
+
+    test('a series well under way or nearly done is not', () {
+      expect(
+        Abandoned.series({
+          'PlayedPercentage': 60,
+          'UnplayedItemCount': 8,
+        }, _now),
+        isFalse,
+      );
+      expect(
+        Abandoned.series({
+          'PlayedPercentage': 20,
+          'UnplayedItemCount': 2,
+        }, _now),
+        isFalse,
+      );
+      expect(
+        Abandoned.series({'PlayedPercentage': 0, 'UnplayedItemCount': 10}, _now),
+        isFalse,
+      );
+    });
+
+    test('penalties hit top neighbours hardest and add up', () {
+      final factors = Abandoned.penalties([
+        [('movie:1', 0), ('movie:2', 3)],
+        [('movie:1', 0)],
+      ]);
+      expect(factors['movie:1'], closeTo(0.36, 0.001));
+      expect(factors['movie:2'], closeTo(0.8, 0.001));
+      expect(factors.containsKey('movie:3'), isFalse);
     });
   });
 }

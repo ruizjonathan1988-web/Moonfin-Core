@@ -377,6 +377,7 @@ class TonightService {
         return (
           recent: const <AggregatedItem>[],
           favorites: const <AggregatedItem>[],
+          abandoned: const <AggregatedItem>[],
         );
       }
     }
@@ -393,12 +394,11 @@ class TonightService {
             as ({
               List<TasteSeed> seeds,
               Map<String, List<SeerrDiscoverItem>> recommendations,
-              Set<String> requested,
+              Set<String> exclude,
             })?;
     final discovered = results[2] as List<TonightCandidate>;
     final history =
-        results[3]
-            as ({List<AggregatedItem> recent, List<AggregatedItem> favorites});
+        results[3] as TasteHistory;
 
     // Library first, so its copy of a title wins the merge.
     final pool = <String, TonightCandidate>{};
@@ -445,7 +445,7 @@ class TonightService {
       seeds: raw?.seeds ?? const [],
       recommendations: raw?.recommendations ?? const {},
       rejections: rejections,
-      exclude: {...exclude, ...?raw?.requested},
+      exclude: {...exclude, ...?raw?.exclude},
       watched: watched,
       weights: weights,
       blockAdult: blockAdult,
@@ -597,7 +597,7 @@ class TonightService {
     ({
       List<TasteSeed> seeds,
       Map<String, List<SeerrDiscoverItem>> recommendations,
-      Set<String> requested,
+      Set<String> exclude,
     })
   >
   _forYouRaw(

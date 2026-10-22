@@ -1,8 +1,17 @@
 import 'package:flutter/foundation.dart';
 
 import '../../models/aggregated_item.dart';
+import 'abandoned.dart';
 import 'for_you_ranker.dart';
 import 'seerr_api_models.dart';
+
+/// What the library says about the viewer: what they watched, newest
+/// first, what they marked as favourite, and what they gave up on.
+typedef TasteHistory = ({
+  List<AggregatedItem> recent,
+  List<AggregatedItem> favorites,
+  List<AggregatedItem> abandoned,
+});
 
 /// Builds the For You row: the viewer's history goes in, titles to request
 /// come out.
@@ -55,8 +64,7 @@ class ForYouService {
 
   Future<List<ForYouPick>> load({
     required String serverId,
-    required Future<({List<AggregatedItem> recent, List<AggregatedItem> favorites})>
-    Function()
+    required Future<TasteHistory> Function()
     loadHistory,
     required Future<SeerrDiscoverPage> Function(TasteSeed seed)
     fetchRecommendations,
@@ -78,10 +86,10 @@ class ForYouService {
     return ForYouRanker.rank(
       seeds: snapshot.seeds,
       recommendationsBySeed: snapshot.recommendations,
-      excludeKeys: {..._requested, ...hidden},
+      excludeKeys: {..._requested, ...hidden, ...snapshot.abandoned},
       blockAdult: blockAdult,
       limit: limit,
-      weigh: weigh,
+      weigh: snapshot.weigh(weigh),
     );
   }
 
@@ -89,8 +97,7 @@ class ForYouService {
   /// as [load], without asking Seerr again.
   Future<List<BecauseRow>> loadBecauseRows({
     required String serverId,
-    required Future<({List<AggregatedItem> recent, List<AggregatedItem> favorites})>
-    Function()
+    required Future<TasteHistory> Function()
     loadHistory,
     required Future<SeerrDiscoverPage> Function(TasteSeed seed)
     fetchRecommendations,
@@ -109,7 +116,8 @@ class ForYouService {
       forceRefresh: forceRefresh,
     );
     if (snapshot.seeds.isEmpty) return const [];
-    final exclude = {..._requested, ...hidden};
+    final exclude = {..._requested, ...hidden, ...snapshot.abandoned};
+    final weighed = snapshot.weigh(weigh);
     // What leads the For You row stays there, so the same poster doesn't
     // show twice on one screen.
     final forYouLead = ForYouRanker.rank(
@@ -118,7 +126,7 @@ class ForYouService {
       excludeKeys: exclude,
       blockAdult: blockAdult,
       limit: forYouLeadCount,
-      weigh: weigh,
+      weigh: weighed,
     );
     return ForYouRanker.becauseRows(
       seeds: snapshot.seeds,
@@ -126,7 +134,7 @@ class ForYouService {
       excludeKeys: {...exclude, for (final pick in forYouLead) pick.key},
       blockAdult: blockAdult,
       rows: rows,
-      weigh: weigh,
+      weigh: weighed,
     );
   }
 
@@ -134,8 +142,7 @@ class ForYouService {
   /// lead and the Because rows already show.
   Future<List<ForYouPick>> loadGems({
     required String serverId,
-    required Future<({List<AggregatedItem> recent, List<AggregatedItem> favorites})>
-    Function()
+    required Future<TasteHistory> Function()
     loadHistory,
     required Future<SeerrDiscoverPage> Function(TasteSeed seed)
     fetchRecommendations,
@@ -153,14 +160,15 @@ class ForYouService {
       forceRefresh: forceRefresh,
     );
     if (snapshot.seeds.isEmpty) return const [];
-    final exclude = {..._requested, ...hidden};
+    final exclude = {..._requested, ...hidden, ...snapshot.abandoned};
+    final weighed = snapshot.weigh(weigh);
     final forYouLead = ForYouRanker.rank(
       seeds: snapshot.seeds,
       recommendationsBySeed: snapshot.recommendations,
       excludeKeys: exclude,
       blockAdult: blockAdult,
       limit: forYouLeadCount,
-      weigh: weigh,
+      weigh: weighed,
     );
     final leadKeys = {for (final pick in forYouLead) pick.key};
     final because = ForYouRanker.becauseRows(
@@ -168,7 +176,7 @@ class ForYouService {
       recommendationsBySeed: snapshot.recommendations,
       excludeKeys: {...exclude, ...leadKeys},
       blockAdult: blockAdult,
-      weigh: weigh,
+      weigh: weighed,
     );
     return ForYouRanker.gems(
       seeds: snapshot.seeds,
@@ -180,23 +188,23 @@ class ForYouService {
           for (final item in row.items) item.key,
       },
       blockAdult: blockAdult,
-      weigh: weigh,
+      weigh: weighed,
     );
   }
 
   /// The seeds and what TMDB recommends next to each, as the rows see them,
-  /// for anything that ranks on its own terms (Tonight).
+  /// for anything that ranks on its own terms (Tonight), with the titles to
+  /// keep out: requested this session or given up on.
   Future<
     ({
       List<TasteSeed> seeds,
       Map<String, List<SeerrDiscoverItem>> recommendations,
-      Set<String> requested,
+      Set<String> exclude,
     })
   >
   loadRaw({
     required String serverId,
-    required Future<({List<AggregatedItem> recent, List<AggregatedItem> favorites})>
-    Function()
+    required Future<TasteHistory> Function()
     loadHistory,
     required Future<SeerrDiscoverPage> Function(TasteSeed seed)
     fetchRecommendations,
@@ -213,7 +221,7 @@ class ForYouService {
     return (
       seeds: snapshot.seeds,
       recommendations: snapshot.recommendations,
-      requested: {..._requested},
+      exclude: {..._requested, ...snapshot.abandoned},
     );
   }
 
@@ -223,8 +231,7 @@ class ForYouService {
 
   Future<_Snapshot> _snapshot({
     required String serverId,
-    required Future<({List<AggregatedItem> recent, List<AggregatedItem> favorites})>
-    Function()
+    required Future<TasteHistory> Function()
     loadHistory,
     required Future<SeerrDiscoverPage> Function(TasteSeed seed)
     fetchRecommendations,
@@ -252,8 +259,7 @@ class ForYouService {
   }
 
   Future<_Snapshot> _gather(
-    Future<({List<AggregatedItem> recent, List<AggregatedItem> favorites})>
-    Function()
+    Future<TasteHistory> Function()
     loadHistory,
     Future<SeerrDiscoverPage> Function(TasteSeed seed) fetchRecommendations,
     Future<TasteExtras> Function()? loadExtras,
@@ -267,15 +273,19 @@ class ForYouService {
           return TasteExtras.none;
         }),
     ]);
-    final history =
-        results[0]
-            as ({List<AggregatedItem> recent, List<AggregatedItem> favorites});
+    final history = results[0] as TasteHistory;
     final extras = results.length > 1
         ? results[1] as TasteExtras
         : TasteExtras.none;
+    final abandoned = signalsFrom(history.abandoned);
+    final dropped = {for (final signal in abandoned) signal.key};
+    List<TasteSignal> kept(List<AggregatedItem> items) => [
+      for (final signal in signalsFrom(items))
+        if (!dropped.contains(signal.key)) signal,
+    ];
     final seeds = ForYouRanker.buildSeeds(
-      recent: signalsFrom(history.recent),
-      favorites: signalsFrom(history.favorites),
+      recent: kept(history.recent),
+      favorites: kept(history.favorites),
       picked: extras.picked,
       watchlist: extras.watchlist,
       requested: extras.requested,
@@ -307,7 +317,39 @@ class ForYouService {
       at: DateTime.now(),
       seeds: withTrakt,
       recommendations: recommendations,
+      abandoned: dropped,
+      penalties: await _penalties(abandoned, fetchRecommendations),
     );
+  }
+
+  /// What TMDB lists next to the titles the viewer gave up on, as a factor
+  /// on each candidate's score.
+  static Future<Map<String, double>> _penalties(
+    List<TasteSignal> abandoned,
+    Future<SeerrDiscoverPage> Function(TasteSeed seed) fetchRecommendations,
+  ) async {
+    final lists = await Future.wait(
+      abandoned.take(Abandoned.maxLookups).map((signal) async {
+        try {
+          final page = await fetchRecommendations(
+            TasteSeed(
+              tmdbId: signal.tmdbId,
+              mediaType: signal.mediaType,
+              title: signal.title,
+              weight: 0,
+            ),
+          );
+          return [
+            for (final (position, item) in page.results.indexed)
+              (forYouKey(item.mediaType ?? signal.mediaType, item.id), position),
+          ];
+        } catch (e) {
+          debugPrint('[ForYou] No recommendations for ${signal.title}: $e');
+          return const <(String, int)>[];
+        }
+      }),
+    );
+    return Abandoned.penalties(lists);
   }
 
   /// Library items that carry a TMDB id, as signals Seerr can look up.
@@ -344,11 +386,27 @@ class _Snapshot {
   final List<TasteSeed> seeds;
   final Map<String, List<SeerrDiscoverItem>> recommendations;
 
+  /// The titles the viewer gave up on, as [forYouKey] keys.
+  final Set<String> abandoned;
+
+  /// A factor below 1 for titles that go with what the viewer gave up on.
+  final Map<String, double> penalties;
+
   const _Snapshot({
     required this.at,
     required this.seeds,
     required this.recommendations,
+    this.abandoned = const {},
+    this.penalties = const {},
   });
+
+  /// [weigh] with the penalties on top.
+  TasteWeigher? weigh(TasteWeigher? weigh) {
+    if (penalties.isEmpty) return weigh;
+    return (item, mediaType) =>
+        (weigh?.call(item, mediaType) ?? 1.0) *
+        (penalties[forYouKey(mediaType, item.id)] ?? 1.0);
+  }
 }
 
 /// Interest the library's history doesn't hold: titles picked in the taste

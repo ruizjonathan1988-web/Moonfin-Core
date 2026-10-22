@@ -30,6 +30,8 @@ import '../viewmodels/live_tv_guide_view_model.dart';
 import 'custom_external_lists_service.dart';
 import 'plugin_sync_service.dart';
 import 'home_highlights.dart';
+import 'seerr/abandoned.dart';
+import 'seerr/for_you_service.dart' show TasteHistory;
 
 class RowDataSource {
   final MediaServerClient _client;
@@ -2639,8 +2641,9 @@ class RowDataSource {
   /// as movies and series carrying their provider ids. The For You row asks
   /// Seerr what goes with each of them. Watched episodes stand for their
   /// series.
-  Future<({List<AggregatedItem> recent, List<AggregatedItem> favorites})>
-  loadTasteHistory(String serverId) async {
+  ///
+  /// Also returns what the viewer abandoned, as [Abandoned] judges it.
+  Future<TasteHistory> loadTasteHistory(String serverId) async {
     const seedFields = '$_fields,ProviderIds';
     const recentTypes = ['Movie', 'Episode'];
     const favoriteTypes = ['Movie', 'Series'];
@@ -2668,6 +2671,7 @@ class RowDataSource {
 
     // Keep the play order while swapping each episode for its series.
     final order = <String>[];
+    final lastEpisode = <String, DateTime>{};
     final movies = <String, AggregatedItem>{};
     final seriesIds = <String>[];
     for (final item in played) {
@@ -2678,6 +2682,11 @@ class RowDataSource {
       } else if (item.type == 'Episode') {
         final seriesId = item.rawData['SeriesId']?.toString();
         if (seriesId == null || seriesId.isEmpty) continue;
+        final played = DateTime.tryParse(_lastPlayedOf(item));
+        if (played != null &&
+            (lastEpisode[seriesId]?.isBefore(played) ?? true)) {
+          lastEpisode[seriesId] = played;
+        }
         if (seriesIds.contains(seriesId)) continue;
         seriesIds.add(seriesId);
         order.add(seriesId);
@@ -2724,7 +2733,74 @@ class RowDataSource {
       debugPrint('[RowDataSource] For You favourites failed: $e');
     }
 
-    return (recent: recent, favorites: favorites);
+    final abandoned = await _loadAbandoned(serverId, seedFields, lastEpisode);
+    final dropped = {for (final item in abandoned) item.id};
+    return (
+      recent: [
+        for (final item in recent)
+          if (!dropped.contains(item.id)) item,
+      ],
+      favorites: favorites,
+      abandoned: abandoned,
+    );
+  }
+
+  /// Films stopped early and series dropped after a few episodes, most
+  /// recently touched first.
+  Future<List<AggregatedItem>> _loadAbandoned(
+    String serverId,
+    String fields,
+    Map<String, DateTime> lastEpisode,
+  ) async {
+    Future<List<AggregatedItem>> started(
+      List<String> types, {
+      List<String>? filters,
+      String extraFields = '',
+    }) async {
+      try {
+        return await _searchVisibleLibraryItems(
+          serverId,
+          types,
+          (parentId) => _getItemsWithFallback(
+            parentId: parentId,
+            includeItemTypes: types,
+            filters: filters,
+            sortBy: 'DatePlayed',
+            sortOrder: 'Descending',
+            recursive: true,
+            limit: 40,
+            fields: '$fields$extraFields',
+          ),
+          merge: _byLastPlayed,
+        );
+      } catch (e) {
+        debugPrint('[RowDataSource] Abandoned $types failed: $e');
+        return const [];
+      }
+    }
+
+    final (movies, series) = await (
+      started(const ['Movie'], filters: const ['IsResumable']),
+      // Jellyfin only works out a series' played share when asked to
+      // count its episodes.
+      started(const ['Series'], extraFields: ',RecursiveItemCount'),
+    ).wait;
+    final now = DateTime.now();
+    Map<String, dynamic>? userData(AggregatedItem item) =>
+        item.rawData['UserData'] is Map<String, dynamic>
+        ? item.rawData['UserData'] as Map<String, dynamic>
+        : null;
+    return [
+      for (final movie in movies)
+        if (Abandoned.movie(userData(movie), now)) movie,
+      for (final show in series)
+        if (Abandoned.series(
+          userData(show),
+          now,
+          lastEpisode: lastEpisode[show.id],
+        ))
+          show,
+    ];
   }
 
   /// What the library offers for Tonight: movies and series nobody
