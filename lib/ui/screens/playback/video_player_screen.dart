@@ -5733,6 +5733,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                   _seekRelative(-_prefs.get(UserPreferences.skipBackLength)),
               size: buttonIconSize,
               extent: buttonExtent,
+              fill: _vjodOsd ? const Color(0x1FEDEBE6) : null,
               tooltip: _tooltipMessage(
                 l10n.playerTooltipSeekBack,
                 shortcut: 'Left',
@@ -5750,7 +5751,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                       ? _manager.pause()
                       : _resumeWithConfiguredRewind(),
                   size: buttonIconSize,
-                  extent: buttonExtent,
+                  extent: _vjodOsd ? buttonExtent * 1.2 : buttonExtent,
+                  fill: _vjodOsd ? const Color(0xFFEDEBE6) : null,
+                  iconColor: _vjodOsd ? const Color(0xFF0B0B0D) : Colors.white,
                   focusNode: _primaryPlayFocus,
                   tooltip: _tooltipMessage(
                     isPlaying ? l10n.pause : l10n.play,
@@ -5766,6 +5769,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                   _seekRelative(_prefs.get(UserPreferences.skipForwardLength)),
               size: buttonIconSize,
               extent: buttonExtent,
+              fill: _vjodOsd ? const Color(0x1FEDEBE6) : null,
               tooltip: _tooltipMessage(
                 l10n.playerTooltipSeekForward,
                 shortcut: 'Right',
@@ -7036,8 +7040,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
               isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
               onPressed: () =>
                   isPlaying ? _manager.pause() : _resumeWithConfiguredRewind(),
-              size: 64 * scale,
+              size: (_vjodOsd ? 44 : 64) * scale,
               extent: 92 * scale,
+              fill: _vjodOsd ? const Color(0xFFEDEBE6) : null,
+              iconColor: _vjodOsd ? const Color(0xFF0B0B0D) : Colors.white,
               focusNode: _primaryPlayFocus,
               tooltip: _tooltipMessage(
                 isPlaying ? l10n.pause : l10n.play,
@@ -7090,7 +7096,18 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     FocusNode? focusNode,
     Color iconColor = Colors.white,
     VoidCallback? onRightBoundary,
+    Color? fill,
   }) {
+    // VJOD sets its transport on discs: ivory for play, faint for the rest.
+    final Widget glyph = fill == null
+        ? AdaptiveIcon(icon, color: iconColor, size: size)
+        : Container(
+            width: extent * 0.86,
+            height: extent * 0.86,
+            decoration: BoxDecoration(color: fill, shape: BoxShape.circle),
+            alignment: Alignment.center,
+            child: AdaptiveIcon(icon, color: iconColor, size: size),
+          );
     if (PlatformDetection.isTV) {
       return _TvFocusButton(
         focusNode: focusNode,
@@ -7098,7 +7115,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
         tooltip: tooltip,
         onPressed: () => _handleControlButtonPress(onPressed),
         onRightBoundary: onRightBoundary,
-        child: AdaptiveIcon(icon, color: iconColor, size: size),
+        child: glyph,
       );
     }
     return SizedBox(
@@ -7108,7 +7125,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
         focusNode: focusNode,
         onPressed: () => _handleControlButtonPress(onPressed),
         tooltip: PlatformDetection.useDesktopUi ? tooltip : null,
-        icon: AdaptiveIcon(icon, color: iconColor, size: size),
+        icon: glyph,
         padding: EdgeInsets.zero,
         constraints: const BoxConstraints(),
       ),
