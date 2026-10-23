@@ -78,6 +78,7 @@ import '../../widgets/adaptive/sf_symbol.dart';
 import '../../screensaver/screensaver_controller.dart';
 import '../../widgets/remote_play_to_session_dialog.dart';
 import '../../widgets/track_selector_dialog.dart';
+import '../../widgets/focusable_dialog_row.dart';
 import '../../widgets/playback/player_loading_overlay.dart';
 import '../../widgets/playback/loading_animation_widget.dart';
 import '../../widgets/playback/chapter_marker_track.dart';
@@ -286,6 +287,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   bool _controlsVisible = true;
   Timer? _hideTimer;
   bool _displayPlaying = false;
+
+  /// VJOD shows its three text buttons; Plus reveals the usual icons too.
+  bool _vjodOsdMore = false;
+
+  static bool get _vjodOsd =>
+      ThemeRegistry.active.id == ThemeRegistry.vjodId ||
+      ThemeRegistry.active.id == ThemeRegistry.ecrinId;
   Timer? _displayPlayingDebounce;
   Timer? _endsAtTicker;
   bool _isSeeking = false;
@@ -4853,6 +4861,44 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     ].where((s) => s.isNotEmpty).join(' - ');
     final logoUrl = _logoUrlForQueueItem(item);
 
+    if (_vjodOsd) {
+      final l10n = AppLocalizations.of(context);
+      final season = item is AggregatedItem ? item.parentIndexNumber : null;
+      final episode = item is AggregatedItem ? item.indexNumber : null;
+      final line = [
+        if (season != null) l10n.vjodSeason(season),
+        if (episode != null) l10n.vjodEpisodeShort(episode),
+        if (seriesName != null) title,
+      ].join(' \u00b7 ');
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            (seriesName ?? title).toUpperCase(),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontFamily: 'Anton',
+              fontSize: 30,
+              height: 1.05,
+              color: Colors.white,
+            ),
+          ),
+          if (line.isNotEmpty)
+            Text(
+              line,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.8),
+                fontSize: 18,
+              ),
+            ),
+        ],
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -6034,14 +6080,40 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
             ),
         };
 
-        final secondaryButtons = _wireTvSecondaryEnds([
+        final iconButtons = [
           for (final button in osdButtonLayout.ordered(
             OsdButton.values,
             (button) => button.id,
             _prefs,
           ))
             ?byButton[button],
-        ]);
+        ];
+        final secondaryButtons = _wireTvSecondaryEnds(
+          _vjodOsd
+              ? [
+                  _vjodPill(
+                    l10n.vjodAudioAndSubtitles,
+                    secondaryExtent,
+                    _showVjodTrackChooser,
+                  ),
+                  if (canBrowse)
+                    _vjodPill(l10n.episodes, secondaryExtent, _showEpisodes),
+                  if (_queue.hasNext)
+                    _vjodPill(
+                      l10n.vjodNextEpisode,
+                      secondaryExtent,
+                      _manager.next,
+                      icon: Icons.skip_next_rounded,
+                    ),
+                  _vjodPill(
+                    _vjodOsdMore ? l10n.vjodLess : l10n.vjodMore,
+                    secondaryExtent,
+                    () => setState(() => _vjodOsdMore = !_vjodOsdMore),
+                  ),
+                  if (_vjodOsdMore) ...iconButtons,
+                ]
+              : iconButtons,
+        );
 
         final orderedSecondaryButtons = PlatformDetection.isTV
             ? List<Widget>.generate(
@@ -7398,6 +7470,90 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
           index != primary &&
           _manager.canUseAsSecondarySubtitle(index);
     });
+  }
+
+  /// A text button in VJOD's player: a word in a dark block.
+  Widget _vjodPill(
+    String label,
+    double extent,
+    VoidCallback onPressed, {
+    IconData? icon,
+  }) {
+    final content = Container(
+      height: extent * 0.8,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      alignment: Alignment.center,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          if (icon != null) ...[
+            const SizedBox(width: 6),
+            Icon(icon, color: Colors.white, size: 20),
+          ],
+        ],
+      ),
+    );
+    if (PlatformDetection.isTV) {
+      return _TvFocusButton(
+        extent: extent,
+        onPressed: () {
+          _showControls();
+          onPressed();
+        },
+        child: content,
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: GestureDetector(
+        onTap: () {
+          _showControls();
+          onPressed();
+        },
+        child: content,
+      ),
+    );
+  }
+
+  /// Audio and subtitles behind one button, as in the mock-up.
+  Future<void> _showVjodTrackChooser() async {
+    final l10n = AppLocalizations.of(context);
+    final audio = await showStyledPlayerDialog<bool>(
+      context,
+      title: l10n.vjodAudioAndSubtitles,
+      useRootNavigator: false,
+      builder: (dialogContext) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          FocusableDialogRow(
+            icon: Icons.audiotrack_outlined,
+            label: l10n.audio,
+            autofocus: true,
+            onTap: () => Navigator.of(dialogContext).pop(true),
+          ),
+          FocusableDialogRow(
+            icon: Icons.subtitles_outlined,
+            label: l10n.subtitles,
+            onTap: () => Navigator.of(dialogContext).pop(false),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || audio == null) return;
+    _showTrackSelector(audio: audio);
   }
 
   void _showTrackSelector({
