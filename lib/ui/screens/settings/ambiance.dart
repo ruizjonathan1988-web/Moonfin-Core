@@ -72,6 +72,14 @@ enum Ambiance {
     // The mock-up's clock is French: 21:15, not 9:15 PM.
     if (this != Ambiance.classic) {
       await prefs.set(UserPreferences.use24HourClock, true);
+      // The mock-up's player: time played on the left, time left on the
+      // right, nothing above the bar.
+      await prefs.set(UserPreferences.playbackTimeAboveLeft, PlaybackTimeSlot.none);
+      await prefs.set(UserPreferences.playbackTimeAboveCenter, PlaybackTimeSlot.none);
+      await prefs.set(UserPreferences.playbackTimeAboveRight, PlaybackTimeSlot.none);
+      await prefs.set(UserPreferences.playbackTimeBelowLeft, PlaybackTimeSlot.elapsed);
+      await prefs.set(UserPreferences.playbackTimeBelowCenter, PlaybackTimeSlot.none);
+      await prefs.set(UserPreferences.playbackTimeBelowRight, PlaybackTimeSlot.timeRemaining);
     }
     final sync = GetIt.instance<PluginSyncService>();
     if (sync.pluginAvailable) {

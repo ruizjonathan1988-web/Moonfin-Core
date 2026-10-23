@@ -5718,21 +5718,26 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            _controlButton(
-              Icons.skip_previous_rounded,
-              onPressed: _manager.previous,
-              size: buttonIconSize,
-              extent: buttonExtent,
-              focusNode: _tvTransportFirstFocus,
-              tooltip: l10n.playerTooltipPrevious,
-            ),
-            const SizedBox(width: 4),
+            // VJOD keeps back, play and forward only, as in the mock-up; the
+            // next episode has its own word on the right.
+            if (!_vjodOsd) ...[
+              _controlButton(
+                Icons.skip_previous_rounded,
+                onPressed: _manager.previous,
+                size: buttonIconSize,
+                extent: buttonExtent,
+                focusNode: _tvTransportFirstFocus,
+                tooltip: l10n.playerTooltipPrevious,
+              ),
+              const SizedBox(width: 4),
+            ],
             _controlButton(
               seekBackIcon(_prefs.get(UserPreferences.skipBackLength)),
               onPressed: () =>
                   _seekRelative(-_prefs.get(UserPreferences.skipBackLength)),
               size: buttonIconSize,
               extent: buttonExtent,
+              focusNode: _vjodOsd ? _tvTransportFirstFocus : null,
               fill: _vjodOsd ? const Color(0x1FEDEBE6) : null,
               tooltip: _tooltipMessage(
                 l10n.playerTooltipSeekBack,
@@ -5769,23 +5774,26 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                   _seekRelative(_prefs.get(UserPreferences.skipForwardLength)),
               size: buttonIconSize,
               extent: buttonExtent,
+              focusNode: _vjodOsd ? _tvTransportLastFocus : null,
               fill: _vjodOsd ? const Color(0x1FEDEBE6) : null,
               tooltip: _tooltipMessage(
                 l10n.playerTooltipSeekForward,
                 shortcut: 'Right',
               ),
             ),
-            const SizedBox(width: 4),
-            // Always here, because it steps chapters before it steps the
-            // queue, so it has something to do on a lone movie too.
-            _controlButton(
-              Icons.skip_next_rounded,
-              onPressed: _manager.next,
-              size: buttonIconSize,
-              extent: buttonExtent,
-              focusNode: _tvTransportLastFocus,
-              tooltip: l10n.next,
-            ),
+            if (!_vjodOsd) ...[
+              const SizedBox(width: 4),
+              // Always here, because it steps chapters before it steps the
+              // queue, so it has something to do on a lone movie too.
+              _controlButton(
+                Icons.skip_next_rounded,
+                onPressed: _manager.next,
+                size: buttonIconSize,
+                extent: buttonExtent,
+                focusNode: _tvTransportLastFocus,
+                tooltip: l10n.next,
+              ),
+            ],
           ],
         ),
       ),
@@ -6142,7 +6150,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
               return SizedBox(
                 height: secondaryExtent,
                 child: Row(
-                  mainAxisAlignment: PlatformDetection.isTV
+                  mainAxisAlignment: _vjodOsd && isLandscape
+                      ? MainAxisAlignment.end
+                      : PlatformDetection.isTV
                       ? MainAxisAlignment.start
                       : MainAxisAlignment.spaceEvenly,
                   children: orderedSecondaryButtons,

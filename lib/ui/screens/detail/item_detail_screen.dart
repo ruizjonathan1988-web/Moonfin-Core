@@ -7294,6 +7294,8 @@ class DetailActionButtonsState extends State<DetailActionButtons> {
       const keep = [
         DetailButton.restart,
         DetailButton.trailer,
+        DetailButton.favorite,
+        DetailButton.personalRating,
         DetailButton.notForMe,
         DetailButton.seerrRequest,
       ];
@@ -12204,13 +12206,28 @@ class _DetailActionButtonState extends State<_DetailActionButton>
             false);
     final ink = AppColorScheme.onSurface;
     final page = AppColorScheme.background;
+    // The mock-up's small squares (+ and the thumb) and its plain-word
+    // "Not for me".
+    const squares = {
+      Icons.favorite,
+      Icons.thumb_up,
+      Icons.thumb_down,
+      Icons.thumb_up_outlined,
+      Icons.star_outline,
+      Icons.numbers,
+    };
+    final square = !widget.isPrimary && squares.contains(widget.icon);
+    final ghost =
+        !widget.isPrimary && widget.icon == Icons.thumb_down_alt_outlined;
     final light = widget.isPrimary || showHighlight;
     final fill = light
         ? ink
+        : ghost
+        ? Colors.transparent
         : widget.isActive
         ? (widget.activeColor ?? AppColorScheme.accent).withValues(alpha: 0.22)
         : AppColorScheme.buttonNormal;
-    final fg = light ? page : ink;
+    final fg = light ? page : (ghost ? ink.withValues(alpha: 0.7) : ink);
     final iconColor = (widget.icon == Icons.favorite && widget.isActive)
         ? const Color(0xFFE50914)
         : fg;
@@ -12222,8 +12239,10 @@ class _DetailActionButtonState extends State<_DetailActionButton>
     return AnimatedContainer(
       duration: const Duration(milliseconds: 120),
       height: height,
-      width: fullWidth ? double.infinity : null,
-      padding: EdgeInsets.symmetric(horizontal: (isMobile ? 16 : 22) * scale),
+      width: fullWidth ? double.infinity : (square ? height : null),
+      padding: square
+          ? EdgeInsets.zero
+          : EdgeInsets.symmetric(horizontal: (isMobile ? 16 : 22) * scale),
       decoration: BoxDecoration(
         color: fill,
         borderRadius: BorderRadius.circular(6),
@@ -12238,7 +12257,10 @@ class _DetailActionButtonState extends State<_DetailActionButton>
         mainAxisSize: fullWidth ? MainAxisSize.max : MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          if (icon != null) ...[icon, SizedBox(width: 8 * scale)],
+          if (square && icon != null)
+            icon
+          else ...[
+          if (icon != null && !ghost) ...[icon, SizedBox(width: 8 * scale)],
           Flexible(
             child: Text(
               widget.label,
@@ -12252,6 +12274,7 @@ class _DetailActionButtonState extends State<_DetailActionButton>
               ),
             ),
           ),
+          ],
         ],
       ),
     );

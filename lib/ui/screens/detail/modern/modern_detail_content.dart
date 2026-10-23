@@ -725,6 +725,7 @@ class _ModernDetailContentState extends State<ModernDetailContent> {
     _otherFirstFocusNode.dispose();
     _collectionFirstFocusNode.dispose();
     _seasonsFirstFocusNode.dispose();
+    _vjodBelowFirst.dispose();
     _episodesFirstFocusNode.dispose();
     _overviewFocusNode.dispose();
     _personMoviesFirstFocusNode.dispose();
@@ -4284,6 +4285,8 @@ class _ModernDetailContentState extends State<ModernDetailContent> {
   String? _heroKicker(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final because = _vm.because;
+    // VJOD says "not here yet" on top and gives the reason its own box.
+    if (_vjodTheme && _vm.isSeerrOnly) return l10n.tonightNotHereYet;
     if (because != null && because.trim().isNotEmpty) {
       return l10n.seerrForYouBecause(because.trim());
     }
@@ -4677,7 +4680,8 @@ class _ModernDetailContentState extends State<ModernDetailContent> {
       mainAxisSize: hasUpNext ? MainAxisSize.max : MainAxisSize.min,
       children: [
         if (!hideTitleAndLogo) ...[
-          if (_heroKicker(context) case final kicker?) _HeroKicker(kicker),
+          if (_heroKicker(context) case final kicker?)
+            _HeroKicker(kicker, dot: !_vjodTheme || _vm.isSeerrOnly),
           if (showLogo && isSeason && _seriesLogoTag != null && _seriesLogoId != null) ...[
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -4783,12 +4787,17 @@ class _ModernDetailContentState extends State<ModernDetailContent> {
             ),
           ],
           const SizedBox(height: 6),
-          _metadataRow(context, item, selectedSource),
+          if (_vjodMeta(item))
+            _vjodMetaRow(context, item)
+          else
+            _metadataRow(context, item, selectedSource),
           if (techRow != null) ...[
             const SizedBox(height: 6),
             techRow,
           ],
-          if (showRatings) ...[
+          if (_vjodMeta(item))
+            ?_vjodWhyBox(context)
+          else if (showRatings) ...[
             const SizedBox(height: 6),
             RatingsRow(
               ratings: _vm.ratings,
@@ -4858,7 +4867,9 @@ class _ModernDetailContentState extends State<ModernDetailContent> {
             selectedMediaSourceId: widget.selectedMediaSourceId,
             onSelectedMediaSourceChanged: widget.onSelectedMediaSourceChanged,
             tvPlayFocusNode: widget.initialFocusNode,
-            downTarget: _tabBarDownTarget(tabs),
+            downTarget: _vjodBelow(item)
+                ? _vjodBelowFirst
+                : _tabBarDownTarget(tabs),
             upTarget: _overviewFocusNode,
             autoPlay: widget.autoPlay,
             modernStyle: true,
@@ -4879,6 +4890,7 @@ class _ModernDetailContentState extends State<ModernDetailContent> {
             onActionsExpandedChanged: widget.onActionsExpandedChanged,
           ),
         ),
+        if (_vjodTheme && _vm.isSeerrOnly) _vjodTimeline(context),
       ],
     );
 
@@ -5431,6 +5443,483 @@ class _ModernDetailContentState extends State<ModernDetailContent> {
   }
 
   @override
+
+  // ---- VJOD: the mock-up's film and request pages ----
+
+  final FocusNode _vjodBelowFirst = FocusNode(debugLabel: 'vjodBelowFirst');
+
+  /// Films and titles not here yet drop the tabs for the mock-up's sections.
+  bool _vjodBelow(AggregatedItem item) =>
+      _vjodTheme && (item.type == 'Movie' || _vm.isSeerrOnly);
+
+  bool _vjodMeta(AggregatedItem item) =>
+      _vjodTheme &&
+      (item.type == 'Movie' || item.type == 'Series' || _vm.isSeerrOnly);
+
+  String _vjodLength(Duration d) {
+    final h = d.inMinutes ~/ 60;
+    final m = d.inMinutes % 60;
+    if (h == 0) return '$m min';
+    return m == 0 ? '$h h' : '$h h ${m.toString().padLeft(2, '0')}';
+  }
+
+  /// Ready dot, year, genres, length, end time, age box and star, in one line.
+  Widget _vjodMetaRow(BuildContext context, AggregatedItem item) {
+    final l10n = AppLocalizations.of(context);
+    final muted = AppColorScheme.onSurface.withValues(alpha: 0.75);
+    final style = TextStyle(color: muted, fontSize: _landscape ? 18 : 15);
+    final ready = !_vm.isSeerrOnly;
+    final runtime = item.type == 'Movie' ? item.runtime : null;
+    final use24 = widget.prefs.get(UserPreferences.use24HourClock);
+    final end = ready && runtime != null
+        ? _endsAt(item, runtime, use24Hour: use24)
+        : null;
+    final rating = item.communityRating;
+    final age = item.officialRating;
+    final genres = item.genres.take(2).join(' · ');
+    return Wrap(
+      spacing: 12,
+      runSpacing: 6,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        if (ready)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  color: AppColorScheme.statusAvailable,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                l10n.seerrTagReady,
+                style: style.copyWith(
+                  color: AppColorScheme.statusAvailable,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        if (item.productionYear != null)
+          Text('${item.productionYear}', style: style),
+        if (genres.isNotEmpty) Text(genres, style: style),
+        if (item.type == 'Series' && item.childCount != null)
+          Text(l10n.seasonCount(item.childCount!), style: style),
+        if (runtime != null) Text(_vjodLength(runtime), style: style),
+        if (end != null) Text(l10n.vjodEndsAtShort(end), style: style),
+        if (age != null && age.isNotEmpty)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+            decoration: BoxDecoration(
+              border: Border.all(color: muted),
+              borderRadius: BorderRadius.circular(3),
+            ),
+            child: Text(age, style: style.copyWith(fontSize: style.fontSize! - 3)),
+          ),
+        if (rating != null && rating > 0)
+          Text.rich(
+            TextSpan(
+              children: [
+                const TextSpan(
+                  text: '★ ',
+                  style: TextStyle(color: Color(0xFFE8C46A)),
+                ),
+                TextSpan(
+                  text: rating
+                      .toStringAsFixed(1)
+                      .replaceAll('.', l10n.localeName.startsWith('fr') ? ',' : '.'),
+                ),
+              ],
+            ),
+            style: style,
+          ),
+      ],
+    );
+  }
+
+  /// "Why you", boxed, on a title not here yet.
+  Widget? _vjodWhyBox(BuildContext context) {
+    final because = _vm.because?.trim();
+    if (!_vm.isSeerrOnly || because == null || because.isEmpty) return null;
+    final l10n = AppLocalizations.of(context);
+    final ink = AppColorScheme.onSurface;
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: _landscape ? 650 : double.infinity),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+          decoration: BoxDecoration(
+            color: ink.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.vjodWhyYou.toUpperCase(),
+                style: TextStyle(
+                  color: ink.withValues(alpha: 0.55),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.4,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                l10n.vjodWhyYouText(because),
+                style: TextStyle(color: ink, fontSize: _landscape ? 18 : 15),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Requested, downloading, ready: where the title stands, lit up to now.
+  Widget _vjodTimeline(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final info = _vm.seerr?.state.mediaInfo;
+    final status = info?.status;
+    final downloading = (info?.downloadStatus?.isNotEmpty ?? false);
+    final stage = switch (status) {
+      SeerrMediaStatus.available => 3,
+      SeerrMediaStatus.partiallyAvailable => 3,
+      SeerrMediaStatus.processing when downloading => 2,
+      SeerrMediaStatus.pending || SeerrMediaStatus.processing => 1,
+      _ => 0,
+    };
+    final steps = [
+      (l10n.seerrTagRequested, const Color(0xFFE8C46A)),
+      (l10n.vjodDownloading, const Color(0xFF8DB4F0)),
+      (l10n.seerrTagReady, AppColorScheme.statusAvailable),
+    ];
+    final dim = AppColorScheme.onSurface.withValues(alpha: 0.35);
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        runSpacing: 6,
+        children: [
+          for (final (i, (label, color)) in steps.indexed) ...[
+            if (i > 0)
+              Container(
+                width: 56,
+                height: 1,
+                margin: const EdgeInsets.symmetric(horizontal: 12),
+                color: dim,
+              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    color: stage > i || stage == 0 ? color : dim,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: stage > i || stage == 0 ? color : dim,
+                    fontWeight: FontWeight.w700,
+                    fontSize: _landscape ? 16 : 14,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _vjodOpen(AggregatedItem entry) {
+    if (entry.serverId == 'seerr' || entry.id.startsWith('tmdb:')) {
+      final mediaType =
+          entry.seerrMediaType ?? (entry.type == 'Series' ? 'tv' : 'movie');
+      final tmdbId = entry.tmdbId;
+      final targetId = (tmdbId != null && tmdbId.isNotEmpty)
+          ? tmdbId
+          : entry.id.replaceAll(RegExp(r'^tmdb:(?:movie:|tv:)?'), '');
+      context.push(
+        Destinations.seerrMedia(targetId, mediaType: mediaType, title: entry.name),
+      );
+    } else {
+      context.push(
+        Destinations.itemOrPhoto(
+          entry.id,
+          serverId: entry.serverId,
+          type: entry.type,
+          channelId: entry.channelId,
+        ),
+      );
+    }
+  }
+
+  KeyEventResult _vjodUpToButtons(FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.arrowUp) {
+      widget.initialFocusNode?.requestFocus();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  Widget _vjodSectionTitle(String text) => Padding(
+    padding: const EdgeInsets.only(bottom: 10),
+    child: Text(
+      text,
+      style: TextStyle(
+        color: AppColorScheme.onSurface,
+        fontSize: _landscape ? 20 : 17,
+        fontWeight: FontWeight.w700,
+      ),
+    ),
+  );
+
+  /// A poster from "In the same vein", with Ready or Request on its corner.
+  Widget _vjodPoster(AggregatedItem entry, {FocusNode? focusNode}) {
+    final seerr = entry.serverId == 'seerr' || entry.id.startsWith('tmdb:');
+    final l10n = AppLocalizations.of(context);
+    final color = seerr ? AppColorScheme.accent : AppColorScheme.statusAvailable;
+    final w = _landscape ? 120.0 : 104.0;
+    final url = _imageUrl(entry);
+    return Padding(
+      padding: const EdgeInsets.only(right: 10),
+      child: VjodFocusable(
+        focusNode: focusNode,
+        onTap: () => _vjodOpen(entry),
+        builder: (context, focused) => AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          width: w,
+          height: w * 1.5,
+          decoration: BoxDecoration(
+            color: AppColorScheme.surface,
+            borderRadius: BorderRadius.circular(4),
+            boxShadow: vjodFocusRing(0.8, on: focused),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (url != null) OfflineAwareImage(imageUrl: url, fit: BoxFit.cover),
+              Positioned(
+                left: 5,
+                top: 5,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xD90B0B0D),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        seerr ? l10n.vjodRequestIt : l10n.seerrTagReady,
+                        style: TextStyle(
+                          color: seerr ? Colors.white : color,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// A wide card from "Meanwhile, ready right now", with its end time.
+  Widget _vjodReadyCard(AggregatedItem entry, {FocusNode? focusNode}) {
+    final l10n = AppLocalizations.of(context);
+    final w = _landscape ? 210.0 : 180.0;
+    final tags = entry.backdropImageTags;
+    final url = tags.isNotEmpty
+        ? _vm.imageApi.getBackdropImageUrl(entry.id, maxWidth: 480, tag: tags.first)
+        : _imageUrl(entry);
+    final runtime = entry.runtime;
+    final end = runtime == null
+        ? null
+        : _endsAt(
+            entry,
+            runtime,
+            use24Hour: widget.prefs.get(UserPreferences.use24HourClock),
+          );
+    final ready = AppColorScheme.statusAvailable;
+    return Padding(
+      padding: const EdgeInsets.only(right: 16),
+      child: VjodFocusable(
+        focusNode: focusNode,
+        onTap: () => _vjodOpen(entry),
+        builder: (context, focused) => SizedBox(
+          width: w,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 120),
+                height: w * 9 / 16,
+                decoration: BoxDecoration(
+                  color: AppColorScheme.surface,
+                  borderRadius: BorderRadius.circular(4),
+                  boxShadow: vjodFocusRing(0.8, on: focused),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: url == null
+                    ? null
+                    : OfflineAwareImage(imageUrl: url, fit: BoxFit.cover),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                entry.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: AppColorScheme.onSurface,
+                  fontWeight: FontWeight.w700,
+                  fontSize: _landscape ? 16 : 14,
+                ),
+              ),
+              Text(
+                end == null
+                    ? l10n.seerrTagReady
+                    : '${l10n.seerrTagReady} · ${l10n.vjodEndsAtShort(end)}',
+                style: TextStyle(color: ready, fontSize: _landscape ? 14 : 12),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _vjodRow(List<Widget> children) => Focus(
+    canRequestFocus: false,
+    skipTraversal: true,
+    onKeyEvent: _vjodUpToButtons,
+    child: SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      clipBehavior: Clip.none,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      ),
+    ),
+  );
+
+  /// What sits under the buttons in the mock-up, in place of the tabs.
+  Widget _vjodBelowSections(BuildContext context, AggregatedItem item) {
+    final l10n = AppLocalizations.of(context);
+    if (_vm.isSeerrOnly) {
+      final ready = _vm.readyNow;
+      if (ready.isEmpty) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _vjodSectionTitle(l10n.vjodMeanwhile),
+            _vjodRow([
+              for (final (i, e) in ready.take(8).indexed)
+                _vjodReadyCard(e, focusNode: i == 0 ? _vjodBelowFirst : null),
+            ]),
+          ],
+        ),
+      );
+    }
+    final actors = _vm.actors;
+    final similar = _vm.similar;
+    final cast = actors.isEmpty
+        ? null
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _vjodSectionTitle(l10n.castMembers),
+              Focus(
+                canRequestFocus: false,
+                skipTraversal: true,
+                onKeyEvent: _vjodUpToButtons,
+                child: HorizontalScrollSection(
+                  title: '',
+                  contentSpacing: 0,
+                  builder: (context, controller) => DetailCastRow(
+                    people: actors.take(_landscape ? 4 : 8).toList(),
+                    imageApi: _vm.imageApi,
+                    serverId: item.serverId,
+                    scrollController: controller,
+                    firstItemFocusNode: _vjodBelowFirst,
+                    onNavigateUp: () => widget.initialFocusNode?.requestFocus(),
+                  ),
+                ),
+              ),
+            ],
+          );
+    final same = similar.isEmpty
+        ? null
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _vjodSectionTitle(l10n.vjodSameSpirit),
+              _vjodRow([
+                for (final (i, e) in similar.take(12).indexed)
+                  _vjodPoster(
+                    e,
+                    focusNode: cast == null && i == 0 ? _vjodBelowFirst : null,
+                  ),
+              ]),
+            ],
+          );
+    if (cast == null && same == null) return const SizedBox.shrink();
+    if (_landscape && cast != null && same != null) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(width: 440, child: cast),
+            const SizedBox(width: 40),
+            Expanded(child: same),
+          ],
+        ),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ?cast,
+          if (cast != null && same != null) const SizedBox(height: 20),
+          ?same,
+        ],
+      ),
+    );
+  }
+
   Widget build(BuildContext context) {
     final item = _vm.item;
     if (item == null) return const SizedBox.shrink();
@@ -5634,13 +6123,23 @@ class _ModernDetailContentState extends State<ModernDetailContent> {
           )
         : null;
 
+    final Widget? effectiveTabBar;
+    final Widget effectiveTabContent;
+    if (_vjodBelow(item)) {
+      effectiveTabBar = null;
+      effectiveTabContent = _vjodBelowSections(context, item);
+    } else {
+      effectiveTabBar = tabBarWidget;
+      effectiveTabContent = tabContent;
+    }
+
     final layout = _landscape
         ? ModernLandscapeLayout(
             backdrop: backdrop,
             hero: hero,
             upNext: upNext,
-            tabBar: tabBarWidget,
-            tabContent: tabContent,
+            tabBar: effectiveTabBar,
+            tabContent: effectiveTabContent,
             topInset: topInset,
             scrollController: _scrollController,
             aboveHero: aboveHeroWidget,
@@ -5650,8 +6149,8 @@ class _ModernDetailContentState extends State<ModernDetailContent> {
             backdrop: backdrop,
             hero: hero,
             upNext: upNext,
-            tabBar: tabBarWidget,
-            tabContent: tabContent,
+            tabBar: effectiveTabBar,
+            tabContent: effectiveTabContent,
             topInset: topInset,
             scrollController: _scrollController,
           );
@@ -5970,7 +6469,8 @@ String getExtraCategoryLabel(String key, AppLocalizations l10n) {
 
 class _HeroKicker extends StatelessWidget {
   final String text;
-  const _HeroKicker(this.text);
+  final bool dot;
+  const _HeroKicker(this.text, {this.dot = true});
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -5978,15 +6478,17 @@ class _HeroKicker extends StatelessWidget {
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: 7,
-          height: 7,
-          decoration: BoxDecoration(
-            color: AppColorScheme.accent,
-            shape: BoxShape.circle,
+        if (dot) ...[
+          Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(
+              color: AppColorScheme.accent,
+              shape: BoxShape.circle,
+            ),
           ),
-        ),
-        const SizedBox(width: 8),
+          const SizedBox(width: 8),
+        ],
         Flexible(
           child: Text(
             text.toUpperCase(),
