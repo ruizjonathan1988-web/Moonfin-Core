@@ -64,6 +64,11 @@ enum Ambiance {
     await prefs.set(UserPreferences.mediaBarTrailerAudio, false);
     await prefs.set(UserPreferences.previewAudioEnabled, false);
     await prefs.set(UserPreferences.episodePreviewEnabled, previews);
+    // The mock-up's film page names the picture, sound and languages.
+    await prefs.set(
+      UserPreferences.detailShowTechnicalDetails,
+      this != Ambiance.classic,
+    );
     final sync = GetIt.instance<PluginSyncService>();
     if (sync.pluginAvailable) {
       sync.pushSettings(GetIt.instance<MediaServerClient>());
