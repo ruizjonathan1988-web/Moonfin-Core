@@ -166,7 +166,7 @@ class _BientotScreenState extends State<BientotScreen> {
           ? Center(child: Text(l10n.enRouteFailed))
           : const Center(child: CircularProgressIndicator());
     } else {
-      final cardW = 125 * s * (isMobile ? 1.15 : 1);
+      final cardW = 165 * s * (isMobile ? 1.0 : 1);
       content = ListView(
         padding: EdgeInsets.fromLTRB(left, 0, left, 40),
         children: [

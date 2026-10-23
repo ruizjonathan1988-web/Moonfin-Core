@@ -533,9 +533,16 @@ class MediaBarRepository {
     try {
       final tonight = TonightService.instance;
       final answers = tonight.suggestAnswers();
+      final l10n = currentAppLocalizations();
+      // The three lookups are independent: asked together, the banner waits
+      // for the slowest one instead of the sum of all three.
+      final requestable = activeParentalFilter.isActive
+          ? Future<MediaBarSlideItem?>.value(null)
+          : _tonightRequestable(tonight, answers);
+      final resumeSlide = _tonightResume(l10n);
       final view = await tonight
           .load(answers, libraryOnly: true)
-          .timeout(const Duration(seconds: 20));
+          .timeout(const Duration(seconds: 12));
       final ids = <String>[];
       for (final pick in view.result.picks) {
         final id = pick.candidate.libraryItemId;
@@ -551,7 +558,6 @@ class MediaBarRepository {
             .cast<Map<String, dynamic>>())
           item['Id']?.toString(): item,
       };
-      final l10n = currentAppLocalizations();
       final kicker = tonightKicker(l10n, answers);
       final slides = [
         for (final id in ids)
@@ -565,7 +571,7 @@ class MediaBarRepository {
       // One title not here yet, third, to request in a press. Never on a
       // profile with ratings blocked: its rating isn't known here.
       if (slides.isNotEmpty && !activeParentalFilter.isActive) {
-        final toRequest = await _tonightRequestable(tonight, answers);
+        final toRequest = await requestable;
         if (toRequest != null) {
           slides.insert(
             slides.length < 2 ? slides.length : 2,
@@ -579,7 +585,7 @@ class MediaBarRepository {
       // What was left half watched, last, so the banner opens on tonight's
       // pick while its card still offers to pick up where things stopped.
       if (slides.isNotEmpty) {
-        final resume = await _tonightResume(l10n);
+        final resume = await resumeSlide;
         if (resume != null) slides.add(resume);
       }
       return slides;

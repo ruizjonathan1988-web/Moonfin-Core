@@ -876,6 +876,7 @@ class _ModernDetailContentState extends State<ModernDetailContent> {
               _detailsTabFocusNode.requestFocus();
               break;
             case 'similar':
+            case 'readyNow':
               _similarFirstFocusNode.requestFocus();
               break;
             case 'collections':
@@ -4667,7 +4668,7 @@ class _ModernDetailContentState extends State<ModernDetailContent> {
     final hasSeriesLogo = showLogo &&
         effectiveSeriesLogoTag != null &&
         effectiveSeriesLogoId != null;
-    final tagline = _sections.shows(DetailSection.tagline)
+    final tagline = _sections.shows(DetailSection.tagline) && !_vjodTheme
         ? item.tagline?.trim() ?? ''
         : '';
 
@@ -4956,7 +4957,9 @@ class _ModernDetailContentState extends State<ModernDetailContent> {
             }
             final use24 = prefs.get(UserPreferences.use24HourClock);
             final end = _endsAt(item, runtime, use24Hour: use24);
-            if (end != null && item.type != 'Series') {
+            if (end != null &&
+                item.type != 'Series' &&
+                !(_vjodTheme && _vm.isSeerrOnly)) {
               addText(l10n.endsAt(end));
             }
           }

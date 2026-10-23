@@ -6130,7 +6130,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
             : secondaryButtons;
 
         final estimatedWidth =
-            orderedSecondaryButtons.length * (secondaryExtent + 8);
+            orderedSecondaryButtons.length *
+            (secondaryExtent + 8 + (_vjodOsd ? 190 : 0));
 
         final layoutBuilder = LayoutBuilder(
           builder: (context, constraints) {
@@ -7525,6 +7526,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     if (PlatformDetection.isTV) {
       return _TvFocusButton(
         extent: extent,
+        pill: true,
         onPressed: () {
           _showControls();
           onPressed();
@@ -8323,8 +8325,10 @@ class _TvFocusButton extends StatefulWidget {
     this.tooltip,
     this.onPressed,
     this.onRightBoundary,
+    this.pill = false,
   });
 
+  final bool pill;
   final FocusNode? focusNode;
   final double extent;
   final String? tooltip;
@@ -8433,10 +8437,11 @@ class _TvFocusButtonState extends State<_TvFocusButton> {
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        width: widget.extent,
+        width: widget.pill ? null : widget.extent,
         height: widget.extent,
         decoration: BoxDecoration(
-          shape: BoxShape.circle,
+          shape: widget.pill ? BoxShape.rectangle : BoxShape.circle,
+          borderRadius: widget.pill ? BorderRadius.circular(10) : null,
           color: _focused
               ? Colors.white.withValues(alpha: 0.22)
               : Colors.transparent,
@@ -8449,7 +8454,12 @@ class _TvFocusButtonState extends State<_TvFocusButton> {
                 )
               : null,
         ),
-        child: Center(child: widget.child),
+        child: widget.pill
+            ? Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Center(widthFactor: 1, child: widget.child),
+              )
+            : Center(child: widget.child),
       ),
     );
     final button = widget.onPressed != null
