@@ -313,6 +313,10 @@ flutter:
     - family: NotoSans
       fonts:
         - asset: assets/fonts/NotoSans-Regular.ttf
+    # VJOD's display face: tall condensed capitals for titles.
+    - family: Anton
+      fonts:
+        - asset: assets/fonts/Anton-Regular.ttf
     - family: EightBitHero
       fonts:
         - asset: assets/fonts/PressStart2P-Regular.ttf

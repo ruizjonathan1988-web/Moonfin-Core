@@ -6,6 +6,10 @@ on:
   push:
     branches: [perso-wip]
 
+# Writes the VJOD captures to their own branch, see the last step.
+permissions:
+  contents: write
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -52,3 +56,24 @@ jobs:
           fi
           tail -5 tests.txt
           exit $status
+
+      # Draws VJOD's screens to pictures and keeps them on the captures
+      # branch, to be compared with the mock-up. Never fails the check.
+      - name: Captures VJOD
+        if: always()
+        run: |
+          flutter test test/vjod/vjod_preview_test.dart --update-goldens > captures.txt 2>&1 || true
+          tail -15 captures.txt
+          if ls test/vjod/captures/*.png > /dev/null 2>&1; then
+            mkdir -p /tmp/cap && cp test/vjod/captures/*.png /tmp/cap/
+            git config user.name "vjod-captures"
+            git config user.email "vjod-captures@users.noreply.github.com"
+            git checkout -q --orphan captures-tmp
+            git rm -rfq .
+            git clean -fdxq
+            cp /tmp/cap/*.png .
+            echo "${GITHUB_SHA}" > SOURCE
+            git add -A
+            git commit -qm "Captures ${GITHUB_SHA::7}"
+            git push -qf origin HEAD:captures
+          fi
