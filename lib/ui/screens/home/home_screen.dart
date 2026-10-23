@@ -5307,6 +5307,13 @@ class _ContentRowsState extends State<_ContentRows>
             } else if (isRowsV2) {
               cardSubtitle = episodeInfo ?? item.name;
               cardSubtitleWidget = null;
+            } else if (_vjodTheme && episodeInfo != null) {
+              // The mock-up's Continue line: where it is and what's left.
+              final left = _vjodMinutesLeft(item);
+              cardSubtitle = left == null
+                  ? '$episodeInfo · ${item.name}'
+                  : '$episodeInfo · ${l10n.vjodMinutesLeft(left)}';
+              cardSubtitleWidget = null;
             } else {
               // Classic cards never expand, so their one subtitle line carries
               // the episode name alongside the numbers.
@@ -5323,7 +5330,16 @@ class _ContentRowsState extends State<_ContentRows>
             cardTitle = item.name;
             final showUserRatings = item.rawData['ShowUserRatings'] == true;
             final userRating = item.rawData['UserRating'] as String? ?? '';
-            if (showUserRatings && userRating.isNotEmpty) {
+            final because =
+                item.rawData[HomeViewModel.forYouReasonKey] as String?;
+            if (_vjodTheme && because != null && because.isNotEmpty) {
+              // The mock-up says why under a suggestion, not its year.
+              cardSubtitle = l10n.seerrForYouBecause(because);
+            } else if (_vjodTheme &&
+                item.type == 'Movie' &&
+                _vjodMinutesLeft(item) != null) {
+              cardSubtitle = l10n.vjodMinutesLeft(_vjodMinutesLeft(item)!);
+            } else if (showUserRatings && userRating.isNotEmpty) {
               cardSubtitle = userRating;
             } else {
               cardSubtitle = (canUseExpandedV2Card &&
@@ -5566,6 +5582,17 @@ class _ContentRowsState extends State<_ContentRows>
       return '${hours}h';
     }
     return '${hours}h ${minutes}m';
+  }
+
+  /// Minutes left of something started, or null when it isn't.
+  static int? _vjodMinutesLeft(AggregatedItem item) {
+    final runtime = item.runtime;
+    final position = item.playbackPosition;
+    if (runtime == null || position == null || position <= Duration.zero) {
+      return null;
+    }
+    final left = (runtime - position).inMinutes;
+    return left > 0 ? left : null;
   }
 
   /// What the mock-up puts in a row's head: the Top 10's Films and Series.
@@ -6259,6 +6286,13 @@ class _ContentRowsState extends State<_ContentRows>
     }
     if (_isSeerrFilterRow(row)) {
       return ImageType.thumb;
+    }
+    // The mock-up: what to continue in wide stills, everything else in
+    // posters, whatever the per-row settings say.
+    if (_vjodTheme) {
+      return row.id == 'resume' || row.id == 'nextUp'
+          ? ImageType.thumb
+          : ImageType.poster;
     }
     if (row.rowType == HomeRowType.latestMedia && _isLatestMusicRow(row)) {
       return ImageType.poster;

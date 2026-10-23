@@ -308,7 +308,6 @@ class VjodNavBar extends StatelessWidget {
           Flexible(
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              clipBehavior: Clip.none,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -646,12 +645,15 @@ class VjodHeroContent extends StatelessWidget {
     final s = scale;
     final chipStyle = TextStyle(
       color: vjodInk,
-      fontSize: 17 * s,
+      fontSize: (compact ? 15 : 17) * s,
       fontWeight: FontWeight.w600,
     );
     Widget chip(String text, {bool outlined = false, bool focused = false}) =>
         Container(
-          padding: EdgeInsets.symmetric(horizontal: 14 * s, vertical: 7 * s),
+          padding: EdgeInsets.symmetric(
+            horizontal: (compact ? 11 : 14) * s,
+            vertical: 7 * s,
+          ),
           decoration: BoxDecoration(
             color: focused
                 ? vjodInk
@@ -774,6 +776,7 @@ class VjodHeroContent extends StatelessWidget {
                 ringed: activeAction != null && i == activeAction,
                 onTap: a.onTap,
                 scale: s,
+                compact: compact,
               ),
           ],
         ),
@@ -791,6 +794,7 @@ class VjodButton extends StatelessWidget {
   final bool ringed;
   final VoidCallback onTap;
   final double scale;
+  final bool compact;
 
   const VjodButton({
     super.key,
@@ -800,6 +804,7 @@ class VjodButton extends StatelessWidget {
     this.light = false,
     this.ringed = false,
     this.scale = 1,
+    this.compact = false,
   });
 
   @override
@@ -810,8 +815,8 @@ class VjodButton extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 120),
-        height: 56 * s,
-        padding: EdgeInsets.symmetric(horizontal: 26 * s),
+        height: (compact ? 48 : 56) * s,
+        padding: EdgeInsets.symmetric(horizontal: (compact ? 16 : 26) * s),
         decoration: BoxDecoration(
           color: light ? vjodInk : vjodButton,
           borderRadius: BorderRadius.circular(6 * s),
@@ -828,7 +833,7 @@ class VjodButton extends StatelessWidget {
               label,
               style: TextStyle(
                 color: fg,
-                fontSize: 21 * s,
+                fontSize: (compact ? 18 : 21) * s,
                 fontWeight: FontWeight.w700,
               ),
             ),
