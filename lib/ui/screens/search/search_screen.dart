@@ -1108,12 +1108,19 @@ class _SearchScreenState extends State<SearchScreen>
         _vm.results.fold<int>(0, (s, g) => s + g.items.length) +
         _vm.seerrResults.length +
         _vm.gameResults.length;
+    // VJOD names the tabs the mock-up's way: "À demander · 5".
+    final vjod =
+        ThemeRegistry.active.id == ThemeRegistry.vjodId ||
+        ThemeRegistry.active.id == ThemeRegistry.ecrinId;
+    String tab(String label, int count) =>
+        vjod ? '$label \u00b7 $count' : '$label: $count';
     final labels = <String>[
-      if (_hasSeerr) '$seerrLabel: ${_vm.seerrResults.length}',
-      if (_hasGames) '${l10n.games}: ${_vm.gameResults.length}',
-      '${l10n.all}: $totalCount',
+      if (_hasSeerr)
+        tab(vjod ? l10n.vjodToRequest : seerrLabel, _vm.seerrResults.length),
+      if (_hasGames) tab(l10n.games, _vm.gameResults.length),
+      tab(l10n.all, totalCount),
       for (final group in _vm.results)
-        '${localizeSearchGroupTitle(group.title, l10n)}: ${group.items.length}',
+        tab(localizeSearchGroupTitle(group.title, l10n), group.items.length),
     ];
 
     final isMobile = PlatformDetection.useMobileUi;

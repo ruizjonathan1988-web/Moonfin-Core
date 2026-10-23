@@ -9754,6 +9754,8 @@
     "vjodBarAnother": "Autre idée",
     "vjodBarDetails": "Infos",
     "notForMe": "Pas pour moi",
+    "vjodCatalogueCount": "{count} chez vous · tout le reste à un geste",
+    "vjodToRequest": "À demander",
     "vjodSeason": "Saison {number}",
     "vjodAudioAndSubtitles": "Audio et sous-titres",
     "vjodNextEpisode": "Épisode suivant",

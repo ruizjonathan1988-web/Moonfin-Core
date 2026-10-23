@@ -2425,7 +2425,45 @@ class _LibraryHeader extends StatelessWidget {
     required bool isMobile,
     required double desktopScale,
   }) {
-    final titleWidget = Row(
+    final vjod =
+        ThemeRegistry.active.id == ThemeRegistry.vjodId ||
+        ThemeRegistry.active.id == ThemeRegistry.ecrinId;
+    final l10n = AppLocalizations.of(context);
+    // The mock-up's catalogue head: the name in big capitals, then how many
+    // are here and that the rest is a request away.
+    final titleWidget = vjod
+        ? Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                libraryName.toUpperCase(),
+                style: TextStyle(
+                  fontFamily: 'Anton',
+                  fontSize: (isMobile ? 34 : 46) * desktopScale,
+                  color: AppColorScheme.onBackground,
+                ),
+              ),
+              if (totalCount > 0) ...[
+                SizedBox(width: 14 * desktopScale),
+                Flexible(
+                  child: Text(
+                    l10n.vjodCatalogueCount(totalCount),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: (isMobile ? 14 : 17) * desktopScale,
+                      color: AppColorScheme.onBackground.withValues(
+                        alpha: 0.6,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          )
+        : Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
@@ -2465,8 +2503,12 @@ class _LibraryHeader extends StatelessWidget {
 
           return Row(
             children: [
-              SizedBox(width: searchWidth),
-              Expanded(child: Center(child: titleWidget)),
+              if (!vjod) SizedBox(width: searchWidth),
+              Expanded(
+                child: vjod
+                    ? Align(alignment: Alignment.centerLeft, child: titleWidget)
+                    : Center(child: titleWidget),
+              ),
               SizedBox(
                 width: searchWidth,
                 child: LocalSearchField(

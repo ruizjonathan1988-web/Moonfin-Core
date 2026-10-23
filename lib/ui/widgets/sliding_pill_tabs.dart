@@ -334,8 +334,20 @@ class _SlidingPillTabsState extends State<SlidingPillTabs> {
     final accent = AppColorScheme.accent;
     final selectedIndex = widget.selectedIndex;
 
-    final thumbColor = glass ? onSurface.withValues(alpha: 0.22) : accent;
-    final selectedTextColor = glass ? onSurface : AppColorScheme.onAccent;
+    // VJOD and Écrin choose in ivory, keeping red for small marks.
+    final quiet =
+        ThemeRegistry.active.id == ThemeRegistry.vjodId ||
+        ThemeRegistry.active.id == ThemeRegistry.ecrinId;
+    final thumbColor = glass
+        ? onSurface.withValues(alpha: 0.22)
+        : quiet
+        ? onSurface
+        : accent;
+    final selectedTextColor = glass
+        ? onSurface
+        : quiet
+        ? AppColorScheme.background
+        : AppColorScheme.onAccent;
 
     // The thumb only renders once segments are measured, so its first frame is
     // already at the right geometry. Later selection changes animate from
