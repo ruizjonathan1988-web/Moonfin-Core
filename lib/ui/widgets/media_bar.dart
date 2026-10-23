@@ -2303,10 +2303,9 @@ class _MediaBarState extends State<MediaBar>
         !isMobile &&
         widget.prefs.get(UserPreferences.navbarPosition) == NavbarPosition.left;
     final left = isMobile ? 16.0 : 64.0 + (hasLeftSidebar ? 88.0 : 0.0);
-    final navbarAtTop =
-        isMobile &&
-        widget.prefs.get(UserPreferences.navbarPosition) == NavbarPosition.top;
-    final toolbarInset = navbarAtTop ? media.padding.top + 60.0 : 0.0;
+    // The picture runs up under the floating toolbar, as in the mock-up;
+    // only the text, anchored at the bottom, needs to stay clear of it.
+    const toolbarInset = 0.0;
     final hasVisibleTrailerVideo =
         (_activeYouTubeVideoId != null ||
             _activeWebTrailerUrl != null ||
@@ -2402,6 +2401,12 @@ class _MediaBarState extends State<MediaBar>
                       width: infoWidth,
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 300),
+                        // The default centres the outgoing and incoming
+                        // slides, which pushed the text away from the edge.
+                        layoutBuilder: (current, previous) => Stack(
+                          alignment: Alignment.bottomLeft,
+                          children: [...previous, ?current],
+                        ),
                         child: Column(
                           key: ValueKey('vjod_${current.itemId}'),
                           crossAxisAlignment: CrossAxisAlignment.start,

@@ -12294,11 +12294,21 @@ class _DetailActionButtonState extends State<_DetailActionButton>
     // Only a compact layout keeps Play filled with the accent. Everywhere else
     // it looks like the buttons beside it until it has focus.
     final accentPrimary = widget.isPrimary && isMobile;
+    // VJOD and Écrin keep red for small marks: their Play is the light one.
+    final quietTheme =
+        ThemeRegistry.active.id == ThemeRegistry.vjodId ||
+        ThemeRegistry.active.id == ThemeRegistry.ecrinId;
+    final primaryFill = quietTheme
+        ? AppColorScheme.onSurface
+        : AppColorScheme.accent;
+    final onPrimaryFill = quietTheme
+        ? AppColorScheme.background
+        : AppColorScheme.onAccent;
 
     final containerColor = showHighlight
         ? AppColorScheme.buttonFocused
         : (accentPrimary
-              ? AppColorScheme.accent
+              ? primaryFill
               : (widget.isActive
                     ? (widget.activeColor ?? AppColorScheme.accent).withValues(
                         alpha: 0.18,
@@ -12317,7 +12327,7 @@ class _DetailActionButtonState extends State<_DetailActionButton>
             color: (widget.icon == Icons.favorite && widget.isActive)
                 ? const Color(0xFFE50914)
                 : (accentPrimary && !showHighlight
-                      ? AppColorScheme.onAccent
+                      ? onPrimaryFill
                       : iconColor),
             size: 24 * scale,
           )
@@ -12332,7 +12342,7 @@ class _DetailActionButtonState extends State<_DetailActionButton>
                 ));
 
     final effectiveLabelColor = accentPrimary && !showHighlight
-        ? AppColorScheme.onAccent
+        ? onPrimaryFill
         : labelColor;
 
     return AnimatedContainer(

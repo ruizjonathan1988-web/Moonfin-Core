@@ -376,6 +376,10 @@ class _DetailsTabItemState extends State<_DetailsTabItem> {
       if (apple) {
         bg = accent.withValues(alpha: 0.18);
         fg = accent;
+      } else if (ThemeRegistry.active.id == ThemeRegistry.vjodId ||
+          ThemeRegistry.active.id == ThemeRegistry.ecrinId) {
+        bg = AppColorScheme.onSurface;
+        fg = AppColorScheme.background;
       } else {
         bg = accent;
         fg = AppColorScheme.onAccent;

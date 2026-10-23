@@ -584,9 +584,9 @@ class _ShuffleOverlayState extends State<_ShuffleOverlay> {
     return '${value.substring(0, maxChars - 3).trim()}...';
   }
 
-  String _heroTagline(AggregatedItem? item) {
+  String _heroTagline(AggregatedItem? item, AppLocalizations l10n) {
     if (item == null) {
-      return 'Shuffle something new.';
+      return l10n.shuffleTaglineEmpty;
     }
 
     final overview = (item.overview ?? '').trim();
@@ -599,8 +599,9 @@ class _ShuffleOverlayState extends State<_ShuffleOverlay> {
       return subtitle;
     }
 
-    final type = (item.type ?? 'item').toLowerCase();
-    return 'Discover a random $type from your library.';
+    return item.type == 'Series'
+        ? l10n.shuffleTaglineSeries
+        : l10n.shuffleTaglineItem;
   }
 
   String? _formatRuntime(Duration? runtime) {
@@ -1318,7 +1319,7 @@ class _ShuffleOverlayState extends State<_ShuffleOverlay> {
               ),
               const SizedBox(width: 6),
               Text(
-                'RANDOM ${l10n.shuffle.toUpperCase()}',
+                l10n.shuffle.toUpperCase(),
                 style: TextStyle(
                   color: AppColorScheme.onSurface.withValues(alpha: 0.94),
                   fontSize: isMobile ? 10 : 11,
@@ -1471,7 +1472,7 @@ class _ShuffleOverlayState extends State<_ShuffleOverlay> {
     }
 
     final overview = (item.overview ?? '').trim();
-    final overviewText = overview.isEmpty ? _heroTagline(item) : overview;
+    final overviewText = overview.isEmpty ? _heroTagline(item, AppLocalizations.of(context)) : overview;
     final overviewStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
       color: AppColorScheme.onSurface.withValues(alpha: 0.86),
       height: 1.3,

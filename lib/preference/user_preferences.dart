@@ -1771,7 +1771,8 @@ class UserPreferences extends ChangeNotifier {
 
   static final use24HourClock = Preference(
     key: 'pref_use_24_hour_clock',
-    defaultValue: false,
+    // VJOD is French first: 22:23, not 10:23 PM.
+    defaultValue: true,
   );
 
   // Opt-in: trust self-signed / private-CA TLS certificates. Off by default so
