@@ -34,6 +34,7 @@ import '../../data/repositories/media_bar_repository.dart'
     show seerrSlideServer;
 import '../navigation/destinations.dart';
 import '../screens/tonight/tonight_screen.dart' show showTonight;
+import 'vjod/vjod_widgets.dart';
 import '../screensaver/screensaver_controller.dart';
 import '../../util/language_matching.dart';
 import '../../util/overlay_color_palette.dart';
@@ -903,44 +904,96 @@ class _MediaBarState extends State<MediaBar>
       _lastFocusReceivedAt = DateTime.now();
     }
     if (_isVjodMode() && focused != _vjodFocused) {
-      setState(() => _vjodFocused = focused);
+      setState(() {
+        _vjodFocused = focused;
+        // Coming back to the banner lands on its buttons.
+        if (focused) _vjodZone = _vjodZoneActions;
+      });
     }
   }
 
-  /// The VJOD banner's buttons, which the remote moves between.
+  /// Where the remote is on the VJOD banner: the evening's Change chip, the
+  /// buttons, or the three ideas under them.
   bool _vjodFocused = false;
+  int _vjodZone = 1;
   int _vjodAction = 0;
+  int _vjodCard = 1;
 
-  List<_VjodAction> _vjodActions(int count) => [
-    _VjodAction.play,
-    if (count > 1) _VjodAction.another,
-    _VjodAction.details,
-    _VjodAction.evening,
-  ];
+  static const _vjodZoneChange = 0;
+  static const _vjodZoneActions = 1;
+  static const _vjodZoneCards = 2;
 
-  void _runVjodAction(
+  /// The three ideas under the banner, as slide indexes: what to resume, the
+  /// pick, and the one to request, topped up with other picks.
+  List<int> _vjodStrip(List<MediaBarSlideItem> items) {
+    int? find(String role) {
+      final i = items.indexWhere((e) => e.role == role);
+      return i < 0 ? null : i;
+    }
+
+    final resume = find(MediaBarSlideItem.roleResume);
+    final pick = find(MediaBarSlideItem.rolePick) ?? (items.isEmpty ? null : 0);
+    final request = find(MediaBarSlideItem.roleRequest);
+    final strip = <int>[?resume, ?pick, ?request];
+    for (var i = 0; i < items.length && strip.length < 3; i++) {
+      if (!strip.contains(i)) strip.add(i);
+    }
+    return strip;
+  }
+
+  List<VjodHeroAction> _vjodActions(
     BuildContext context,
-    _VjodAction action,
     List<MediaBarSlideItem> items,
   ) {
-    switch (action) {
-      case _VjodAction.play:
-        _navigateToItemAndPlay(context, items);
-      case _VjodAction.another:
-        _goToPage((_currentIndex + 1) % items.length);
-      case _VjodAction.details:
-        _navigateToItem(context, items);
-      case _VjodAction.evening:
-        // New answers reload the banner through TonightService.
-        _cancelTrailerPreview();
-        unawaited(showTonight(context));
+    final l10n = AppLocalizations.of(context);
+    final item = items.elementAtOrNull(_currentIndex);
+    final role = item?.role;
+    return [
+      VjodHeroAction(
+        label: switch (role) {
+          MediaBarSlideItem.roleRequest => l10n.vjodRequestIt,
+          MediaBarSlideItem.roleResume => l10n.vjodResume,
+          _ => l10n.vjodBarPlay,
+        },
+        icon: role == MediaBarSlideItem.roleRequest
+            ? Icons.add_rounded
+            : Icons.play_arrow_rounded,
+        onTap: () => _navigateToItemAndPlay(context, items),
+      ),
+      if (items.length > 1)
+        VjodHeroAction(
+          label: l10n.vjodBarAnother,
+          onTap: () => _goToPage(_vjodNextIdea(items)),
+        ),
+      VjodHeroAction(
+        label: l10n.vjodBarDetails,
+        onTap: () => _navigateToItem(context, items),
+      ),
+    ];
+  }
+
+  /// Another idea skips what is there to resume: that has its own card.
+  int _vjodNextIdea(List<MediaBarSlideItem> items) {
+    for (var step = 1; step <= items.length; step++) {
+      final i = (_currentIndex + step) % items.length;
+      if (items[i].role != MediaBarSlideItem.roleResume) return i;
     }
+    return (_currentIndex + 1) % items.length;
+  }
+
+  void _vjodChangeEvening() {
+    // New answers reload the banner through TonightService.
+    _cancelTrailerPreview();
+    unawaited(showTonight(context));
   }
 
   KeyEventResult _handleVjodKey(KeyEvent event, List<MediaBarSlideItem> items) {
     final key = event.logicalKey;
-    final actions = _vjodActions(items.length);
-    final index = _vjodAction.clamp(0, actions.length - 1);
+    final actions = _vjodActions(context, items);
+    final strip = PlatformDetection.useMobileUi
+        ? const <int>[]
+        : _vjodStrip(items);
+    final action = _vjodAction.clamp(0, actions.length - 1);
     if (key == LogicalKeyboardKey.select || key == LogicalKeyboardKey.enter) {
       if (event is KeyDownEvent || event is KeyRepeatEvent) {
         _keyDownTime ??= DateTime.now();
@@ -959,31 +1012,71 @@ class _MediaBarState extends State<MediaBar>
         if (downTime != null &&
             now.difference(downTime) >= _keyLongPressThreshold) {
           _navigateToItem(context, items);
+        } else if (_vjodZone == _vjodZoneChange) {
+          _vjodChangeEvening();
+        } else if (_vjodZone == _vjodZoneCards && strip.isNotEmpty) {
+          final target = strip[_vjodCard.clamp(0, strip.length - 1)];
+          if (target == _currentIndex) {
+            _navigateToItemAndPlay(context, items);
+          } else {
+            _goToPage(target);
+          }
         } else {
-          _runVjodAction(context, actions[index], items);
+          actions[action].onTap();
         }
       }
       return KeyEventResult.handled;
     }
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
     if (key == LogicalKeyboardKey.arrowLeft ||
         key == LogicalKeyboardKey.arrowRight) {
-      final isRtl = Directionality.of(context) == TextDirection.rtl;
-      final forward = (key == LogicalKeyboardKey.arrowRight) != isRtl;
-      final next = index + (forward ? 1 : -1);
-      if (next < 0) {
-        widget.onNavigateLeft?.call();
-      } else if (next < actions.length) {
-        setState(() => _vjodAction = next);
+      final step = ((key == LogicalKeyboardKey.arrowRight) != isRtl) ? 1 : -1;
+      if (_vjodZone == _vjodZoneActions) {
+        final next = action + step;
+        if (next < 0) {
+          widget.onNavigateLeft?.call();
+        } else if (next < actions.length) {
+          setState(() => _vjodAction = next);
+        }
+      } else if (_vjodZone == _vjodZoneCards && strip.isNotEmpty) {
+        final next = _vjodCard.clamp(0, strip.length - 1) + step;
+        if (next >= 0 && next < strip.length) {
+          setState(() => _vjodCard = next);
+          _goToPage(strip[next]);
+        } else if (next < 0) {
+          widget.onNavigateLeft?.call();
+        }
       }
       return KeyEventResult.handled;
     }
-    if (key == LogicalKeyboardKey.arrowDown && widget.onNavigateDown != null) {
-      unawaited(widget.onNavigateDown!());
-      return KeyEventResult.handled;
+    if (key == LogicalKeyboardKey.arrowDown) {
+      if (_vjodZone == _vjodZoneChange) {
+        setState(() => _vjodZone = _vjodZoneActions);
+        return KeyEventResult.handled;
+      }
+      if (_vjodZone == _vjodZoneActions && strip.isNotEmpty) {
+        setState(() {
+          _vjodZone = _vjodZoneCards;
+          final here = strip.indexOf(_currentIndex);
+          _vjodCard = here < 0 ? 0 : here;
+        });
+        return KeyEventResult.handled;
+      }
+      if (widget.onNavigateDown != null) {
+        unawaited(widget.onNavigateDown!());
+        return KeyEventResult.handled;
+      }
+      return KeyEventResult.ignored;
     }
     if (key == LogicalKeyboardKey.arrowUp) {
-      widget.onNavigateUp?.call();
+      if (_vjodZone == _vjodZoneCards) {
+        setState(() => _vjodZone = _vjodZoneActions);
+      } else if (_vjodZone == _vjodZoneActions) {
+        setState(() => _vjodZone = _vjodZoneChange);
+      } else {
+        widget.onNavigateUp?.call();
+      }
       return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;
@@ -2289,8 +2382,44 @@ class _MediaBarState extends State<MediaBar>
     );
   }
 
-  /// The VJOD banner: tonight's pick, the reason it was picked, when it
-  /// would end, and the other ideas underneath to switch to.
+  /// "1 h 47", "47 min": the mock-up's way of writing a length.
+  static String _vjodLength(Duration d) {
+    final h = d.inHours;
+    final m = d.inMinutes.remainder(60);
+    if (h == 0) return '$m min';
+    return '$h h ${m.toString().padLeft(2, '0')}';
+  }
+
+  String _vjodClock(DateTime t) {
+    if (widget.prefs.get(UserPreferences.use24HourClock)) {
+      return '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+    }
+    return TimeOfDay.fromDateTime(t).format(context);
+  }
+
+  /// When the title would end if started now, what's left of it for one to
+  /// resume. Null for a series.
+  String? _vjodEndsAt(AppLocalizations l10n, MediaBarSlideItem item) {
+    final runtime = item.runtime;
+    if (runtime == null || item.itemType == 'Series') return null;
+    final left = item.progress == null
+        ? runtime
+        : runtime * (1 - item.progress!.clamp(0.0, 1.0));
+    return l10n.mediaBarEndsAt(_vjodClock(DateTime.now().add(left)));
+  }
+
+  /// Why the pick: who it suits, from the evening's first answer.
+  String _vjodReason(AppLocalizations l10n, List<String> answers) {
+    final who = answers.firstOrNull;
+    if (who == l10n.tonightWhoCouple) return l10n.vjodPickForTwo;
+    if (who == l10n.tonightWhoFamily) return l10n.vjodPickForFamily;
+    if (who == l10n.tonightWhoFriends) return l10n.vjodPickForFriends;
+    return l10n.vjodPickFor;
+  }
+
+  /// The VJOD banner, as in the mock-up: the evening's answers and Change,
+  /// why this pick, its title in big capitals, where it stands and when it
+  /// would end, the buttons, and under them three ideas to switch to.
   Widget _buildVjodSlideshow(
     BuildContext context,
     List<MediaBarSlideItem> items,
@@ -2299,13 +2428,11 @@ class _MediaBarState extends State<MediaBar>
     final current = items.elementAtOrNull(_currentIndex);
     final isMobile = PlatformDetection.useMobileUi;
     final media = MediaQuery.of(context);
+    final s = isMobile ? 0.9 : (media.size.width / 1280).clamp(0.6, 1.2);
     final hasLeftSidebar =
         !isMobile &&
         widget.prefs.get(UserPreferences.navbarPosition) == NavbarPosition.left;
-    final left = isMobile ? 16.0 : 64.0 + (hasLeftSidebar ? 88.0 : 0.0);
-    // The picture runs up under the floating toolbar, as in the mock-up;
-    // only the text, anchored at the bottom, needs to stay clear of it.
-    const toolbarInset = 0.0;
+    final left = isMobile ? 16.0 : 64 * s + (hasLeftSidebar ? 88.0 : 0.0);
     final hasVisibleTrailerVideo =
         (_activeYouTubeVideoId != null ||
             _activeWebTrailerUrl != null ||
@@ -2313,17 +2440,80 @@ class _MediaBarState extends State<MediaBar>
             _trailerController != null) &&
         _trailerVideoOpacity > 0;
     final bg = AppColorScheme.background;
-    final infoWidth = isMobile
-        ? media.size.width - 32
-        : (media.size.width * 0.42).clamp(320.0, 720.0);
-    final chips = (current?.kicker ?? '')
-        .split('·')
-        .map((c) => c.trim())
-        .where((c) => c.isNotEmpty)
-        .toList();
-    final picks = items.take(3).toList();
-    final actions = _vjodActions(items.length);
-    final activeAction = _vjodAction.clamp(0, actions.length - 1);
+
+    // The evening, read off a pick's kicker: "Ce soir · Seul · Rire".
+    final pickKicker = items
+        .where((e) => e.role == MediaBarSlideItem.rolePick)
+        .map((e) => e.kicker)
+        .firstOrNull;
+    final evening = (pickKicker ?? '')
+            .split('·')
+            .map((c) => c.trim())
+            .where((c) => c.isNotEmpty)
+            .toList();
+    final tonightLabel = evening.firstOrNull ?? l10n.tonightTitle;
+    final answers = evening.skip(1).toList();
+    final reason = _vjodReason(l10n, answers);
+
+    String labelFor(MediaBarSlideItem item) => switch (item.role) {
+      MediaBarSlideItem.roleResume => l10n.vjodResume,
+      MediaBarSlideItem.roleRequest => l10n.tonightNotHereYet,
+      _ when items.indexOf(item) ==
+          items.indexWhere((e) => e.role == MediaBarSlideItem.rolePick) =>
+        reason,
+      _ => l10n.vjodBarAnother,
+    };
+
+    String? captionFor(MediaBarSlideItem item) => switch (item.role) {
+      MediaBarSlideItem.roleResume => item.caption,
+      MediaBarSlideItem.roleRequest => l10n.vjodRequestCaption,
+      _ => [
+        l10n.seerrTagReady,
+        ?_vjodEndsAt(l10n, item),
+      ].join(' · '),
+    };
+
+    final actions = _vjodActions(context, items);
+    final strip = isMobile ? const <int>[] : _vjodStrip(items);
+    final remoteOn = _vjodFocused && !isMobile;
+
+    Widget hero(MediaBarSlideItem item) {
+      final isRequest = item.role == MediaBarSlideItem.roleRequest;
+      final isResume = item.role == MediaBarSlideItem.roleResume;
+      return VjodHeroContent(
+        key: ValueKey('vjod_${item.itemId}'),
+        scale: s,
+        compact: isMobile,
+        tonightLabel: tonightLabel,
+        answers: answers,
+        changeLabel: l10n.vjodChange,
+        onChange: _vjodChangeEvening,
+        changeFocused: remoteOn && _vjodZone == _vjodZoneChange,
+        kicker: isRequest
+            ? l10n.tonightNotHereYet
+            : isResume
+            ? l10n.vjodResume
+            : reason,
+        title: item.title,
+        statusLabel: isRequest ? l10n.seerrTagRequest : l10n.seerrTagReady,
+        statusColor: isRequest
+            ? AppColorScheme.accent
+            : AppColorScheme.statusAvailable,
+        statusIcon: isRequest ? Icons.add_circle_rounded : Icons.play_arrow_rounded,
+        meta: [
+          ?item.genres.firstOrNull,
+          if (isResume && item.caption != null)
+            item.caption!
+          else if (item.runtime != null && item.itemType != 'Series')
+            _vjodLength(item.runtime!),
+        ],
+        endsAt: _vjodEndsAt(l10n, item),
+        actions: actions,
+        activeAction: remoteOn && _vjodZone == _vjodZoneActions
+            ? _vjodAction.clamp(0, actions.length - 1)
+            : null,
+      );
+    }
 
     return MouseRegion(
       onEnter: (_) => _setPaused(true),
@@ -2335,8 +2525,6 @@ class _MediaBarState extends State<MediaBar>
         onFocusChange: _handleFocusChange,
         onKeyEvent: (node, event) => _handleKeyEvent(event, items),
         child: GestureDetector(
-          onTap: () => _navigateToItem(context, items),
-          onLongPress: () => _navigateToItemAndPlay(context, items),
           onHorizontalDragEnd: isMobile
               ? (details) {
                   final v = details.primaryVelocity ?? 0;
@@ -2347,167 +2535,139 @@ class _MediaBarState extends State<MediaBar>
                   }
                 }
               : null,
-          child: Padding(
-            padding: EdgeInsets.only(top: toolbarInset),
-            child: SizedBox(
-              height: widget.height - toolbarInset,
-              width: double.infinity,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  AnimatedOpacity(
-                    opacity: hasVisibleTrailerVideo ? 0 : 1,
-                    duration: const Duration(milliseconds: 250),
-                    child: _BackdropLayer(
-                      items: items,
-                      currentIndex: _currentIndex,
-                    ),
-                  ),
-                  ..._buildVideoOverlays(allowPersistentMedia3: true),
-                  // Two plain gradients from the page colour: the text sits on
-                  // the dark side and the rows below start on the same black.
-                  IgnorePointer(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                          colors: [
-                            bg.withValues(alpha: 0.92),
-                            bg.withValues(alpha: 0.55),
-                            bg.withValues(alpha: 0),
-                          ],
-                          stops: const [0, 0.38, 0.7],
+          child: SizedBox(
+            height: widget.height,
+            width: double.infinity,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // The picture takes the top two thirds, as in the mock-up,
+                // and the ideas sit on the page colour under it.
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  height: isMobile ? widget.height : widget.height * 0.72,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      AnimatedOpacity(
+                        opacity: hasVisibleTrailerVideo ? 0 : 1,
+                        duration: const Duration(milliseconds: 250),
+                        child: _BackdropLayer(
+                          items: items,
+                          currentIndex: _currentIndex,
                         ),
                       ),
-                    ),
-                  ),
-                  IgnorePointer(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                          colors: [bg, bg.withValues(alpha: 0)],
-                          stops: const [0, 0.45],
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (current != null)
-                    Positioned(
-                      left: left,
-                      bottom: isMobile ? 20 : (picks.length > 1 ? 150 : 48),
-                      width: infoWidth,
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 300),
-                        // The default centres the outgoing and incoming
-                        // slides, which pushed the text away from the edge.
-                        layoutBuilder: (current, previous) => Stack(
-                          alignment: Alignment.bottomLeft,
-                          children: [...previous, ?current],
-                        ),
-                        child: Column(
-                          key: ValueKey('vjod_${current.itemId}'),
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (chips.isNotEmpty)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: Wrap(
-                                  spacing: 8,
-                                  runSpacing: 6,
-                                  children: [
-                                    for (final (i, c) in chips.indexed)
-                                      _VjodChip(label: c, dot: i == 0),
-                                  ],
-                                ),
-                              ),
-                            SizedBox(
-                              height: isMobile ? 72 : 110,
-                              width: isMobile ? 260 : MediaBar.logoBoxWidth,
-                              child: current.logoUrl != null
-                                  ? _buildLogoWithShadow(
-                                      current.logoUrl,
-                                      current.title,
-                                    )
-                                  : Align(
-                                      alignment: Alignment.bottomLeft,
-                                      child: Text(
-                                        current.title.toUpperCase(),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          color: AppColorScheme.onBackground,
-                                          fontSize: isMobile ? 30 : 46,
-                                          height: 1,
-                                          fontWeight: FontWeight.w900,
-                                          shadows: _textShadows,
-                                        ),
-                                      ),
-                                    ),
-                            ),
-                            const SizedBox(height: 12),
-                            _MetadataRow(item: current.withKicker(null)),
-                            const SizedBox(height: 16),
-                            Wrap(
-                              spacing: isMobile ? 8 : 14,
-                              runSpacing: 8,
-                              children: [
-                                for (final (i, action) in actions.indexed)
-                                  _VjodButton(
-                                    label: switch (action) {
-                                      _VjodAction.play => l10n.vjodBarPlay,
-                                      _VjodAction.another => l10n.vjodBarAnother,
-                                      _VjodAction.details => l10n.vjodBarDetails,
-                                      _VjodAction.evening => l10n.vjodBarEvening,
-                                    },
-                                    icon: switch (action) {
-                                      _VjodAction.play => Icons.play_arrow_rounded,
-                                      _VjodAction.another => Icons.shuffle_rounded,
-                                      _VjodAction.details =>
-                                        Icons.info_outline_rounded,
-                                      _VjodAction.evening => Icons.tune_rounded,
-                                    },
-                                    // With the remote, the lit button is the one
-                                    // OK will press; otherwise Play leads.
-                                    primary: !isMobile && _vjodFocused
-                                        ? i == activeAction
-                                        : action == _VjodAction.play,
-                                    large: !isMobile,
-                                    onTap: () =>
-                                        _runVjodAction(context, action, items),
-                                  ),
+                      ..._buildVideoOverlays(allowPersistentMedia3: true),
+                      IgnorePointer(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              colors: [
+                                bg.withValues(alpha: 0.9),
+                                bg.withValues(alpha: 0.5),
+                                bg.withValues(alpha: 0),
                               ],
+                              stops: const [0, 0.4, 0.75],
                             ),
-                          ],
+                          ),
                         ),
                       ),
-                    ),
-                  if (!isMobile && picks.length > 1)
-                    Positioned(
-                      left: left,
-                      bottom: 24,
-                      child: Row(
-                        children: [
-                          for (final (i, p) in picks.indexed)
-                            Padding(
-                              padding: const EdgeInsets.only(right: 14),
-                              child: _VjodPickCard(
-                                item: p,
-                                selected: i == _currentIndex,
-                                label: p.serverId == seerrSlideServer
-                                    ? l10n.tonightNotHereYet
-                                    : null,
-                                onTap: () => _goToPage(i),
-                              ),
+                      IgnorePointer(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                              colors: [bg, bg.withValues(alpha: 0)],
+                              stops: const [0, 0.5],
                             ),
-                        ],
+                          ),
+                        ),
                       ),
+                      IgnorePointer(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                bg.withValues(alpha: 0.7),
+                                bg.withValues(alpha: 0),
+                              ],
+                              stops: const [0, 0.3],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (current != null)
+                  Positioned(
+                    left: left,
+                    right: isMobile ? 16 : null,
+                    width: isMobile ? null : 780 * s,
+                    top: isMobile ? null : 112 * s,
+                    bottom: isMobile ? 16 : null,
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      layoutBuilder: (shown, previous) => Stack(
+                        alignment: Alignment.topLeft,
+                        children: [...previous, ?shown],
+                      ),
+                      child: hero(current),
                     ),
-                ],
-              ),
+                  ),
+                if (strip.isNotEmpty)
+                  Positioned(
+                    left: left,
+                    top: 430 * s,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (final (i, index) in strip.indexed) ...[
+                          if (i > 0) SizedBox(width: 24 * s),
+                          Builder(
+                            builder: (context) {
+                              final item = items[index];
+                              final image =
+                                  item.backdropUrl ?? item.posterUrl;
+                              final ringed = remoteOn
+                                  ? _vjodZone == _vjodZoneCards &&
+                                        _vjodCard == i
+                                  : index == _currentIndex;
+                              return VjodPickCard(
+                                scale: s,
+                                label: labelFor(item),
+                                title: item.title,
+                                subtitle: captionFor(item),
+                                subtitleColor:
+                                    item.role == MediaBarSlideItem.rolePick
+                                    ? AppColorScheme.statusAvailable
+                                    : null,
+                                progress: item.progress,
+                                selected: ringed,
+                                image: image == null
+                                    ? null
+                                    : OfflineAwareImage(
+                                        imageUrl: image,
+                                        fit: BoxFit.cover,
+                                      ),
+                                onTap: () => index == _currentIndex
+                                    ? _navigateToItemAndPlay(context, items)
+                                    : _goToPage(index),
+                              );
+                            },
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
@@ -4110,199 +4270,4 @@ class _TheaterLoadingOverlay extends StatelessWidget {
 }
 
 
-class _VjodChip extends StatelessWidget {
-  final String label;
-  final bool dot;
 
-  const _VjodChip({required this.label, this.dot = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: AppColorScheme.background.withValues(alpha: 0.55),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: AppColorScheme.onBackground.withValues(alpha: 0.18),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (dot) ...[
-            Container(
-              width: 7,
-              height: 7,
-              decoration: BoxDecoration(
-                color: AppColorScheme.accent,
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 7),
-          ],
-          Text(
-            label.toUpperCase(),
-            style: TextStyle(
-              color: AppColorScheme.onBackground.withValues(alpha: 0.85),
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.2,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _VjodButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool primary;
-  final bool large;
-  final VoidCallback onTap;
-
-  const _VjodButton({
-    required this.label,
-    required this.icon,
-    required this.onTap,
-    this.primary = false,
-    this.large = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bg = primary ? AppColorScheme.onBackground : AppColorScheme.buttonNormal;
-    final fg = primary ? AppColorScheme.background : AppColorScheme.onBackground;
-    return Material(
-      color: bg,
-      borderRadius: BorderRadius.circular(6),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(6),
-        onTap: onTap,
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: large ? 22 : 14,
-            vertical: large ? 14 : 11,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: large ? 24 : 18, color: fg),
-              SizedBox(width: large ? 10 : 6),
-              Text(
-                label,
-                style: TextStyle(
-                  color: fg,
-                  fontSize: large ? 19 : 14,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _VjodPickCard extends StatelessWidget {
-  final MediaBarSlideItem item;
-  final bool selected;
-  final String? label;
-  final VoidCallback onTap;
-
-  const _VjodPickCard({
-    required this.item,
-    required this.selected,
-    required this.onTap,
-    this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final image = item.backdropUrl ?? item.posterUrl;
-    final ink = AppColorScheme.onBackground;
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: 200,
-        height: 112,
-        decoration: BoxDecoration(
-          color: AppColorScheme.surface,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color: selected ? ink : Colors.transparent,
-            width: 3,
-          ),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (image != null)
-              Opacity(
-                opacity: selected ? 1 : 0.6,
-                child: OfflineAwareImage(imageUrl: image, fit: BoxFit.cover),
-              ),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.85),
-                    Colors.black.withValues(alpha: 0),
-                  ],
-                  stops: const [0, 0.7],
-                ),
-              ),
-            ),
-            if (label != null)
-              Positioned(
-                left: 8,
-                top: 8,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColorScheme.background.withValues(alpha: 0.8),
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                  child: Text(
-                    label!,
-                    style: TextStyle(
-                      color: ink,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-            Positioned(
-              left: 10,
-              right: 10,
-              bottom: 8,
-              child: Text(
-                item.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-enum _VjodAction { play, another, details, evening }

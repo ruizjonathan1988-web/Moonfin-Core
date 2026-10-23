@@ -24,6 +24,21 @@ class MediaBarSlideItem {
   /// it was picked for.
   final String? kicker;
 
+  /// What the slide is to Tonight: [roleResume], [rolePick] or
+  /// [roleRequest]. Null outside Tonight.
+  final String? role;
+
+  /// The line a Tonight card shows under itself, when it isn't worked out
+  /// on screen, such as how much of an episode is left.
+  final String? caption;
+
+  /// How far the viewer got, for what is there to resume.
+  final double? progress;
+
+  static const roleResume = 'resume';
+  static const rolePick = 'pick';
+  static const roleRequest = 'request';
+
   const MediaBarSlideItem({
     required this.itemId,
     required this.serverId,
@@ -44,9 +59,24 @@ class MediaBarSlideItem {
     this.itemType = 'Movie',
     this.remoteTrailers = const [],
     this.kicker,
+    this.role,
+    this.caption,
+    this.progress,
   });
 
-  MediaBarSlideItem withKicker(String? kicker) => MediaBarSlideItem(
+  MediaBarSlideItem withKicker(String? kicker) => withTonight(
+    kicker: kicker,
+    role: role,
+    caption: caption,
+    progress: progress,
+  );
+
+  MediaBarSlideItem withTonight({
+    String? kicker,
+    String? role,
+    String? caption,
+    double? progress,
+  }) => MediaBarSlideItem(
     itemId: itemId,
     serverId: serverId,
     title: title,
@@ -66,5 +96,8 @@ class MediaBarSlideItem {
     itemType: itemType,
     remoteTrailers: remoteTrailers,
     kicker: kicker,
+    role: role,
+    caption: caption,
+    progress: progress,
   );
 }

@@ -3,6 +3,7 @@ import 'dart:ui' show PlatformDispatcher;
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:moonfin_design/moonfin_design.dart' show ThemeRegistry;
 import 'package:path_provider/path_provider.dart';
 
 import 'package:flutter/foundation.dart';
@@ -3026,6 +3027,15 @@ class HomeViewModel extends ChangeNotifier {
   bool _top10Switches = false;
   bool _top10ShowsSeries = false;
 
+  /// Whether the films' Top 10 can switch to series, and is showing them.
+  bool get top10Switches => _top10Switches;
+  bool get top10ShowsSeries => _top10ShowsSeries;
+
+  /// VJOD puts the switch in the row's head instead of a first card.
+  static bool get _switchInHeader =>
+      ThemeRegistry.active.id == ThemeRegistry.vjodId ||
+      ThemeRegistry.active.id == ThemeRegistry.ecrinId;
+
   /// Shows the Top 10 of the other kind in the films' row.
   Future<void> toggleTop10() async {
     _top10ShowsSeries = !_top10ShowsSeries;
@@ -3076,7 +3086,7 @@ class HomeViewModel extends ChangeNotifier {
       ].take(10).toList();
       // A Top 3 isn't much of a chart.
       if (items.length < 3) return [];
-      if (switches) {
+      if (switches && !_switchInHeader) {
         items.insert(
           0,
           AggregatedItem(

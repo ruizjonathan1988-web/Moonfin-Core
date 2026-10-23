@@ -25,6 +25,7 @@ import '../../../data/models/home_row.dart';
 import '../../../data/repositories/mdblist_repository.dart';
 import '../../../data/repositories/seerr_repository.dart';
 import '../../widgets/seerr/seerr_shortcuts.dart';
+import '../../widgets/vjod/vjod_widgets.dart';
 import '../../widgets/seerr/seerr_for_you_sheet.dart';
 import '../../widgets/card_highlights.dart';
 import '../../widgets/floating_notification.dart';
@@ -757,6 +758,25 @@ class _ContentRows extends StatefulWidget {
 class _ContentRowsState extends State<_ContentRows>
     with WidgetsBindingObserver, WindowListener
     implements AudioOwnable {
+  /// The Films and Series halves of the Top 10's switch, in its head.
+  final _top10SwitchFocus = [
+    FocusNode(debugLabel: 'Top10Films'),
+    FocusNode(debugLabel: 'Top10Series'),
+  ];
+
+  static bool get _vjodTheme =>
+      ThemeRegistry.active.id == ThemeRegistry.vjodId ||
+      ThemeRegistry.active.id == ThemeRegistry.ecrinId;
+
+  double get _vjodRowScale => PlatformDetection.useMobileUi
+      ? 0.72
+      : (MediaQuery.sizeOf(context).width / 1280).clamp(0.6, 1.2);
+
+  bool _isTop10WithSwitch(HomeRow? row) =>
+      _vjodTheme &&
+      row != null &&
+      row.id == HomeViewModel.top10MoviesRowId &&
+      widget.viewModel.top10Switches;
   /// A wide artwork row has no modern variant, so beside rows drawing at twice
   /// the poster height it reads as a band of undersized cards. This brings the
   /// two back to roughly the same height.
@@ -1409,6 +1429,9 @@ class _ContentRowsState extends State<_ContentRows>
 
   @override
   void dispose() {
+    for (final node in _top10SwitchFocus) {
+      node.dispose();
+    }
     if (widget.viewModel.onRequestsReady == _announceReadyRequests) {
       widget.viewModel.onRequestsReady = null;
     }
@@ -2358,7 +2381,9 @@ class _ContentRowsState extends State<_ContentRows>
         ) ==
         UserPreferences.mediaBarModeVjod;
     if (isVjod && !PlatformDetection.useMobileUi) {
-      return screenHeight * 0.86;
+      // The mock-up's banner and its three ideas, 700 of its 1280 wide.
+      final scale = (screenWidth / 1280).clamp(0.6, 1.2);
+      return (700 * scale).clamp(0.0, screenHeight);
     }
 
     if (!PlatformDetection.useMobileUi) {
@@ -3415,6 +3440,13 @@ class _ContentRowsState extends State<_ContentRows>
     required bool isUp,
   }) {
     _markUserGesture();
+    if (isUp && _isTop10WithSwitch(rows.elementAtOrNull(rowIndex))) {
+      final node = _top10SwitchFocus[widget.viewModel.top10ShowsSeries ? 1 : 0];
+      if (node.context != null) {
+        node.requestFocus();
+        return true;
+      }
+    }
     if (isUp) {
       if (rowIndex == 0) {
         if (_isMediaBarIncluded()) {
@@ -4121,6 +4153,10 @@ class _ContentRowsState extends State<_ContentRows>
   }
 
   String _localizedRowTitle(HomeRow row, AppLocalizations l10n) {
+    if (_vjodTheme) {
+      if (row.id == 'resume' || row.id == 'nextUp') return l10n.vjodContinue;
+      if (_isTop10WithSwitch(row)) return l10n.vjodTop10Title;
+    }
     final merge = widget.prefs.effectiveMergeContinueWatchingNextUp;
     return localizeHomeRowTitle(
       row: row,
@@ -4130,6 +4166,14 @@ class _ContentRowsState extends State<_ContentRows>
   }
 
   String? _rowSubtitle(HomeRow row, AppLocalizations l10n) {
+    if (_vjodTheme) {
+      // The mock-up says what a row is for, not where it comes from.
+      return switch (row.id) {
+        HomeViewModel.forYouRowId => l10n.vjodForYouSubtitle,
+        'french_movies' => l10n.vjodFrenchSubtitle,
+        _ => null,
+      };
+    }
     if (row.id == 'merged_calendar' || row.id == 'radarr_calendar' || row.id == 'sonarr_calendar') {
       return 'Radarr and Sonarr Calendars';
     }
@@ -4863,10 +4907,12 @@ class _ContentRowsState extends State<_ContentRows>
     required AppLocalizations l10n,
   }) {
     final suppressFocusGlow = ThemeRegistry.active.borders.focusGlow.isNotEmpty;
-    final showMediaTypeBadges = showsMediaTypeBadges(
-      prefs.get(UserPreferences.mediaTypeBadgeBehavior),
-      row.items,
-    );
+    // The mock-up's posters carry where a title stands, not what it is.
+    final showMediaTypeBadges = !_vjodTheme &&
+        showsMediaTypeBadges(
+          prefs.get(UserPreferences.mediaTypeBadgeBehavior),
+          row.items,
+        );
     final isSeerrRowOverride = _isSeerrFilterRow(row);
     final isRowsV2 = _isRowModern(row, prefs);
     final isModernMyMediaStatic = _isModernMyMediaStatic(row, prefs);
@@ -5522,6 +5568,59 @@ class _ContentRowsState extends State<_ContentRows>
     return '${hours}h ${minutes}m';
   }
 
+  /// What the mock-up puts in a row's head: the Top 10's Films and Series.
+  Widget? _vjodRowTrailing(int rowIndex) {
+    final rows = widget.viewModel.rows;
+    final row = rows.elementAtOrNull(rowIndex);
+    if (!_isTop10WithSwitch(row)) return null;
+    final l10n = AppLocalizations.of(context);
+    final series = widget.viewModel.top10ShowsSeries;
+    return Focus(
+      canRequestFocus: false,
+      skipTraversal: true,
+      onKeyEvent: (node, event) {
+        if (event is! KeyDownEvent) return KeyEventResult.ignored;
+        final key = event.logicalKey;
+        if (key == LogicalKeyboardKey.arrowDown) {
+          unawaited(
+            rowIndex == 0
+                ? _focusAdjacentRowItem(rows, -1, 1)
+                : _focusAdjacentRowItem(rows, rowIndex - 1, 1),
+          );
+          return KeyEventResult.handled;
+        }
+        if (key == LogicalKeyboardKey.arrowUp) {
+          if (rowIndex == 0) {
+            if (_isMediaBarIncluded()) {
+              unawaited(_moveFocusFromRowsToMediaBar());
+            } else {
+              _navigateFromMediaBarToNavbar();
+            }
+          } else {
+            unawaited(_focusAdjacentRowItem(rows, rowIndex, -1));
+          }
+          return KeyEventResult.handled;
+        }
+        if (key == LogicalKeyboardKey.arrowLeft ||
+            key == LogicalKeyboardKey.arrowRight) {
+          final target = key == LogicalKeyboardKey.arrowRight ? 1 : 0;
+          _top10SwitchFocus[target].requestFocus();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: VjodSegmented(
+        scale: _vjodRowScale,
+        options: [l10n.vjodTabMovies, l10n.vjodTabSeries],
+        selected: series ? 1 : 0,
+        focusNodes: _top10SwitchFocus,
+        onSelect: (i) {
+          if ((i == 1) != series) unawaited(widget.viewModel.toggleTop10());
+        },
+      ),
+    );
+  }
+
   Widget _buildTitledRow({
     Key? key,
     required String title,
@@ -5534,6 +5633,27 @@ class _ContentRowsState extends State<_ContentRows>
     final isRowsV2 = _isHomeRowsStyleV2();
     final showHeaderControls =
         hasItems && PlatformDetection.useDesktopUi && !PlatformDetection.isTV;
+    if (_vjodTheme) {
+      return RepaintBoundary(
+        child: Column(
+          key: key,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(_kHomeRowLabelInset, 22, 8, 6),
+              child: VjodRowHeader(
+                title: title,
+                subtitle: subtitle,
+                scale: _vjodRowScale,
+                trailing: _vjodRowTrailing(rowIndex),
+              ),
+            ),
+            child,
+          ],
+        ),
+      );
+    }
     return RepaintBoundary(
       child: SingleChildScrollView(
         physics: const NeverScrollableScrollPhysics(),

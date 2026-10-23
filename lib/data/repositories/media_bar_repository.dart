@@ -557,7 +557,10 @@ class MediaBarRepository {
         for (final id in ids)
           if (byId[id] case final data?
               when !isRatingBlocked(data['OfficialRating']?.toString()))
-            _toSlideItem(data).withKicker(kicker),
+            _toSlideItem(data).withTonight(
+              kicker: kicker,
+              role: MediaBarSlideItem.rolePick,
+            ),
       ];
       // One title not here yet, third, to request in a press. Never on a
       // profile with ratings blocked: its rating isn't known here.
@@ -566,14 +569,94 @@ class MediaBarRepository {
         if (toRequest != null) {
           slides.insert(
             slides.length < 2 ? slides.length : 2,
-            toRequest.withKicker(l10n.tonightNotHereYet),
+            toRequest.withTonight(
+              kicker: l10n.tonightNotHereYet,
+              role: MediaBarSlideItem.roleRequest,
+            ),
           );
         }
+      }
+      // What was left half watched, last, so the banner opens on tonight's
+      // pick while its card still offers to pick up where things stopped.
+      if (slides.isNotEmpty) {
+        final resume = await _tonightResume(l10n);
+        if (resume != null) slides.add(resume);
       }
       return slides;
     } catch (e) {
       // The usual draw takes over.
       return const [];
+    }
+  }
+
+  /// The last thing left half watched, as a slide that plays it from there.
+  Future<MediaBarSlideItem?> _tonightResume(AppLocalizations l10n) async {
+    try {
+      final response = await _client.itemsApi
+          .getResumeItems(
+            limit: 1,
+            mediaTypes: 'Video',
+            fields: '$_fields,ParentBackdropImageTags,SeriesName,UserData',
+          )
+          .timeout(const Duration(seconds: 8));
+      final data = (response['Items'] as List? ?? [])
+          .cast<Map<String, dynamic>>()
+          .firstOrNull;
+      if (data == null) return null;
+      if (isRatingBlocked(data['OfficialRating']?.toString())) return null;
+      var slide = _toSlideItem(data);
+      final isEpisode = data['Type'] == 'Episode';
+      final runTicks = (data['RunTimeTicks'] as num?)?.toInt();
+      final posTicks =
+          ((data['UserData'] as Map?)?['PlaybackPositionTicks'] as num?)
+              ?.toInt();
+      final progress = runTicks != null && runTicks > 0 && posTicks != null
+          ? (posTicks / runTicks).clamp(0.0, 1.0)
+          : null;
+      final leftMinutes = runTicks != null && posTicks != null
+          ? ((runTicks - posTicks) / 600000000).round()
+          : null;
+      final episode = (data['IndexNumber'] as num?)?.toInt();
+      final caption = [
+        if (isEpisode && episode != null) l10n.vjodEpisodeShort(episode),
+        if (leftMinutes != null && leftMinutes > 0)
+          l10n.vjodMinutesLeft(leftMinutes),
+      ].join(' \u00b7 ');
+      // An episode stands under its series' name and picture.
+      if (isEpisode) {
+        final seriesName = data['SeriesName']?.toString();
+        final parentId = data['ParentBackdropItemId']?.toString();
+        final parentTags = data['ParentBackdropImageTags'] as List?;
+        slide = MediaBarSlideItem(
+          itemId: slide.itemId,
+          serverId: slide.serverId,
+          title: seriesName ?? slide.title,
+          overview: slide.overview,
+          backdropUrl: parentId != null &&
+                  parentTags != null &&
+                  parentTags.isNotEmpty
+              ? _client.imageApi.getBackdropImageUrl(
+                  parentId,
+                  tag: parentTags[0] as String,
+                  maxWidth: 1280,
+                )
+              : slide.backdropUrl,
+          officialRating: slide.officialRating,
+          year: slide.year,
+          genres: slide.genres,
+          runtime: slide.runtime,
+          communityRating: slide.communityRating,
+          itemType: 'Episode',
+        );
+      }
+      return slide.withTonight(
+        kicker: l10n.vjodResume,
+        role: MediaBarSlideItem.roleResume,
+        caption: caption.isEmpty ? null : caption,
+        progress: progress,
+      );
+    } catch (_) {
+      return null;
     }
   }
 

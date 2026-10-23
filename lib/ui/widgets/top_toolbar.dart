@@ -56,6 +56,7 @@ import '../../util/focus/dpad_keys.dart';
 import '../../util/focus/input_mode_tracker.dart';
 import '../navigation/app_router.dart';
 import 'adaptive/sf_symbol.dart';
+import 'vjod/vjod_widgets.dart';
 
 const _kToolbarHeightTV = 95.0;
 const _kToolbarHeightDesktop = 80.0;
@@ -798,7 +799,12 @@ class _TopToolbarState extends State<TopToolbar> with RouteAware {
               children: [
                 FocusTraversalGroup(
                   policy: WidgetOrderTraversalPolicy(),
-                  child: isLandscape
+                  child: _vjod
+                      ? SizedBox(
+                          height: toolbarHeight - (vPad * 2),
+                          child: _buildVjodBar(),
+                        )
+                      : isLandscape
                       ? SizedBox(
                           height: toolbarHeight - (vPad * 2),
                           child: Stack(
@@ -853,6 +859,203 @@ class _TopToolbarState extends State<TopToolbar> with RouteAware {
         ),
       ),
     );
+  }
+
+  /// VJOD and Écrin draw the mock-up's bar instead of the icon pill.
+  bool get _vjod =>
+      ThemeRegistry.active.id == ThemeRegistry.vjodId ||
+      ThemeRegistry.active.id == ThemeRegistry.ecrinId;
+
+  double get _vjodScale {
+    if (PlatformDetection.useMobileUi) return 0.72;
+    final width = MediaQuery.sizeOf(context).width;
+    return (width / 1280).clamp(0.6, 1.2);
+  }
+
+  AggregatedLibrary? _libraryOfType(String type) {
+    for (final lib in _navLibraries) {
+      if (lib.collectionType.toLowerCase() == type) return lib;
+    }
+    return null;
+  }
+
+  void _openLibrary(AggregatedLibrary? lib) {
+    if (lib == null) {
+      context.navigateTopLevel(Destinations.home);
+      return;
+    }
+    context.navigateTopLevel(
+      libraryRoute(lib.id, lib.collectionType, lib.name, serverId: lib.serverId),
+    );
+  }
+
+  /// The mock-up's bar: logo, Accueil, Films, Séries, Bientôt, En route,
+  /// search, and the avatar that opens everything else.
+  Widget _buildVjodBar() {
+    final l10n = AppLocalizations.of(context);
+    final s = _vjodScale;
+    final user = _userRepo.currentUser;
+    final initial = (user?.name.isNotEmpty == true)
+        ? user!.name[0].toUpperCase()
+        : '?';
+    final movies = _libraryOfType('movies');
+    final series = _libraryOfType('tvshows');
+    final seerr =
+        !_kidsMode && GetIt.instance<PluginSyncService>().seerrAvailable;
+    return VjodNavBar(
+      scale: s,
+      avatarInitial: initial,
+      avatarFocusNode: _settingsFocus,
+      leading: _showBackArrow && !_isActive(Destinations.home)
+          ? VjodRoundButton(
+              size: 44 * s,
+              background: vjodButton,
+              scale: s,
+              onTap: () => context.popOrHome(),
+              child: Icon(Icons.arrow_back, color: vjodInk, size: 22 * s),
+            )
+          : null,
+      onSearch: () {
+        if (_isActive(Destinations.search)) return;
+        context.navigateTopLevel(Destinations.search);
+      },
+      onAvatar: _openVjodMenu,
+      tabs: [
+        VjodNavItem(
+          label: l10n.home,
+          selected: _isActive(Destinations.home),
+          focusNode: _homeFocus,
+          onTap: () {
+            if (_isActive(Destinations.home)) {
+              homeRefreshBus.request(newMediaBar: true);
+              return;
+            }
+            homeRefreshBus.requestAfterNavigation();
+            context.go(Destinations.home);
+          },
+        ),
+        if (movies != null)
+          VjodNavItem(label: l10n.vjodTabMovies, onTap: () => _openLibrary(movies)),
+        if (series != null)
+          VjodNavItem(label: l10n.vjodTabSeries, onTap: () => _openLibrary(series)),
+        if (seerr) ...[
+          VjodNavItem(
+            label: l10n.vjodTabSoon,
+            selected: _isActive(Destinations.seerrDiscover),
+            onTap: () {
+              if (_isActive(Destinations.seerrDiscover)) return;
+              context.navigateTopLevel(Destinations.seerrDiscover);
+            },
+          ),
+          VjodNavItem(
+            label: l10n.enRouteTitle,
+            selected: _isActive(Destinations.enRoute),
+            onTap: () {
+              if (_isActive(Destinations.enRoute)) return;
+              context.navigateTopLevel(Destinations.enRoute);
+            },
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// What sits behind the avatar: the profile, everything that isn't a tab,
+  /// and settings.
+  Future<void> _openVjodMenu() async {
+    final l10n = AppLocalizations.of(context);
+    final s = _vjodScale;
+    final user = _userRepo.currentUser;
+    final name = user?.name ?? '';
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
+    final kids = _kidsMode;
+    final seerr = !kids && GetIt.instance<PluginSyncService>().seerrAvailable;
+    final liveTv = _showLiveTvButton;
+    final host = context;
+
+    void go(String route) {
+      if (_isActive(route)) return;
+      host.navigateTopLevel(route);
+    }
+
+    final action = await showGeneralDialog<VoidCallback>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: l10n.close,
+      barrierColor: const Color(0xB80B0B0D),
+      pageBuilder: (dialogContext, _, _) {
+        VjodMenuEntry entry(
+          IconData icon,
+          String label,
+          VoidCallback run, {
+          String? subtitle,
+        }) => VjodMenuEntry(
+          icon: icon,
+          label: label,
+          subtitle: subtitle,
+          onTap: () => Navigator.of(dialogContext).pop(run),
+        );
+        final panel = VjodMenuPanel(
+          scale: s,
+          name: name,
+          initial: initial,
+          changeLabel: l10n.vjodMenuChange,
+          onChange: () => Navigator.of(dialogContext).pop(() => showUserMenu(host)),
+          sectionLabel: l10n.vjodMenuAlso,
+          entries: [
+            entry(
+              Icons.shuffle_rounded,
+              l10n.shuffle,
+              () => showShuffleOverlay(host),
+              subtitle: l10n.vjodMenuShuffleHint,
+            ),
+            if (!kids)
+              entry(Icons.theater_comedy_outlined, l10n.genres,
+                  () => go(Destinations.allGenres)),
+            entry(Icons.favorite_border_rounded, l10n.favorites,
+                () => go(Destinations.allFavorites)),
+            if (seerr)
+              entry(
+                Icons.explore_outlined,
+                l10n.vjodMenuDiscover,
+                () => go(Destinations.seerrDiscover),
+                subtitle: l10n.vjodMenuDiscoverHint,
+              ),
+            if (liveTv)
+              entry(Icons.live_tv_rounded, l10n.liveTv,
+                  () => go(Destinations.liveTvGuide)),
+            if (seerr)
+              entry(Icons.rule_rounded, l10n.vjodMenuRequests,
+                  () => go(Destinations.seerrRequests)),
+          ],
+          settings: entry(
+            Icons.settings_outlined,
+            l10n.settings,
+            () => SettingsPanel.open(host, const SettingsSidePanel()),
+          ),
+        );
+        final media = MediaQuery.of(dialogContext);
+        return SafeArea(
+          child: Align(
+            alignment: PlatformDetection.useMobileUi
+                ? Alignment.bottomCenter
+                : Alignment.topRight,
+            child: Padding(
+              padding: PlatformDetection.useMobileUi
+                  ? EdgeInsets.only(bottom: media.padding.bottom + 12)
+                  : EdgeInsets.only(right: 64 * s, top: 104 * s),
+              child: Material(type: MaterialType.transparency, child: panel),
+            ),
+          ),
+        );
+      },
+    );
+    if (!mounted) return;
+    if (action != null) {
+      action();
+    } else {
+      _settingsFocus.requestFocus();
+    }
   }
 
   Widget _buildStart() {
