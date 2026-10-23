@@ -15,6 +15,7 @@ import 'bottom_nav/fold_nav.dart';
 import 'download_progress_bar.dart';
 import 'left_sidebar.dart';
 import 'top_toolbar.dart';
+import 'vjod/vjod_widgets.dart';
 
 import 'dart:async';
 import 'package:moonfin_design/moonfin_design.dart';
@@ -544,6 +545,8 @@ class _NavigationLayoutState extends State<NavigationLayout>
     final insetBody = (widget.pinTopToolbar && musicExtra > 0)
         ? Padding(padding: EdgeInsets.only(top: musicExtra), child: body)
         : body;
+    final vjodNarrow =
+        widget.showNavigationChrome && TopToolbar.vjodNarrow(context);
     return Column(
       children: [
         Expanded(
@@ -599,6 +602,13 @@ class _NavigationLayoutState extends State<NavigationLayout>
           ),
         ),
         const DownloadProgressBar(),
+        if (vjodNarrow)
+          ValueListenableBuilder<List<VjodNavItem>>(
+            valueListenable: TopToolbar.vjodBottomTabs,
+            builder: (context, tabs, _) => tabs.isEmpty
+                ? const SizedBox.shrink()
+                : VjodBottomBar(tabs: tabs),
+          ),
       ],
     );
   }

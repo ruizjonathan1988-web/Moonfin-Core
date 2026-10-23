@@ -336,13 +336,7 @@ Widget _foldHome() {
           avatarInitial: 'J',
           onSearch: () {},
           onAvatar: () {},
-          tabs: [
-            VjodNavItem(label: 'Accueil', selected: true, onTap: () {}),
-            VjodNavItem(label: 'Films', onTap: () {}),
-            VjodNavItem(label: 'Séries', onTap: () {}),
-            VjodNavItem(label: 'Bientôt', onTap: () {}),
-            VjodNavItem(label: 'En route', badge: 2, onTap: () {}),
-          ],
+          tabs: const [],
         ),
       ),
       Positioned(
@@ -364,6 +358,20 @@ Widget _foldHome() {
             VjodHeroAction(label: 'Lecture', icon: Icons.play_arrow_rounded, onTap: () {}),
             VjodHeroAction(label: 'Autre idée', onTap: () {}),
             VjodHeroAction(label: 'Infos', onTap: () {}),
+          ],
+        ),
+      ),
+      Positioned(
+        left: 0,
+        right: 0,
+        bottom: 0,
+        child: VjodBottomBar(
+          tabs: [
+            VjodNavItem(label: 'Accueil', icon: Icons.home_rounded, selected: true, onTap: () {}),
+            VjodNavItem(label: 'Films', icon: Icons.movie_outlined, onTap: () {}),
+            VjodNavItem(label: 'Séries', icon: Icons.tv_rounded, onTap: () {}),
+            VjodNavItem(label: 'Bientôt', icon: Icons.calendar_month_outlined, onTap: () {}),
+            VjodNavItem(label: 'En route', icon: Icons.downloading_rounded, badge: 2, onTap: () {}),
           ],
         ),
       ),

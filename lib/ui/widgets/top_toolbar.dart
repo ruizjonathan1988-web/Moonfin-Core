@@ -110,6 +110,17 @@ class TopToolbar extends StatefulWidget {
   }
 
   /// Total laid-out height of the toolbar for the current platform.
+  /// The tabs VJOD moves to the bottom bar on a narrow screen, published by
+  /// the toolbar for the layout to draw.
+  static final vjodBottomTabs = ValueNotifier<List<VjodNavItem>>(const []);
+
+  /// Whether VJOD's tabs go to the bottom: its look, on a phone-narrow screen.
+  static bool vjodNarrow(BuildContext context) =>
+      (ThemeRegistry.active.id == ThemeRegistry.vjodId ||
+          ThemeRegistry.active.id == ThemeRegistry.ecrinId) &&
+      PlatformDetection.useMobileUi &&
+      MediaQuery.sizeOf(context).width < 600;
+
   static double heightFor(BuildContext context) {
     return baseHeightFor(context) + musicBarExtraHeight();
   }
@@ -902,6 +913,63 @@ class _TopToolbarState extends State<TopToolbar> with RouteAware {
     final series = _libraryOfType('tvshows');
     final seerr =
         !_kidsMode && GetIt.instance<PluginSyncService>().seerrAvailable;
+    final narrow = TopToolbar.vjodNarrow(context);
+    final tabs = <VjodNavItem>[
+      VjodNavItem(
+        label: l10n.home,
+        icon: Icons.home_rounded,
+        selected: _isActive(Destinations.home),
+        focusNode: narrow ? null : _homeFocus,
+        onTap: () {
+          if (_isActive(Destinations.home)) {
+            homeRefreshBus.request(newMediaBar: true);
+            return;
+          }
+          homeRefreshBus.requestAfterNavigation();
+          context.go(Destinations.home);
+        },
+      ),
+      if (movies != null)
+        VjodNavItem(
+          label: l10n.vjodTabMovies,
+          icon: Icons.movie_outlined,
+          onTap: () => _openLibrary(movies),
+        ),
+      if (series != null)
+        VjodNavItem(
+          label: l10n.vjodTabSeries,
+          icon: Icons.tv_rounded,
+          onTap: () => _openLibrary(series),
+        ),
+      if (seerr) ...[
+        VjodNavItem(
+          label: l10n.vjodTabSoon,
+          icon: Icons.calendar_month_outlined,
+          selected: _isActive(Destinations.bientot),
+          onTap: () {
+            if (_isActive(Destinations.bientot)) return;
+            context.navigateTopLevel(Destinations.bientot);
+          },
+        ),
+        VjodNavItem(
+          label: l10n.enRouteTitle,
+          icon: Icons.downloading_rounded,
+          selected: _isActive(Destinations.enRoute),
+          onTap: () {
+            if (_isActive(Destinations.enRoute)) return;
+            context.navigateTopLevel(Destinations.enRoute);
+          },
+        ),
+      ],
+    ];
+    // On a narrow screen the tabs go to the bottom bar, which the layout
+    // draws from what is published here.
+    final published = narrow ? tabs : const <VjodNavItem>[];
+    if (!_sameTabs(TopToolbar.vjodBottomTabs.value, published)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) TopToolbar.vjodBottomTabs.value = published;
+      });
+    }
     return VjodNavBar(
       scale: s,
       avatarInitial: initial,
@@ -920,44 +988,18 @@ class _TopToolbarState extends State<TopToolbar> with RouteAware {
         context.navigateTopLevel(Destinations.search);
       },
       onAvatar: _openVjodMenu,
-      tabs: [
-        VjodNavItem(
-          label: l10n.home,
-          selected: _isActive(Destinations.home),
-          focusNode: _homeFocus,
-          onTap: () {
-            if (_isActive(Destinations.home)) {
-              homeRefreshBus.request(newMediaBar: true);
-              return;
-            }
-            homeRefreshBus.requestAfterNavigation();
-            context.go(Destinations.home);
-          },
-        ),
-        if (movies != null)
-          VjodNavItem(label: l10n.vjodTabMovies, onTap: () => _openLibrary(movies)),
-        if (series != null)
-          VjodNavItem(label: l10n.vjodTabSeries, onTap: () => _openLibrary(series)),
-        if (seerr) ...[
-          VjodNavItem(
-            label: l10n.vjodTabSoon,
-            selected: _isActive(Destinations.bientot),
-            onTap: () {
-              if (_isActive(Destinations.bientot)) return;
-              context.navigateTopLevel(Destinations.bientot);
-            },
-          ),
-          VjodNavItem(
-            label: l10n.enRouteTitle,
-            selected: _isActive(Destinations.enRoute),
-            onTap: () {
-              if (_isActive(Destinations.enRoute)) return;
-              context.navigateTopLevel(Destinations.enRoute);
-            },
-          ),
-        ],
-      ],
+      tabs: narrow ? const [] : tabs,
     );
+  }
+
+  static bool _sameTabs(List<VjodNavItem> a, List<VjodNavItem> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i].label != b[i].label || a[i].selected != b[i].selected) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /// What sits behind the avatar: the profile, everything that isn't a tab,

@@ -104,6 +104,7 @@ List<BoxShadow> vjodFocusRing(double scale, {bool on = true}) => on
 
 class VjodNavItem {
   final String label;
+  final IconData? icon;
   final bool selected;
   final int? badge;
   final VoidCallback onTap;
@@ -112,10 +113,101 @@ class VjodNavItem {
   const VjodNavItem({
     required this.label,
     required this.onTap,
+    this.icon,
     this.selected = false,
     this.badge,
     this.focusNode,
   });
+}
+
+/// A narrow screen, like a closed foldable: the tabs move to a bar at the
+/// bottom that spans the width, as in the mock-up.
+class VjodBottomBar extends StatelessWidget {
+  final List<VjodNavItem> tabs;
+  const VjodBottomBar({super.key, required this.tabs});
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.paddingOf(context).bottom;
+    return Container(
+      padding: EdgeInsets.only(top: 6, bottom: bottom + 6),
+      decoration: BoxDecoration(
+        color: vjodPage,
+        border: Border(top: BorderSide(color: vjodButton)),
+      ),
+      child: Row(
+        children: [
+          for (final tab in tabs)
+            Expanded(
+              child: VjodFocusable(
+                focusNode: tab.focusNode,
+                onTap: tab.onTap,
+                builder: (context, focused) {
+                  final color = tab.selected || focused
+                      ? vjodInk
+                      : vjodInk.withValues(alpha: 0.55);
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Icon(
+                              tab.icon ?? Icons.circle_outlined,
+                              color: color,
+                              size: 24,
+                            ),
+                            if (tab.badge case final badge? when badge > 0)
+                              Positioned(
+                                right: -10,
+                                top: -6,
+                                child: Container(
+                                  constraints: const BoxConstraints(
+                                    minWidth: 18,
+                                  ),
+                                  height: 18,
+                                  decoration: BoxDecoration(
+                                    color: vjodRed,
+                                    borderRadius: BorderRadius.circular(9),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    '$badge',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          tab.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: color,
+                            fontSize: 12,
+                            fontWeight: tab.selected
+                                ? FontWeight.w800
+                                : FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }
 
 /// The logo as the user drew it, on its own black, never cut out.
