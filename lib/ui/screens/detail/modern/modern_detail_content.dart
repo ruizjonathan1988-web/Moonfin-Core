@@ -208,8 +208,9 @@ class _ModernDetailContentState extends State<ModernDetailContent> {
   /// Expanded Tabs preference: when on, tabs behave like the search pill, with
   /// the first tab expanded and focusing a tab showing its content. When off,
   /// tabs start collapsed and are opened or closed by pressing them.
+  // VJOD shows the first section open, as the mock-up does.
   bool get _expandedTabs =>
-      widget.prefs.get(UserPreferences.detailExpandedTabs);
+      _vjodTheme || widget.prefs.get(UserPreferences.detailExpandedTabs);
 
   /// The sections the viewer left on, read once per build so the tabs, the
   /// hero and every focus hand-off agree on what is on screen.
@@ -1048,13 +1049,21 @@ class _ModernDetailContentState extends State<ModernDetailContent> {
     final studios = _ModernTab('studios', l10n.studios, _studiosTab);
     final chapters = _ModernTab('chapters', l10n.chapters, _chaptersTab);
     final details = _ModernTab('details', l10n.details, _detailsTab);
-    final similar = _ModernTab('similar', l10n.similar, (_, _) => _similarTab(context, _vm.similar));
+    final similar = _ModernTab(
+      'similar',
+      _vjodTheme ? l10n.vjodSameSpirit : l10n.similar,
+      (_, _) => _similarTab(context, _vm.similar),
+    );
 
     switch (item.type) {
       case 'Series':
+        // The mock-up's series page opens on the episodes.
+        final seasonsTab = _ModernTab('seasons', l10n.seasons, _seasonsTab);
+        final episodesTab =
+            _ModernTab('episodes', l10n.episodes, _seriesEpisodesTab);
         return [
-          _ModernTab('seasons', l10n.seasons, _seasonsTab),
-          _ModernTab('episodes', l10n.episodes, _seriesEpisodesTab),
+          if (_vjodTheme) episodesTab else seasonsTab,
+          if (_vjodTheme) seasonsTab else episodesTab,
           if (hasCast) cast,
           if (hasCrew) crew,
           if (hasStudios) studios,
@@ -1265,6 +1274,25 @@ class _ModernDetailContentState extends State<ModernDetailContent> {
         ];
 
       default:
+        // The mock-up's film page: the cast, then what is in the same vein.
+        if (_vjodTheme) {
+          return [
+            if (hasCast) cast,
+            if (hasSimilar) similar,
+            if (hasCrew) crew,
+            if (hasChapters) chapters,
+            ...extraTabs,
+            if (hasCollections)
+              _ModernTab(
+                'collections',
+                l10n.collections,
+                (context, item) => _collectionsTab(context, item),
+              ),
+            if (hasStudios) studios,
+            if (showDetails) details,
+            ?seerrTab,
+          ];
+        }
         return [
           if (hasCast) cast,
           if (hasCrew) crew,
