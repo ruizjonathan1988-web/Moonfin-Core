@@ -253,7 +253,11 @@ class _QuickReturnButtonState extends State<_QuickReturnButton> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final accent = AppColorScheme.accent;
+    final accent =
+        ThemeRegistry.active.id == ThemeRegistry.vjodId ||
+            ThemeRegistry.active.id == ThemeRegistry.ecrinId
+        ? AppColorScheme.onSurface
+        : AppColorScheme.accent;
     final isHorizontal = widget.scrollDirection == Axis.horizontal;
     final isActive = _hovered || _focused;
 
@@ -302,7 +306,11 @@ class _QuickReturnButtonState extends State<_QuickReturnButton> {
                   isHorizontal
                       ? Icons.arrow_back_rounded
                       : Icons.arrow_upward_rounded,
-                  color: isActive ? AppColorScheme.onAccent : accent,
+                  color: isActive
+                      ? (accent == AppColorScheme.accent
+                            ? AppColorScheme.onAccent
+                            : AppColorScheme.background)
+                      : accent,
                   size: 24,
                 ),
               ),

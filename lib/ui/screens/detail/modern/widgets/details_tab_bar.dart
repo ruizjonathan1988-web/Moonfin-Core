@@ -257,7 +257,7 @@ class _DetailsTabItemState extends State<_DetailsTabItem> {
     if (widget.segmented) return _buildSegmented(context);
 
     final textTheme = Theme.of(context).textTheme;
-    final accent = AppColorScheme.accent;
+    final accent = _vjodLook ? AppColorScheme.onSurface : AppColorScheme.accent;
     final muted = AppColorScheme.onSurface.withValues(alpha: 0.7);
 
     return Focus(
@@ -320,7 +320,9 @@ class _DetailsTabItemState extends State<_DetailsTabItem> {
     final glass = GlassCapability.glassLookActive;
     final onSurface = AppColorScheme.onSurface;
     final selected = widget.isSelected;
-    final selectedTextColor = glass ? onSurface : AppColorScheme.onAccent;
+    final selectedTextColor = glass
+        ? onSurface
+        : (_vjodLook ? AppColorScheme.background : AppColorScheme.onAccent);
 
     return Focus(
       focusNode: widget.focusNode,
@@ -517,7 +519,9 @@ class _PillTabBarState extends State<_PillTabBar> {
     final onSurface = AppColorScheme.onSurface;
     final accent = AppColorScheme.accent;
     final selectedIndex = _config.selectedIndex;
-    final thumbColor = glass ? onSurface.withValues(alpha: 0.22) : accent;
+    final thumbColor = glass
+        ? onSurface.withValues(alpha: 0.22)
+        : (_vjodLook ? onSurface : accent);
 
     final hasThumb = selectedIndex >= 0 && selectedIndex < _widths.length;
     final isRtl = Directionality.of(context) == TextDirection.rtl;
@@ -595,3 +599,8 @@ class _PillTabBarState extends State<_PillTabBar> {
     );
   }
 }
+
+/// VJOD and Écrin keep red for the logo only: tabs select in ivory.
+bool get _vjodLook =>
+    ThemeRegistry.active.id == ThemeRegistry.vjodId ||
+    ThemeRegistry.active.id == ThemeRegistry.ecrinId;

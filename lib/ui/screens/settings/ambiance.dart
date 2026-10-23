@@ -69,6 +69,10 @@ enum Ambiance {
       UserPreferences.detailShowTechnicalDetails,
       this != Ambiance.classic,
     );
+    // The mock-up's clock is French: 21:15, not 9:15 PM.
+    if (this != Ambiance.classic) {
+      await prefs.set(UserPreferences.use24HourClock, true);
+    }
     final sync = GetIt.instance<PluginSyncService>();
     if (sync.pluginAvailable) {
       sync.pushSettings(GetIt.instance<MediaServerClient>());

@@ -7283,6 +7283,35 @@ class DetailActionButtonsState extends State<DetailActionButtons> {
       ],
     ];
 
+    // VJOD keeps the mock-up's few words in the row (Play, From the start,
+    // Trailer, Not for me, Request) and folds everything else behind More,
+    // unless the viewer arranged or capped the row themselves.
+    var vjodInline = 0;
+    if (_DetailActionButtonState._vjodButtons &&
+        !widget.nouveauStyle &&
+        prefs.get(detailButtonLayout.orderPreference).isEmpty &&
+        prefs.get(UserPreferences.detailButtonsMaxVisible) == 0) {
+      const keep = [
+        DetailButton.restart,
+        DetailButton.trailer,
+        DetailButton.notForMe,
+        DetailButton.seerrRequest,
+      ];
+      final front = <Widget>[
+        ?primaryAction,
+        for (final button in _orderedButtons(prefs))
+          if (keep.contains(button)) ?byButton[button],
+      ];
+      final rest = [
+        for (final b in allButtons)
+          if (!front.contains(b)) b,
+      ];
+      if (rest.length > 1) {
+        allButtons = [...front, ...rest];
+        vjodInline = front.length;
+      }
+    }
+
     if (isNeon) {
       var neonSlot = 0;
       allButtons = allButtons.map((widget) {
@@ -7459,9 +7488,9 @@ class DetailActionButtonsState extends State<DetailActionButtons> {
     final buttonRunSpacing = compact ? 10.0 : 12.0 * desktopScale;
     final maxVisible = _calculateMaxVisibleButtons(context);
 
-    final List<Widget> primaryButtons;
-    final List<Widget> extraButtons;
-    final bool needsOverflow;
+    List<Widget> primaryButtons;
+    List<Widget> extraButtons;
+    bool needsOverflow;
 
     final bool isTvSeries = item.type == 'Series';
     final bool isTvSeason = item.type == 'Season';
@@ -7549,6 +7578,11 @@ class DetailActionButtonsState extends State<DetailActionButtons> {
         primaryButtons = allButtons;
         extraButtons = const [];
       }
+    }
+    if (vjodInline > 0) {
+      primaryButtons = allButtons.take(vjodInline).toList();
+      extraButtons = allButtons.skip(vjodInline).toList();
+      needsOverflow = true;
     }
 
     final isRtl = Directionality.of(context) == TextDirection.rtl;
@@ -16074,7 +16108,10 @@ class _ExpandableBiographyState extends State<ExpandableBiography> {
                               l10n.readMore,
                               style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(
-                                    color: AppColorScheme.accent,
+                                    color:
+                                        _DetailActionButtonState._vjodButtons
+                                        ? AppColorScheme.onSurface
+                                        : AppColorScheme.accent,
                                     fontWeight: FontWeight.w600,
                                   ),
                             ),
