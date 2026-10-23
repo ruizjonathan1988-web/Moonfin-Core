@@ -16045,10 +16045,14 @@ class _ExpandableBiographyState extends State<ExpandableBiography> {
                         border: Border.all(
                           color: _focused
                               ? (isNeon ? AppColorScheme.accent : focusColor)
-                              : Colors.white.withValues(alpha: 0.08),
+                              : (_DetailActionButtonState._vjodButtons
+                                    ? Colors.transparent
+                                    : Colors.white.withValues(alpha: 0.08)),
                           width: _focused ? 1.5 : 1.0,
                         ),
-                        color: _focused
+                        color: _DetailActionButtonState._vjodButtons && !_focused
+                            ? Colors.transparent
+                            : _focused
                             ? (isNeon
                                   ? AppColorScheme.accent.withValues(
                                       alpha: 0.04,
@@ -16076,7 +16080,11 @@ class _ExpandableBiographyState extends State<ExpandableBiography> {
                                   l10n.showLess,
                                   style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(
-                                        color: AppColorScheme.accent,
+                                        color:
+                                            _DetailActionButtonState
+                                                ._vjodButtons
+                                            ? AppColorScheme.onSurface
+                                            : AppColorScheme.accent,
                                         fontWeight: FontWeight.w600,
                                       ),
                                 ),

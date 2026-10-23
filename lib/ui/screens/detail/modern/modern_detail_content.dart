@@ -89,6 +89,7 @@ import '../../../widgets/seerr/seerr_item_status.dart';
 import '../../../widgets/seerr/seerr_status_pill.dart';
 import '../../../widgets/seerr/seerr_stats_card.dart';
 import '../../../widgets/seerr_icons.dart';
+import '../../../widgets/vjod/vjod_widgets.dart';
 
 double _desktopUiScale({UserPreferences? prefs}) {
   final effectivePrefs = prefs ?? GetIt.instance<UserPreferences>();
@@ -1591,6 +1592,7 @@ class _ModernDetailContentState extends State<ModernDetailContent> {
     return counts;
   }
 
+  int? _vjodSeason;
   final Set<int> _expandedSeasons = {};
   bool _initializedExpandedSeasons = false;
 
@@ -1629,6 +1631,64 @@ class _ModernDetailContentState extends State<ModernDetailContent> {
       } else {
         _expandedSeasons.add(seasonGroups.keys.first);
       }
+    }
+
+    if (_vjodTheme) {
+      final keys = seasonGroups.keys.toList();
+      final fallback = _vm.nextUp?.parentIndexNumber;
+      final current = keys.contains(_vjodSeason)
+          ? _vjodSeason!
+          : (fallback != null && keys.contains(fallback)
+                ? fallback
+                : keys.first);
+      final eps = seasonGroups[current]!;
+      return Focus(
+        canRequestFocus: false,
+        onFocusChange: (focused) {
+          if (focused && mounted) {
+            widget.onToggleNavbar?.call(false);
+          } else if (!focused && mounted) {
+            widget.onToggleNavbar?.call(true);
+          }
+        },
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent &&
+              event.logicalKey == LogicalKeyboardKey.arrowUp &&
+              _episodesFirstFocusNode.hasFocus) {
+            _focusSelectedTab();
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: VjodSegmented(
+                  options: [for (final k in keys) l10n.vjodSeason(k)],
+                  selected: keys.indexOf(current),
+                  focusNodes: [_episodesFirstFocusNode],
+                  onSelect: (i) => setState(() => _vjodSeason = keys[i]),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            for (final episode in eps)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: DetailEpisodeCard(
+                  episode: episode,
+                  imageApi: _vm.imageApi,
+                  onChanged: () => _vm.load(),
+                  isActive: episode.id == _vm.nextUp?.id,
+                ),
+              ),
+          ],
+        ),
+      );
     }
 
     final children = <Widget>[];
