@@ -12148,6 +12148,81 @@ class _DetailActionButtonState extends State<_DetailActionButton>
     super.dispose();
   }
 
+  /// VJOD and Écrin draw the mock-up's buttons on every detail style.
+  static bool get _vjodButtons =>
+      ThemeRegistry.active.id == ThemeRegistry.vjodId ||
+      ThemeRegistry.active.id == ThemeRegistry.ecrinId;
+
+  /// The mock-up's buttons: a word in a block, ivory for Play, dark grey for
+  /// the rest, and an ivory ring on whichever has focus.
+  Widget _buildVjodChild(
+    BuildContext context, {
+    required bool isMobile,
+    required bool showHighlight,
+  }) {
+    final scale = _modernButtonScale(context);
+    final height = isMobile ? 48.0 : 52.0 * scale;
+    final fullWidth =
+        widget.isPrimary &&
+        (context
+                .findAncestorWidgetOfExactType<DetailActionButtons>()
+                ?.fullWidthPrimary ??
+            false);
+    final ink = AppColorScheme.onSurface;
+    final page = AppColorScheme.background;
+    final light = widget.isPrimary || showHighlight;
+    final fill = light
+        ? ink
+        : widget.isActive
+        ? (widget.activeColor ?? AppColorScheme.accent).withValues(alpha: 0.22)
+        : AppColorScheme.buttonNormal;
+    final fg = light ? page : ink;
+    final iconColor = (widget.icon == Icons.favorite && widget.isActive)
+        ? const Color(0xFFE50914)
+        : fg;
+    final icon = widget.iconBuilder != null
+        ? widget.iconBuilder!(22 * scale, iconColor)
+        : (widget.icon == null
+              ? null
+              : AdaptiveIcon(widget.icon!, color: iconColor, size: 22 * scale));
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 120),
+      height: height,
+      width: fullWidth ? double.infinity : null,
+      padding: EdgeInsets.symmetric(horizontal: (isMobile ? 16 : 22) * scale),
+      decoration: BoxDecoration(
+        color: fill,
+        borderRadius: BorderRadius.circular(6),
+        boxShadow: showHighlight
+            ? [
+                BoxShadow(color: page, spreadRadius: 3),
+                BoxShadow(color: ink, spreadRadius: 6),
+              ]
+            : null,
+      ),
+      child: Row(
+        mainAxisSize: fullWidth ? MainAxisSize.max : MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (icon != null) ...[icon, SizedBox(width: 8 * scale)],
+          Flexible(
+            child: Text(
+              widget.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
+              style: TextStyle(
+                color: fg,
+                fontWeight: FontWeight.w700,
+                fontSize: (isMobile ? 16 : 18) * scale,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Modern detail style: primary Play renders as a high-contrast light pill,
   /// secondary actions as circular outline icon buttons (icon only in landscape,
   /// icon + label in portrait).
@@ -12606,7 +12681,13 @@ class _DetailActionButtonState extends State<_DetailActionButton>
           onTap: widget.onPressed,
           onLongPress: widget.onLongPress,
           onSecondaryTap: widget.onLongPress,
-          child: modern
+          child: _vjodButtons
+              ? _buildVjodChild(
+                  context,
+                  isMobile: isMobile,
+                  showHighlight: showHighlight,
+                )
+              : modern
               ? _buildModernChild(
                   context,
                   isMobile: isMobile,

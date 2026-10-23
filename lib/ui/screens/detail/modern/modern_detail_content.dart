@@ -195,6 +195,10 @@ class ModernDetailContent extends StatefulWidget {
 }
 
 class _ModernDetailContentState extends State<ModernDetailContent> {
+  static bool get _vjodTheme =>
+      ThemeRegistry.active.id == ThemeRegistry.vjodId ||
+      ThemeRegistry.active.id == ThemeRegistry.ecrinId;
+
   int _selectedTab = 0;
   String? _selectedTabId;
   String? _lastItemId;
@@ -4207,7 +4211,8 @@ class _ModernDetailContentState extends State<ModernDetailContent> {
     final isEpisode = item.type == 'Episode';
     final isSeason = item.type == 'Season';
     // A hidden logo falls back to the title text, as a missing one does.
-    final showLogo = _sections.shows(DetailSection.logo);
+    // VJOD writes the title in its own capitals, as the mock-up does.
+    final showLogo = _sections.shows(DetailSection.logo) && !_vjodTheme;
     final logoTag = showLogo
         ? item.logoImageTag ?? (isEpisode ? item.seriesLogoImageTag : null)
         : null;
@@ -4667,11 +4672,21 @@ class _ModernDetailContentState extends State<ModernDetailContent> {
               children: [
                 Flexible(
                   child: Text(
-                    item.name,
-                    style: (_landscape
-                            ? textTheme.displaySmall
-                            : textTheme.headlineMedium)
-                        ?.copyWith(fontWeight: FontWeight.w700, color: _titleColor),
+                    _vjodTheme ? item.name.toUpperCase() : item.name,
+                    style: _vjodTheme
+                        ? TextStyle(
+                            fontFamily: 'Anton',
+                            fontSize: _landscape ? 72 : 44,
+                            height: 1.02,
+                            color: _titleColor,
+                          )
+                        : (_landscape
+                                ? textTheme.displaySmall
+                                : textTheme.headlineMedium)
+                            ?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: _titleColor,
+                            ),
                   ),
                 ),
                 ..._versionBadge(item, selectedSource, textTheme),
