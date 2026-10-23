@@ -941,10 +941,10 @@ class _TopToolbarState extends State<TopToolbar> with RouteAware {
         if (seerr) ...[
           VjodNavItem(
             label: l10n.vjodTabSoon,
-            selected: _isActive(Destinations.seerrDiscover),
+            selected: _isActive(Destinations.bientot),
             onTap: () {
-              if (_isActive(Destinations.seerrDiscover)) return;
-              context.navigateTopLevel(Destinations.seerrDiscover);
+              if (_isActive(Destinations.bientot)) return;
+              context.navigateTopLevel(Destinations.bientot);
             },
           ),
           VjodNavItem(
