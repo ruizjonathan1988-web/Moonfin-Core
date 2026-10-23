@@ -336,6 +336,13 @@ class _SettingsSidePanelState extends ConsumerState<SettingsSidePanel> {
                   context.navigateTopLevel(Destinations.admin);
                 },
               ),
+            // The mock-up's first category: one choice for the whole look.
+            _PanelEntry(
+              icon: Icons.auto_awesome_rounded,
+              title: l10n.ambianceTitle,
+              subtitle: l10n.ambianceIntro,
+              onTap: () => context.pushSettingsScreen(const _AmbianceScreen()),
+            ),
             _PanelEntry(
               icon: Icons.lock,
               title: l10n.account,

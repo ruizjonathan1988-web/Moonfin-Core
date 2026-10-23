@@ -321,3 +321,29 @@ class _AppearanceScreenState extends State<_AppearanceScreen> {
     );
   }
 }
+
+
+/// Ambiance on its own, first in the settings as in the mock-up.
+class _AmbianceScreen extends StatelessWidget {
+  const _AmbianceScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Scaffold(
+      appBar: buildSettingsAppBar(context, Text(l10n.ambianceTitle)),
+      body: ListenableBuilder(
+        listenable: GetIt.instance<UserPreferences>(),
+        builder: (context, _) => ListView(
+          padding: const EdgeInsets.only(top: 8, bottom: 24),
+          children: [
+            AmbianceSection(
+              prefs: GetIt.instance<UserPreferences>(),
+              autofocus: true,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
