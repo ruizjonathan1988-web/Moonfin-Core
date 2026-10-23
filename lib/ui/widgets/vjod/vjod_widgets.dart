@@ -397,6 +397,7 @@ class VjodNavBar extends StatelessWidget {
           if (leading != null) SizedBox(width: 12 * scale),
           VjodLogo(scale: scale),
           SizedBox(width: 18 * scale),
+          if (tabs.isNotEmpty)
           Flexible(
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
