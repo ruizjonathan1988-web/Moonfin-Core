@@ -231,7 +231,13 @@ class _AccountDialogState extends State<_AccountDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final focusColor = Theme.of(context).colorScheme.primary;
+    final vjod =
+        ThemeRegistry.active.id == ThemeRegistry.vjodId ||
+        ThemeRegistry.active.id == ThemeRegistry.ecrinId;
+    // VJOD rings what has focus in ivory, as everywhere else.
+    final focusColor = vjod
+        ? AppColorScheme.onSurface
+        : Theme.of(context).colorScheme.primary;
     final activeIndex = _accounts.indexWhere(_isActive);
     final initialAccountFocusIndex = activeIndex >= 0 ? activeIndex : 0;
 
@@ -259,15 +265,40 @@ class _AccountDialogState extends State<_AccountDialog> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: Text(
-                        l10n.switchUser,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: AppColorScheme.onSurface,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      child: vjod
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  l10n.vjodWhoIsWatching.toUpperCase(),
+                                  style: TextStyle(
+                                    fontFamily: 'Anton',
+                                    fontSize: 36,
+                                    color: AppColorScheme.onSurface,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  l10n.vjodWhoIsWatchingHint,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: AppColorScheme.onSurface.withValues(
+                                      alpha: 0.6,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Text(
+                              l10n.switchUser,
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w600,
+                                color: AppColorScheme.onSurface,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                     ),
                     if (!PlatformDetection.isTV)
                       _CircleActionButton(

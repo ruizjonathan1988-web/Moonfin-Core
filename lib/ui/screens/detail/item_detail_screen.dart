@@ -15231,7 +15231,28 @@ class DetailEpisodeCardState extends State<DetailEpisodeCard>
     final desktopScale = _desktopUiScale();
     final epNum = episode.indexNumber;
     final runtime = episode.runtime;
-    final runtimeText = runtime != null
+    final vjod =
+        ThemeRegistry.active.id == ThemeRegistry.vjodId ||
+        ThemeRegistry.active.id == ThemeRegistry.ecrinId;
+    final l10n = AppLocalizations.of(context);
+    String? vjodLine() {
+      if (runtime == null) return null;
+      final position = episode.playbackPosition ?? Duration.zero;
+      if (position > Duration.zero && !episode.isPlayed) {
+        final left = runtime - position;
+        final end = DateTime.now().add(left);
+        final clock =
+            '${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}';
+        return '${l10n.vjodLeftMinutesCap(left.inMinutes)} · ${l10n.mediaBarEndsAt(clock)}';
+      }
+      final h = runtime.inHours;
+      final m = runtime.inMinutes.remainder(60);
+      return h > 0 ? '$h h ${m.toString().padLeft(2, '0')}' : '$m min';
+    }
+
+    final runtimeText = vjod
+        ? vjodLine()
+        : runtime != null
         ? (runtime.inHours > 0
               ? '${runtime.inHours}h ${runtime.inMinutes.remainder(60)}m'
               : '${runtime.inMinutes}m')
@@ -15342,7 +15363,51 @@ class DetailEpisodeCardState extends State<DetailEpisodeCard>
                                   filled: true,
                                 ),
                               ),
-                              if (episode.isPlayed)
+                              // The mock-up's big episode number.
+                              if (vjod && epNum != null)
+                                Positioned(
+                                  top: 6,
+                                  left: 10,
+                                  child: Text(
+                                    '$epNum',
+                                    style: const TextStyle(
+                                      fontFamily: 'Anton',
+                                      fontSize: 30,
+                                      height: 1,
+                                      color: Colors.white,
+                                      shadows: [
+                                        Shadow(
+                                          color: Color(0x99000000),
+                                          blurRadius: 8,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              if (vjod && episode.isPlayed)
+                                Positioned(
+                                  top: 6,
+                                  right: 6,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xD90B0B0D),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      '✓ ${l10n.vjodWatched}',
+                                      style: TextStyle(
+                                        color: AppColorScheme.statusAvailable,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              else if (episode.isPlayed)
                                 Positioned(
                                   top: 6,
                                   right: 6,
@@ -15371,7 +15436,9 @@ class DetailEpisodeCardState extends State<DetailEpisodeCard>
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                episodeCardTitle(context, episode.name, epNum),
+                                vjod
+                                    ? episode.name
+                                    : episodeCardTitle(context, episode.name, epNum),
                                 style: Theme.of(context).textTheme.titleSmall
                                     ?.copyWith(
                                       color: isNeon
