@@ -12208,7 +12208,7 @@ class _DetailActionButtonState extends State<_DetailActionButton>
     final page = AppColorScheme.background;
     // The mock-up's small squares (+ and the thumb) and its plain-word
     // "Not for me".
-    const squares = {
+    final squares = <IconData>{
       Icons.favorite,
       Icons.thumb_up,
       Icons.thumb_down,
